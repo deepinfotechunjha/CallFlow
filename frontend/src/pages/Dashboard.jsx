@@ -45,7 +45,7 @@ const Dashboard = () => {
         </button>
       </div>
 
-      {/* Stats */}
+      
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold text-gray-700">Total Calls</h3>
@@ -69,7 +69,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="mb-6">
         <div className="flex flex-wrap gap-2">
           {['ALL', 'MY_CALLS', 'ASSIGNED_TO_ME', 'PENDING', 'COMPLETED'].map(f => (
@@ -88,7 +87,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Calls List */}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredCalls.length === 0 ? (
           <div className="col-span-full text-center py-12">

@@ -10,8 +10,19 @@ dotenv.config();
 const prisma = new PrismaClient();
 const app = express();
 app.use(express.json());
-// allow the frontend dev server to talk to this API in development
-app.use(cors({ origin: process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173' }));
+const allowedOrigins = [process.env.FRONTEND_ORIGIN ?? 'https://call-manage.netlify.app', 'http://localhost:5173'];
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin)
+            return callback(null, true);
+        if (allowedOrigins.includes(origin))
+            return callback(null, true);
+        if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1'))
+            return callback(null, true);
+        return callback(new Error('Not allowed by CORS'));
+    },
+    methods: ["GET", "POST", "PUT", "DELETE"]
+}));
 const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret';
 function signToken(payload) {
     return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
@@ -44,15 +55,12 @@ function authMiddleware(req, res, next) {
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 function applyPrismaSchema() {
     try {
-        console.log("Applying Prisma schema to the database (prisma db push)...");
         const shell = process.platform === "win32" ? process.env.ComSpec || "cmd.exe" : "/bin/sh";
-        const options = { stdio: "inherit", shell };
-        execSync("npx prisma db push --accept-data-loss", options);
-        console.log("Prisma schema applied.");
+        execSync("npx prisma db push --accept-data-loss", { stdio: "inherit", shell });
         return true;
     }
     catch (err) {
-        console.error("Failed to apply Prisma schema:", err);
+        console.error("Prisma db push failed:", String(err));
         return false;
     }
 }
@@ -376,4 +384,3 @@ process.on("SIGTERM", async () => {
     await prisma.$disconnect();
     process.exit(0);
 });
-//# sourceMappingURL=index.js.map

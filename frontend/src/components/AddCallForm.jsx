@@ -17,6 +17,7 @@ const AddCallForm = ({ onClose }) => {
     assignedTo: ''
   });
   const [customerFound, setCustomerFound] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { addCall, getCustomer, saveCustomer } = useCallStore();
   const { user, users } = useAuthStore();
@@ -42,6 +43,9 @@ const AddCallForm = ({ onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
     try {
       await saveCustomer({
         name: formData.customerName,
@@ -59,6 +63,7 @@ const AddCallForm = ({ onClose }) => {
       onClose();
     } catch (error) {
       console.error('Error adding call:', error);
+      setIsSubmitting(false);
     }
   };
 
@@ -159,14 +164,16 @@ const AddCallForm = ({ onClose }) => {
           <div className="flex gap-2 pt-4">
             <button
               type="submit"
-              className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+              disabled={isSubmitting}
+              className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed font-medium"
             >
-              Add Call
+              {isSubmitting ? 'Adding...' : 'Add Call'}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
+              disabled={isSubmitting}
+              className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed"
             >
               Cancel
             </button>

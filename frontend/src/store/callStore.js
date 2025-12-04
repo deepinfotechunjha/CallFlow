@@ -10,13 +10,31 @@ const useCallStore = create(
       customers: [],
       
       addCall: async (callData) => {
+        const tempId = `temp-${Date.now()}`;
+        const optimisticCall = {
+          id: tempId,
+          ...callData,
+          createdAt: new Date().toISOString()
+        };
+        
         try {
+          set(state => ({ calls: [optimisticCall, ...state.calls] }));
+          
           const response = await apiClient.post('/calls', callData);
-          set(state => ({ calls: [response.data, ...state.calls] }));
+          
+          set(state => ({
+            calls: state.calls.map(call => 
+              call.id === tempId ? response.data : call
+            )
+          }));
+          
           toast.success('Call added successfully');
           return response.data;
         } catch (error) {
-          toast.error('Failed to add call');
+          set(state => ({
+            calls: state.calls.filter(call => call.id !== tempId)
+          }));
+          toast.error('Failed to add call. Please try again.');
           throw error;
         }
       },
