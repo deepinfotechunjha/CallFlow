@@ -292,7 +292,11 @@ app.post('/calls', async (req: Request, res: Response) => {
 			if (!actor) return res.status(401).json({ error: 'unauthenticated' });
 			if (!(actorRole === 'HOST' || actorRole === 'ADMIN')) return res.status(403).json({ error: 'forbidden' });
 
-			const call = await prisma.call.update({ where: { id: callId }, data: { assignedTo: assignee, assignedAt: new Date() } });
+			const call = await prisma.call.update({ 
+				where: { id: callId }, 
+				data: { assignedTo: assignee, assignedAt: new Date() },
+				include: { customer: true }
+			});
 			res.json(call);
 		} catch (err: any) {
 			res.status(500).json({ error: String(err) });
@@ -313,7 +317,11 @@ app.post('/calls', async (req: Request, res: Response) => {
 			if (call.assignedTo && call.assignedTo !== actor && !(actorRole === 'HOST' || actorRole === 'ADMIN'))
 				return res.status(403).json({ error: 'forbidden' });
 
-			const updated = await prisma.call.update({ where: { id: callId }, data: { status: 'COMPLETED', completedBy: actor, completedAt: new Date() } });
+			const updated = await prisma.call.update({ 
+				where: { id: callId }, 
+				data: { status: 'COMPLETED', completedBy: actor, completedAt: new Date() },
+				include: { customer: true }
+			});
 			res.json(updated);
 		} catch (err: any) {
 			res.status(500).json({ error: String(err) });
@@ -333,7 +341,11 @@ app.put('/calls/:id', async (req: Request, res: Response) => {
 	const id = Number(req.params.id);
 	const updates = req.body as any;
 	try {
-		const call = await prisma.call.update({ where: { id }, data: updates });
+		const call = await prisma.call.update({ 
+			where: { id }, 
+			data: updates,
+			include: { customer: true }
+		});
 		res.json(call);
 	} catch (err: any) {
 		res.status(500).json({ error: String(err) });

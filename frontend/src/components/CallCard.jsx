@@ -19,7 +19,7 @@ const CallCard = ({ call }) => {
     category: ''
   });
   
-  const { updateCall } = useCallStore();
+  const { updateCall, updateCallAndCustomer } = useCallStore();
   const { user, users } = useAuthStore();
   
   const canAssign = user?.role === 'HOST' || user?.role === 'ADMIN';
@@ -57,7 +57,21 @@ const CallCard = ({ call }) => {
 
   const handleEditSave = async (e) => {
     e.preventDefault();
-    await updateCall(call.id, formData);
+    
+    // Separate customer and call data
+    const customerData = {
+      name: formData.customerName,
+      phone: formData.phone,
+      email: formData.email || null,
+      address: formData.address || null
+    };
+    
+    const callData = {
+      problem: formData.problem,
+      category: formData.category
+    };
+    
+    await updateCallAndCustomer(call.id, callData, customerData);
     setShowEdit(false);
   };
 

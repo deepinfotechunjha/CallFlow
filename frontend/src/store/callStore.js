@@ -10,30 +10,16 @@ const useCallStore = create(
       customers: [],
       
       addCall: async (callData) => {
-        const tempId = `temp-${Date.now()}`;
-        const optimisticCall = {
-          id: tempId,
-          ...callData,
-          createdAt: new Date().toISOString()
-        };
-        
         try {
-          set(state => ({ calls: [optimisticCall, ...state.calls] }));
-          
           const response = await apiClient.post('/calls', callData);
           
           set(state => ({
-            calls: state.calls.map(call => 
-              call.id === tempId ? response.data : call
-            )
+            calls: [response.data, ...state.calls]
           }));
           
           toast.success('Call added successfully');
           return response.data;
         } catch (error) {
-          set(state => ({
-            calls: state.calls.filter(call => call.id !== tempId)
-          }));
           toast.error('Failed to add call. Please try again.');
           throw error;
         }
@@ -82,6 +68,28 @@ const useCallStore = create(
           return response.data;
         } catch (error) {
           console.error('Failed to save customer:', error);
+          throw error;
+        }
+      },
+
+      updateCallAndCustomer: async (callId, callData, customerData) => {
+        try {
+          // Update customer first
+          await apiClient.post('/customers', customerData);
+          
+          // Then update call
+          const response = await apiClient.put(`/calls/${callId}`, callData);
+          
+          set(state => ({
+            calls: state.calls.map(call => 
+              call.id === callId ? response.data : call
+            )
+          }));
+          
+          toast.success('Call and customer updated successfully');
+          return response.data;
+        } catch (error) {
+          toast.error('Failed to update call and customer');
           throw error;
         }
       }
