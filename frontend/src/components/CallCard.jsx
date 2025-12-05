@@ -19,20 +19,20 @@ const CallCard = ({ call }) => {
     category: ''
   });
   
-  const { updateCall, updateCallAndCustomer } = useCallStore();
+  const { updateCall } = useCallStore();
   const { user, users } = useAuthStore();
   
-  const canAssign = user?.role === 'HOST' || user?.role === 'ADMIN';
-  const canEdit = user?.role === 'HOST' && call.status === 'PENDING';
-  const canComplete = call.assignedTo === user?.username || canAssign;
+  const canAssign = ['HOST', 'ADMIN'].includes(user?.role) && call.status !== 'COMPLETED';
+  const canEdit = user?.role === 'HOST' && call.status !== 'COMPLETED';
+  const canComplete = call.assignedTo === user?.username || ['HOST', 'ADMIN'].includes(user?.role);
 
   useEffect(() => {
     if (showEdit) {
       setFormData({
-        customerName: call?.customer?.name || call?.customerName || '',
-        phone: call?.customer?.phone || call?.phone || '',
-        email: call?.customer?.email || call?.email || '',
-        address: call?.customer?.address || call?.address || '',
+        customerName: call?.customerName || '',
+        phone: call?.phone || '',
+        email: call?.email || '',
+        address: call?.address || '',
         problem: call?.problem || '',
         category: call?.category || ''
       });
@@ -41,37 +41,58 @@ const CallCard = ({ call }) => {
 
   const handleAssign = async () => {
     if (selectedWorker) {
-      await updateCall(call.id, { assignedTo: selectedWorker });
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/calls/${call.id}/assign`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ assignee: selectedWorker })
+        });
+        
+        if (response.ok) {
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error('Assignment failed:', error);
+      }
       setShowAssign(false);
       setSelectedWorker('');
     }
   };
 
   const handleComplete = async () => {
-    await updateCall(call.id, {
-      status: 'COMPLETED',
-      completedBy: user.username,
-      completedAt: new Date().toISOString()
-    });
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/calls/${call.id}/complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Complete failed:', error);
+    }
   };
 
   const handleEditSave = async (e) => {
     e.preventDefault();
     
-    // Separate customer and call data
-    const customerData = {
-      name: formData.customerName,
+    const allData = {
+      customerName: formData.customerName,
       phone: formData.phone,
       email: formData.email || null,
-      address: formData.address || null
-    };
-    
-    const callData = {
+      address: formData.address || null,
       problem: formData.problem,
       category: formData.category
     };
     
-    await updateCallAndCustomer(call.id, callData, customerData);
+    await updateCall(call.id, allData);
     setShowEdit(false);
   };
 
@@ -92,9 +113,9 @@ const CallCard = ({ call }) => {
     <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500">
       <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="font-semibold text-lg">{call?.customer?.name || call?.customerName}</h3>
-          <p className="text-gray-600">{call?.customer?.phone || call?.phone}</p>
-          {(call?.customer?.email || call?.email) && <p className="text-gray-600 text-sm">{call?.customer?.email || call?.email}</p>}
+          <h3 className="font-semibold text-lg">{call?.customerName}</h3>
+          <p className="text-gray-600">{call?.phone}</p>
+          {call?.email && <p className="text-gray-600 text-sm">{call?.email}</p>}
         </div>
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(call.status)}`}>
           {call.status}
@@ -104,7 +125,7 @@ const CallCard = ({ call }) => {
       <div className="mb-3">
         <p className="text-sm text-gray-700 mb-1"><strong>Category:</strong> {call.category}</p>
         <p className="text-sm text-gray-700 mb-2"><strong>Problem:</strong> {call.problem}</p>
-        {(call?.customer?.address || call?.address) && <p className="text-sm text-gray-600"><strong>Address:</strong> {call?.customer?.address || call?.address}</p>}
+        {call?.address && <p className="text-sm text-gray-600"><strong>Address:</strong> {call?.address}</p>}
       </div>
 
       <div className="text-xs text-gray-500 mb-3">

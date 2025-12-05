@@ -28,12 +28,12 @@ const Navbar = () => {
                 Dashboard
               </Link>
               
-              {(user?.role === 'HOST' || user?.role === 'ADMIN') && (
+              {user?.role === 'HOST' && (
                 <Link
                   to="/users"
                   className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
                 >
-                  Users
+                  User Management
                 </Link>
               )}
             </div>

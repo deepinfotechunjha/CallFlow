@@ -21,7 +21,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/users" element={<ProtectedRoute allowedRoles={['ADMIN', 'HOST']}><UserManagement /></ProtectedRoute>} />
+          <Route path="/users" element={<ProtectedRoute allowedRoles={['HOST']}><UserManagement /></ProtectedRoute>} />
         </Routes>
       </main>
       <Toaster position="top-right" />

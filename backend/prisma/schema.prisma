@@ -11,36 +11,26 @@ model User {
   id        Int      @id @default(autoincrement())
   username  String   @unique
   password  String
-  role      String   @default("USER")
+  role      String
   createdAt DateTime @default(now())
 }
 
 model Call {
-  id         Int      @id @default(autoincrement())
-  problem    String
-  category   String
-  status     String
-  assignedTo String?
-  assignedAt DateTime?
-  createdBy  String
-  createdAt  DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  customerName String
+  phone       String
+  email       String?
+  address     String?
+  problem     String
+  category    String
+  status      String
+  assignedTo  String?
+  assignedAt  DateTime?
+  createdBy   String
+  createdAt   DateTime @default(now())
   completedBy String?
   completedAt DateTime?
-  customer   Customer @relation(fields: [customerId], references: [id])
-  customerId Int
   
-  @@index([customerId])
   @@index([assignedTo])
   @@index([createdBy])
-}
-
-model Customer {
-  id       Int     @id @default(autoincrement())
-  name     String
-  phone    String  @unique
-  email    String?
-  address  String?
-  calls    Call[]
-  
-  @@map("Customer")
 }

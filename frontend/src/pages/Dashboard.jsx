@@ -6,19 +6,31 @@ import CallCard from '../components/CallCard';
 
 const Dashboard = () => {
   const [showAddForm, setShowAddForm] = useState(false);
-  const [filter, setFilter] = useState('ALL');
+  const { user } = useAuthStore();
+  const [filter, setFilter] = useState(['HOST', 'ADMIN'].includes(user?.role) ? 'ALL' : 'MY_TASKS');
   
   const { calls, fetchCalls } = useCallStore();
-  const { user, fetchUsers } = useAuthStore();
+  const { fetchUsers } = useAuthStore();
 
   useEffect(() => {
     fetchCalls();
     fetchUsers();
   }, []);
 
+  // Role-based filter options
+  const getFilterOptions = () => {
+    if (['HOST', 'ADMIN'].includes(user?.role)) {
+      return ['ALL', 'MY_CALLS', 'ASSIGNED_TO_ME', 'PENDING', 'COMPLETED'];
+    } else {
+      return ['MY_TASKS', 'MY_CREATED', 'PENDING', 'COMPLETED'];
+    }
+  };
+
   const filteredCalls = calls.filter(call => {
     if (filter === 'ALL') return true;
     if (filter === 'MY_CALLS') return call.createdBy === user?.username;
+    if (filter === 'MY_TASKS') return call.createdBy === user?.username || call.assignedTo === user?.username;
+    if (filter === 'MY_CREATED') return call.createdBy === user?.username;
     if (filter === 'ASSIGNED_TO_ME') return call.assignedTo === user?.username;
     if (filter === 'PENDING') return call.status === 'PENDING';
     if (filter === 'COMPLETED') return call.status === 'COMPLETED';
@@ -71,7 +83,7 @@ const Dashboard = () => {
 
       <div className="mb-6">
         <div className="flex flex-wrap gap-2">
-          {['ALL', 'MY_CALLS', 'ASSIGNED_TO_ME', 'PENDING', 'COMPLETED'].map(f => (
+          {getFilterOptions().map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}

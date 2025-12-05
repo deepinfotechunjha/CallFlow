@@ -53,6 +53,17 @@ function authMiddleware(req: Request & { user?: any }, res: Response, next: Next
     next();
 }
 
+// Role-based authorization middleware
+function requireRole(roles: string[]) {
+    return (req: Request & { user?: any }, res: Response, next: NextFunction) => {
+        if (!req.user) return res.status(401).json({ error: 'Unauthenticated' });
+        if (!roles.includes(req.user.role)) {
+            return res.status(403).json({ error: 'Insufficient permissions' });
+        }
+        next();
+    };
+}
+
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 
 // Health check endpoint
@@ -66,7 +77,7 @@ app.get("/health", async (_req: Request, res: Response) => {
 });
 
 // User endpoints
-app.get("/users", authMiddleware, async (_req: Request & { user?: any }, res: Response) => {
+app.get("/users", authMiddleware, requireRole(['HOST']), async (_req: Request & { user?: any }, res: Response) => {
     try {
         const users = await prisma.user.findMany({ 
             select: { id: true, username: true, role: true, createdAt: true } 
@@ -77,19 +88,61 @@ app.get("/users", authMiddleware, async (_req: Request & { user?: any }, res: Re
     }
 });
 
-app.post("/users", async (req: Request, res: Response) => {
-    const { username, password, role } = req.body as { username?: string; password?: string; role?: string };
-    if (!username || !password) return res.status(400).json({ error: "username and password required" });
+app.put("/users/:id", authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const userId = parseInt(req.params.id);
+    const { role } = req.body;
+    
+    if (!role || !['HOST', 'ADMIN', 'USER'].includes(role)) {
+        return res.status(400).json({ error: 'Invalid role' });
+    }
     
     try {
+        // Check HOST limit if promoting to HOST
+        if (role === 'HOST') {
+            const hostCount = await prisma.user.count({ where: { role: 'HOST' } });
+            const currentUser = await prisma.user.findUnique({ where: { id: userId } });
+            if (currentUser?.role !== 'HOST' && hostCount >= 3) {
+                return res.status(400).json({ error: 'Maximum 3 HOSTs allowed' });
+            }
+        }
+        
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data: { role },
+            select: { id: true, username: true, role: true, createdAt: true }
+        });
+        
+        res.json(user);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post("/users", authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const { username, password, role } = req.body as { username?: string; password?: string; role?: string };
+    
+    if (!username || !password || !role) {
+        return res.status(400).json({ error: "username, password, and role are required" });
+    }
+    
+    if (!['HOST', 'ADMIN', 'USER'].includes(role)) {
+        return res.status(400).json({ error: "Invalid role. Must be HOST, ADMIN, or USER" });
+    }
+    
+    try {
+        // Check HOST limit
+        if (role === 'HOST') {
+            const hostCount = await prisma.user.count({ where: { role: 'HOST' } });
+            if (hostCount >= 3) {
+                return res.status(400).json({ error: 'Maximum 3 HOSTs allowed' });
+            }
+        }
+        
         const hashed = await bcrypt.hash(password, 10);
         const user = await prisma.user.create({ 
-            data: { 
-                username, 
-                password: hashed, 
-                role: role ?? 'USER' 
-            } 
+            data: { username, password: hashed, role } 
         });
+        
         res.status(201).json({ 
             id: user.id, 
             username: user.username, 
@@ -101,105 +154,29 @@ app.post("/users", async (req: Request, res: Response) => {
     }
 });
 
-// Customer endpoints
-app.get("/customers", async (_req: Request, res: Response) => {
-    try {
-        const customers = await prisma.customer.findMany({
-            include: { calls: { orderBy: { createdAt: 'desc' } } }
-        });
-        res.json(customers);
-    } catch (err: any) {
-        console.error('Error fetching customers:', err);
-        res.status(500).json({ error: 'Failed to fetch customers' });
-    }
-});
 
-app.get("/customers/search", async (req: Request, res: Response) => {
-    try {
-        const phone = String(req.query.phone || '');
-        const email = String(req.query.email || '');
-        
-        if (!phone && !email) {
-            return res.status(400).json({ error: 'Either phone or email is required' });
-        }
-
-        const where: any = {
-            OR: [
-                phone ? { phone } : undefined,
-                email ? { email } : undefined,
-            ].filter(Boolean) as any[]
-        };
-
-        const customer = await prisma.customer.findFirst({
-            where,
-            include: { calls: { orderBy: { createdAt: 'desc' } } }
-        });
-
-        if (!customer) return res.status(404).json(null);
-        res.json(customer);
-    } catch (err: any) {
-        console.error('Error searching customer:', err);
-        res.status(500).json({ error: 'Failed to search customer' });
-    }
-});
-
-app.post('/customers', async (req: Request, res: Response) => {
-    const { name, phone, email, address } = req.body as {
-        name?: string;
-        phone?: string;
-        email?: string;
-        address?: string;
-    };
-    
-    if (!name || !phone) {
-        return res.status(400).json({ error: 'Name and phone are required' });
-    }
-
-    try {
-        console.log('Creating/updating customer with:', { name, phone, email, address });
-        const updateData: any = { name };
-        const createData: any = { name, phone };
-        
-        if (email !== undefined) {
-            updateData.email = email;
-            createData.email = email;
-        }
-        
-        if (address !== undefined) {
-            updateData.address = address;
-            createData.address = address;
-        }
-        
-        const customer = await prisma.customer.upsert({
-            where: { phone },
-            update: updateData,
-            create: createData,
-        });
-        console.log('Customer processed successfully:', customer);
-        res.json(customer);
-    } catch (err: any) {
-        console.error('Error in customer upsert:', {
-            message: err.message,
-            stack: err.stack,
-            code: err.code,
-            meta: err.meta
-        });
-        res.status(500).json({ 
-            error: 'Failed to process customer',
-            details: process.env.NODE_ENV === 'development' ? err.message : undefined
-        });
-    }
-});
 
 // Call endpoints
-app.get('/calls', async (_req: Request, res: Response) => {
+app.get('/calls', authMiddleware, async (req: Request & { user?: any }, res: Response) => {
     try {
+        const userRole = req.user?.role as string;
+        const username = req.user?.username as string;
+        
+        let whereClause = {};
+        if (userRole === 'USER') {
+            whereClause = {
+                OR: [
+                    { createdBy: username },
+                    { assignedTo: username }
+                ]
+            };
+        }
+        
         const calls = await prisma.call.findMany({ 
-            include: { customer: true } 
+            where: whereClause
         });
         res.json(calls);
     } catch (err: any) {
-        console.error('Error fetching calls:', err);
         res.status(500).json({ error: 'Failed to fetch calls' });
     }
 });
@@ -214,107 +191,112 @@ declare global {
 }
 
 // Update a call by ID
-app.put('/calls/:id', authMiddleware, async (req: Request, res: Response) => {
-    console.log('Received call update request:', {
-        params: req.params,
-        body: req.body,
-        headers: req.headers
-    });
-    
+app.put('/calls/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
     const callId = parseInt(req.params.id || '');
     if (isNaN(callId)) {
-        const error = 'Invalid call ID';
-        console.error('Validation error:', error);
-        return res.status(400).json({ error });
-    }
-
-    const { 
-        problem, 
-        category, 
-        status, 
-        assignedTo, 
-        customerName, 
-        phone, 
-        email, 
-        address 
-    } = req.body;
-
-    if (!problem || !category || !status || !customerName || !phone) {
-        return res.status(400).json({ error: 'Missing required fields' });
+        return res.status(400).json({ error: 'Invalid call ID' });
     }
 
     try {
-        // Start a transaction to update both customer and call
-        const result = await prisma.$transaction(async (tx) => {
-            // Update or create customer
-            const customerData: any = { 
-                name: customerName, 
-                phone,
-                ...(email && { email }),
-                ...(address && { address })
-            };
-            
-            // Update customer data
-            const customer = await tx.customer.upsert({
-                where: { phone },
-                update: customerData,
-                create: customerData,
-                select: { id: true }
-            });
+        // Check if call is completed
+        const existingCall = await prisma.call.findUnique({ where: { id: callId } });
+        if (!existingCall) {
+            return res.status(404).json({ error: 'Call not found' });
+        }
+        if (existingCall.status === 'COMPLETED') {
+            return res.status(400).json({ error: 'Cannot edit completed calls' });
+        }
 
-            // Update call
-            const callData: any = {
+        const { 
+            problem, 
+            category, 
+            status, 
+            assignedTo, 
+            customerName, 
+            phone, 
+            email, 
+            address 
+        } = req.body;
+
+        const call = await prisma.call.update({
+            where: { id: callId },
+            data: {
+                customerName,
+                phone,
+                email: email || null,
+                address: address || null,
                 problem,
                 category,
                 status,
                 assignedTo: assignedTo || null,
-                customerId: customer.id
-            };
-
-            // Only update completedAt if status is COMPLETED and it's not already set
-            if (status === 'COMPLETED') {
-                const existingCall = await tx.call.findUnique({
-                    where: { id: callId },
-                    select: { completedAt: true }
-                });
-                
-                if (!existingCall?.completedAt) {
-                    callData.completedAt = new Date();
-                    callData.completedBy = req.user?.username || 'system';
-                }
             }
-
-            return await tx.call.update({
-                where: { id: callId },
-                data: callData,
-                include: { customer: true }
-            });
         });
 
-        res.json(result);
+        res.json(call);
     } catch (error: any) {
-        console.error('Error updating call:', {
-            error: error.message,
-            stack: error.stack,
-            code: error.code,
-            meta: error.meta
+        res.status(500).json({ error: 'Failed to update call' });
+    }
+});
+
+// Assign call to worker
+app.post('/calls/:id/assign', authMiddleware, requireRole(['HOST', 'ADMIN']), async (req: Request, res: Response) => {
+    const callId = parseInt(req.params.id);
+    const { assignee } = req.body;
+    
+    if (!assignee) {
+        return res.status(400).json({ error: 'Assignee is required' });
+    }
+    
+    try {
+        const call = await prisma.call.update({
+            where: { id: callId },
+            data: {
+                assignedTo: assignee,
+                assignedAt: new Date(),
+                status: 'ASSIGNED'
+            }
         });
         
-        res.status(500).json({
-            error: 'Failed to update call',
-            ...(process.env.NODE_ENV === 'development' && { 
-                details: error.message,
-                code: error.code,
-                meta: error.meta 
-            })
+        res.json(call);
+    } catch (err: any) {
+        res.status(500).json({ error: 'Failed to assign call' });
+    }
+});
+
+// Complete a call
+app.post('/calls/:id/complete', authMiddleware, async (req: Request, res: Response) => {
+    const callId = parseInt(req.params.id);
+    const user = req.user;
+    
+    try {
+        const call = await prisma.call.findUnique({ where: { id: callId } });
+        if (!call) {
+            return res.status(404).json({ error: 'Call not found' });
+        }
+        
+        // Check if user can complete this call
+        const canComplete = call.assignedTo === user.username || ['HOST', 'ADMIN'].includes(user.role);
+        if (!canComplete) {
+            return res.status(403).json({ error: 'Cannot complete this call' });
+        }
+        
+        const updatedCall = await prisma.call.update({
+            where: { id: callId },
+            data: {
+                status: 'COMPLETED',
+                completedBy: user.username,
+                completedAt: new Date()
+            }
         });
+        
+        res.json(updatedCall);
+    } catch (err: any) {
+        res.status(500).json({ error: 'Failed to complete call' });
     }
 });
 
 // Create a new call
-app.post('/calls', async (req: Request, res: Response) => {
-    console.log('Received call creation request:', JSON.stringify(req.body, null, 2));
-    
+app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
     const { 
         customerName, 
         phone, 
@@ -327,81 +309,28 @@ app.post('/calls', async (req: Request, res: Response) => {
         status = 'PENDING'
     } = req.body as any;
 
-    // Validate required fields
     if (!customerName || !phone || !problem || !category) {
-        const error = {
-            error: 'Missing required fields',
-            missing: [] as string[],
-            received: { customerName, phone, problem, category }
-        };
-        if (!customerName) error.missing.push('customerName');
-        if (!phone) error.missing.push('phone');
-        if (!problem) error.missing.push('problem');
-        if (!category) error.missing.push('category');
-        
-        console.error('Validation error:', error);
-        return res.status(400).json(error);
+        return res.status(400).json({ error: 'Missing required fields' });
     }
 
     try {
-        console.log('Processing customer upsert for phone:', phone);
-        
-        // Prepare customer data
-        const customerData: any = {
-            name: customerName,
-            phone,
-            ...(email && { email }),
-            ...(address && { address })
-        };
-        
-        console.log('Customer data to upsert:', customerData);
-
-        // Ensure customer exists/upsert
-        const customer = await prisma.customer.upsert({
-            where: { phone },
-            update: customerData,
-            create: customerData,
-            select: { id: true, name: true, phone: true }
-        });
-        
-        console.log('Customer processed:', customer);
-
-        // Prepare call data
-        const callData = {
-            problem,
-            category,
-            status,
-            assignedTo: assignedTo || null,
-            createdBy: createdBy || 'system',
-            customer: { connect: { id: customer.id } },
-        };
-        
-        console.log('Creating call with data:', callData);
-        
         const call = await prisma.call.create({
-            data: callData,
-            include: { customer: true }
+            data: {
+                customerName,
+                phone,
+                email: email || null,
+                address: address || null,
+                problem,
+                category,
+                status,
+                assignedTo: assignedTo || null,
+                createdBy: req.user?.username || createdBy || 'system',
+            }
         });
         
-        console.log('Call created successfully:', call);
         res.status(201).json(call);
-        
     } catch (err: any) {
-        console.error('Error in /calls endpoint:', {
-            message: err.message,
-            code: err.code,
-            meta: err.meta,
-            stack: err.stack
-        });
-        
-        res.status(500).json({ 
-            error: 'Failed to create call',
-            ...(process.env.NODE_ENV === 'development' && { 
-                details: err.message,
-                code: err.code,
-                meta: err.meta
-            })
-        });
+        res.status(500).json({ error: 'Failed to create call' });
     }
 });
 

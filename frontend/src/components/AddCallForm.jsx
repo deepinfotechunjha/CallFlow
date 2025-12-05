@@ -16,28 +16,32 @@ const AddCallForm = ({ onClose }) => {
     category: '',
     assignedTo: ''
   });
-  const [customerFound, setCustomerFound] = useState(false);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customerFound, setCustomerFound] = useState(false);
   
-  const { addCall, getCustomer, saveCustomer } = useCallStore();
+  const { addCall, findCustomerByPhone } = useCallStore();
   const { user, users } = useAuthStore();
   const canAssign = user?.role === 'HOST' || user?.role === 'ADMIN';
 
-  const handlePhoneChange = async (phone) => {
+  const handlePhoneChange = (phone) => {
     setFormData(prev => ({ ...prev, phone }));
+    
     if (phone.length >= 10) {
-      const customer = await getCustomer(phone, '');
-      if (customer) {
+      const existingCall = findCustomerByPhone(phone);
+      if (existingCall) {
         setFormData(prev => ({
           ...prev,
-          customerName: customer.name,
-          email: customer.email || '',
-          address: customer.address || ''
+          customerName: existingCall.customerName,
+          email: existingCall.email || '',
+          address: existingCall.address || ''
         }));
         setCustomerFound(true);
       } else {
         setCustomerFound(false);
       }
+    } else {
+      setCustomerFound(false);
     }
   };
 
@@ -47,13 +51,6 @@ const AddCallForm = ({ onClose }) => {
     
     setIsSubmitting(true);
     try {
-      await saveCustomer({
-        name: formData.customerName,
-        phone: formData.phone,
-        email: formData.email,
-        address: formData.address
-      });
-
       await addCall({
         ...formData,
         createdBy: user.username,
@@ -85,7 +82,7 @@ const AddCallForm = ({ onClose }) => {
               className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
               required
             />
-            {customerFound && <p className="text-green-600 text-sm">Customer found!</p>}
+            {customerFound && <p className="text-green-600 text-sm">✓ Customer found! Fields auto-filled (you can edit them)</p>}
           </div>
 
           <div>
