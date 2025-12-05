@@ -363,3 +363,4 @@ process.on("SIGTERM", async () => {
     await prisma.$disconnect();
     process.exit(0);
 });
+//# sourceMappingURL=index.js.map
