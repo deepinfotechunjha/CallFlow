@@ -15,6 +15,8 @@ const useAuthStore = create(
           const response = await apiClient.post('/auth/login', { username, password });
           const { token, user } = response.data;
           set({ user, token });
+          // Also save token directly to localStorage for compatibility
+          localStorage.setItem('token', token);
           toast.success(`Welcome back, ${user.username}!`);
           return true;
         } catch (err) {
@@ -25,6 +27,7 @@ const useAuthStore = create(
       
       logout: () => {
         set({ user: null, token: null });
+        localStorage.removeItem('token');
         toast.success('Logged out successfully');
       },
       

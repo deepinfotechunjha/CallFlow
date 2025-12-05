@@ -50,9 +50,29 @@ const useCallStore = create(
         }
       },
 
-      findCustomerByPhone: (phone) => {
-        const { calls } = get();
-        return calls.find(call => call.phone === phone);
+      fetchCustomers: async () => {
+        try {
+          const response = await apiClient.get('/customers');
+          set({ customers: response.data });
+        } catch (error) {
+          console.error('Failed to fetch customers:', error);
+        }
+      },
+
+      findCustomerByPhone: async (phone) => {
+        if (!phone) return null;
+        try {
+          const response = await apiClient.get(`/customers/phone/${phone}`);
+          return response.data; // Return customer if found
+        } catch (error) {
+          // If 404, customer doesn't exist, return null
+          if (error.response?.status === 404) {
+            return null;
+          }
+          // For other errors, also return null to avoid false positives
+          console.error('Error finding customer:', error);
+          return null;
+        }
       },
 
 

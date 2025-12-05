@@ -9,7 +9,9 @@ const PROBLEM_CATEGORIES = [
 const CallCard = ({ call }) => {
   const [showAssign, setShowAssign] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showComplete, setShowComplete] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState('');
+  const [remark, setRemark] = useState('');
   const [formData, setFormData] = useState({
     customerName: '',
     phone: '',
@@ -20,7 +22,7 @@ const CallCard = ({ call }) => {
   });
   
   const { updateCall } = useCallStore();
-  const { user, users } = useAuthStore();
+  const { user, users, token } = useAuthStore();
   
   const canAssign = ['HOST', 'ADMIN'].includes(user?.role) && call.status !== 'COMPLETED';
   const canEdit = user?.role === 'HOST' && call.status !== 'COMPLETED';
@@ -39,45 +41,80 @@ const CallCard = ({ call }) => {
     }
   }, [showEdit, call]);
 
-  const handleAssign = async () => {
-    if (selectedWorker) {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/calls/${call.id}/assign`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify({ assignee: selectedWorker })
-        });
-        
-        if (response.ok) {
-          window.location.reload();
-        }
-      } catch (error) {
-        console.error('Assignment failed:', error);
-      }
-      setShowAssign(false);
-      setSelectedWorker('');
+ const handleAssign = async () => {
+  if (selectedWorker) {
+    if (!token) {
+      alert('Please login to assign calls');
+      return;
     }
-  };
+    
+    try {
+      console.log('Using token from store:', token);
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/calls/${call.id}/assign`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ assignee: selectedWorker })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Assignment failed:', errorData);
+        alert(`Assignment failed: ${errorData.error || 'Unknown error'}`);
+        return;
+      }
+      
+      // Success - reload the page to show updated data
+      window.location.reload();
+    } catch (error) {
+      console.error('Assignment failed:', error);
+      alert('Assignment failed. Please try again.');
+    }
+    setShowAssign(false);
+    setSelectedWorker('');
+  }
+};
 
   const handleComplete = async () => {
+    if (!token) {
+      alert('Please login to complete calls');
+      return;
+    }
+    
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/calls/${call.id}/complete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ remark })
       });
       
-      if (response.ok) {
-        window.location.reload();
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Complete failed:', errorData);
+        alert(`Complete failed: ${errorData.error || 'Unknown error'}`);
+        return;
       }
+      
+      window.location.reload();
     } catch (error) {
       console.error('Complete failed:', error);
+      alert('Failed to complete call. Please try again.');
     }
+  };
+
+  const handleCompleteClick = () => {
+    setShowComplete(true);
+  };
+
+  const handleCompleteConfirm = () => {
+    handleComplete();
+    setShowComplete(false);
+    setRemark('');
   };
 
   const handleEditSave = async (e) => {
@@ -132,7 +169,10 @@ const CallCard = ({ call }) => {
         <p>Created by: {call.createdBy} on {new Date(call.createdAt).toLocaleString()}</p>
         {call.assignedTo && <p>Assigned to: {call.assignedTo}</p>}
         {call.completedBy && (
-          <p>Completed by: {call.completedBy} on {new Date(call.completedAt).toLocaleString()}</p>
+          <>
+            <p>Completed by: {call.completedBy} on {new Date(call.completedAt).toLocaleString()}</p>
+            {call.remark && <p className="mt-1"><strong>Remark:</strong> {call.remark}</p>}
+          </>
         )}
       </div>
 
@@ -157,7 +197,7 @@ const CallCard = ({ call }) => {
         
         {canComplete && call.status !== 'COMPLETED' && (
           <button
-            onClick={handleComplete}
+            onClick={handleCompleteClick}
             className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
           >
             Mark Complete
@@ -289,6 +329,46 @@ const CallCard = ({ call }) => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showComplete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Complete Call</h2>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to mark this call as completed?
+            </p>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">Remark (optional)</label>
+              <textarea
+                value={remark}
+                onChange={(e) => setRemark(e.target.value)}
+                className="w-full p-2 border rounded focus:ring-2 focus:ring-green-500"
+                rows="3"
+                placeholder="Add any notes about the completion..."
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={handleCompleteConfirm}
+                className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 font-medium"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => {
+                  setShowComplete(false);
+                  setRemark('');
+                }}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

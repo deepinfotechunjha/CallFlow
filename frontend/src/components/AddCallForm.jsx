@@ -24,17 +24,17 @@ const AddCallForm = ({ onClose }) => {
   const { user, users } = useAuthStore();
   const canAssign = user?.role === 'HOST' || user?.role === 'ADMIN';
 
-  const handlePhoneChange = (phone) => {
+  const handlePhoneChange = async (phone) => {
     setFormData(prev => ({ ...prev, phone }));
-    
+
     if (phone.length >= 10) {
-      const existingCall = findCustomerByPhone(phone);
-      if (existingCall) {
+      const existingCustomer = await findCustomerByPhone(phone);
+      if (existingCustomer) {
         setFormData(prev => ({
           ...prev,
-          customerName: existingCall.customerName,
-          email: existingCall.email || '',
-          address: existingCall.address || ''
+          customerName: existingCustomer.name || prev.customerName,
+          email: existingCustomer.email || '',
+          address: existingCustomer.address || ''
         }));
         setCustomerFound(true);
       } else {

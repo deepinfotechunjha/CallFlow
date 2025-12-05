@@ -7,6 +7,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
+
 model User {
   id        Int      @id @default(autoincrement())
   username  String   @unique
@@ -21,6 +23,8 @@ model Call {
   phone       String
   email       String?
   address     String?
+  customerId  Int?
+  customer    Customer? @relation(fields: [customerId], references: [id])
   problem     String
   category    String
   status      String
@@ -30,7 +34,19 @@ model Call {
   createdAt   DateTime @default(now())
   completedBy String?
   completedAt DateTime?
+  remark      String?
   
   @@index([assignedTo])
   @@index([createdBy])
+}
+
+model Customer {
+  id          Int      @id @default(autoincrement())
+  name        String
+  phone       String   @unique
+  email       String?
+  address     String?
+  createdAt   DateTime @default(now())
+
+  calls       Call[]
 }

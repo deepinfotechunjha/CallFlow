@@ -10,6 +10,10 @@ import type { Request, Response, NextFunction } from "express";
 
 dotenv.config();
 
+// Pass the adapter option to PrismaClient so it can connect directly
+// using the DATABASE_URL at runtime (Prisma 7+ style). Use a cast to
+// avoid TypeScript type mismatch if the installed @prisma/client types
+// don't yet include the new option.
 const prisma = new PrismaClient();
 const app = express();
 app.use(express.json());
@@ -89,7 +93,7 @@ app.get("/users", authMiddleware, requireRole(['HOST']), async (_req: Request & 
 });
 
 app.put("/users/:id", authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
-    const userId = parseInt(req.params.id);
+    const userId = parseInt(req.params.id || '');
     const { role } = req.body;
     
     if (!role || !['HOST', 'ADMIN', 'USER'].includes(role)) {
@@ -172,12 +176,14 @@ app.get('/calls', authMiddleware, async (req: Request & { user?: any }, res: Res
             };
         }
         
-        const calls = await prisma.call.findMany({ 
-            where: whereClause
-        });
+        // If whereClause is empty, omit `where` so Prisma receives no filter
+        const findArgs: any = {};
+        if (Object.keys(whereClause).length > 0) findArgs.where = whereClause;
+        const calls = await prisma.call.findMany(findArgs);
         res.json(calls);
     } catch (err: any) {
-        res.status(500).json({ error: 'Failed to fetch calls' });
+        console.error('GET /calls error:', err);
+        res.status(500).json({ error: 'Failed to fetch calls', details: String(err) });
     }
 });
 
@@ -218,29 +224,36 @@ app.put('/calls/:id', authMiddleware, requireRole(['HOST']), async (req: Request
             address 
         } = req.body;
 
+        // Preserve existing assignment if not provided
+        const updateData: any = {
+            customerName,
+            phone,
+            email: email || null,
+            address: address || null,
+            problem,
+            category,
+            status,
+        };
+        
+        // Only update assignedTo if it's explicitly provided
+        if (assignedTo !== undefined) {
+            updateData.assignedTo = assignedTo || null;
+        }
+
         const call = await prisma.call.update({
             where: { id: callId },
-            data: {
-                customerName,
-                phone,
-                email: email || null,
-                address: address || null,
-                problem,
-                category,
-                status,
-                assignedTo: assignedTo || null,
-            }
+            data: updateData
         });
-
+        
         res.json(call);
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to update call' });
     }
 });
 
-// Assign call to worker
+// Assign or reassign call to worker
 app.post('/calls/:id/assign', authMiddleware, requireRole(['HOST', 'ADMIN']), async (req: Request, res: Response) => {
-    const callId = parseInt(req.params.id);
+    const callId = parseInt(req.params.id || '');
     const { assignee } = req.body;
     
     if (!assignee) {
@@ -248,24 +261,53 @@ app.post('/calls/:id/assign', authMiddleware, requireRole(['HOST', 'ADMIN']), as
     }
     
     try {
-        const call = await prisma.call.update({
-            where: { id: callId },
-            data: {
-                assignedTo: assignee,
-                assignedAt: new Date(),
-                status: 'ASSIGNED'
-            }
+        // First check if call exists and is not completed
+        const existingCall = await prisma.call.findUnique({ 
+            where: { id: callId } 
         });
+        
+        if (!existingCall) {
+            return res.status(404).json({ error: 'Call not found' });
+        }
+        
+        if (existingCall.status === 'COMPLETED') {
+            return res.status(400).json({ error: 'Cannot assign a completed call' });
+        }
+        
+        // If this is a reassignment, keep the original assignedAt
+       const isReassignment = existingCall.assignedTo && existingCall.assignedTo !== assignee;
+
+const updateData = {
+    assignedTo: assignee,
+    // Always update assignedAt to current time when assigning/reassigning
+    assignedAt: new Date(),
+    // If it's a new assignment or being reassigned from null, set to 'ASSIGNED'
+    // Otherwise, keep existing status if it's a reassignment to a different user
+    status: (!existingCall.assignedTo || isReassignment) ? 'ASSIGNED' : existingCall.status
+};
+
+const call = await prisma.call.update({
+    where: { id: callId },
+    data: updateData,
+    include: {
+        customer: true
+    }
+});
         
         res.json(call);
     } catch (err: any) {
-        res.status(500).json({ error: 'Failed to assign call' });
+        console.error('Error in /calls/:id/assign:', err);
+        res.status(500).json({ 
+            error: 'Failed to assign call',
+            details: process.env.NODE_ENV === 'development' ? err.message : undefined
+        });
     }
 });
 
 // Complete a call
 app.post('/calls/:id/complete', authMiddleware, async (req: Request, res: Response) => {
-    const callId = parseInt(req.params.id);
+    const callId = parseInt(req.params.id || '');
+    const { remark } = req.body;
     const user = req.user;
     
     try {
@@ -285,13 +327,21 @@ app.post('/calls/:id/complete', authMiddleware, async (req: Request, res: Respon
             data: {
                 status: 'COMPLETED',
                 completedBy: user.username,
-                completedAt: new Date()
+                completedAt: new Date(),
+                remark: remark || null
+            },
+            include: {
+                customer: true
             }
         });
         
         res.json(updatedCall);
     } catch (err: any) {
-        res.status(500).json({ error: 'Failed to complete call' });
+        console.error('Error in /calls/:id/complete:', err);
+        res.status(500).json({ 
+            error: 'Failed to complete call',
+            details: process.env.NODE_ENV === 'development' ? err.message : undefined
+        });
     }
 });
 
@@ -314,6 +364,26 @@ app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
     }
 
     try {
+        // Find or create customer by phone
+        let customer = null;
+        if (phone) {
+            customer = await prisma.customer.findUnique({ 
+                where: { phone } 
+            });
+            
+            // Create customer if not found
+            if (!customer) {
+                customer = await prisma.customer.create({
+                    data: {
+                        name: customerName,
+                        phone,
+                        email: email || null,
+                        address: address || null,
+                    }
+                });
+            }
+        }
+
         const call = await prisma.call.create({
             data: {
                 customerName,
@@ -325,6 +395,7 @@ app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
                 status,
                 assignedTo: assignedTo || null,
                 createdBy: req.user?.username || createdBy || 'system',
+                customerId: customer?.id || null,
             }
         });
         
@@ -439,4 +510,26 @@ process.on("SIGTERM", async () => {
     console.log("Shutting down...");
     await prisma.$disconnect();
     process.exit(0);
+});
+
+// Customers endpoints
+app.get('/customers', authMiddleware, async (_req: Request, res: Response) => {
+    try {
+        const customers = await prisma.customer.findMany({ orderBy: { createdAt: 'desc' } });
+        res.json(customers);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.get('/customers/phone/:phone', authMiddleware, async (req: Request, res: Response) => {
+    const phone = req.params.phone;
+    if (!phone) return res.status(400).json({ error: 'phone is required' });
+    try {
+        const customer = await prisma.customer.findUnique({ where: { phone: phone as string } });
+        if (!customer) return res.status(404).json({ error: 'Not found' });
+        res.json(customer);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
 });
