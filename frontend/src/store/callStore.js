@@ -75,6 +75,43 @@ const useCallStore = create(
         }
       },
 
+      assignCall: async (callId, assignee, engineerRemark) => {
+        try {
+          const response = await apiClient.post(`/calls/${callId}/assign`, {
+            assignee,
+            engineerRemark
+          });
+          set(state => ({
+            calls: state.calls.map(call => 
+              call.id === callId ? response.data : call
+            )
+          }));
+          toast.success('Call assigned successfully');
+          return response.data;
+        } catch (error) {
+          toast.error('Failed to assign call');
+          throw error;
+        }
+      },
+
+      completeCall: async (callId, remark) => {
+        try {
+          const response = await apiClient.post(`/calls/${callId}/complete`, {
+            remark
+          });
+          set(state => ({
+            calls: state.calls.map(call => 
+              call.id === callId ? response.data : call
+            )
+          }));
+          toast.success('Call completed successfully');
+          return response.data;
+        } catch (error) {
+          toast.error('Failed to complete call');
+          throw error;
+        }
+      }
+
 
 
 

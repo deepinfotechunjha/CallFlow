@@ -12,6 +12,7 @@ const CallCard = ({ call }) => {
   const [showComplete, setShowComplete] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState('');
   const [remark, setRemark] = useState('');
+  const [engineerRemark, setEngineerRemark] = useState('');
   const [formData, setFormData] = useState({
     customerName: '',
     phone: '',
@@ -56,7 +57,10 @@ const CallCard = ({ call }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` 
         },
-        body: JSON.stringify({ assignee: selectedWorker })
+        body: JSON.stringify({ 
+          assignee: selectedWorker,
+          engineerRemark: engineerRemark || null
+        })
       });
       
       if (!response.ok) {
@@ -74,6 +78,7 @@ const CallCard = ({ call }) => {
     }
     setShowAssign(false);
     setSelectedWorker('');
+    setEngineerRemark('');
   }
 };
 
@@ -199,6 +204,12 @@ const CallCard = ({ call }) => {
         )}
       </div>
 
+      {call.engineerRemark && (
+        <div className="text-xs text-gray-500 mb-3">
+          <p><strong>Engineer Instructions:</strong> {call.engineerRemark}</p>
+        </div>
+      )}
+
       <div className="flex gap-2">
         {canEdit && (
           <button
@@ -240,6 +251,15 @@ const CallCard = ({ call }) => {
               <option key={u.id} value={u.username}>{u.username}</option>
             ))}
           </select>
+          {['HOST', 'ADMIN'].includes(user?.role) && (
+            <textarea
+              value={engineerRemark}
+              onChange={(e) => setEngineerRemark(e.target.value)}
+              className="w-full p-2 border rounded mb-2"
+              rows="2"
+              placeholder="Engineer instructions (optional)..."
+            />
+          )}
           <div className="flex gap-2">
             <button
               onClick={handleAssign}

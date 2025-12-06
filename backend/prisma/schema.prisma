@@ -35,6 +35,7 @@ model Call {
   completedBy String?
   completedAt DateTime?
   remark      String?
+  engineerRemark String?
   
   @@index([assignedTo])
   @@index([createdBy])

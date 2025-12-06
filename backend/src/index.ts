@@ -254,7 +254,7 @@ app.put('/calls/:id', authMiddleware, requireRole(['HOST']), async (req: Request
 // Assign or reassign call to worker
 app.post('/calls/:id/assign', authMiddleware, requireRole(['HOST', 'ADMIN']), async (req: Request, res: Response) => {
     const callId = parseInt(req.params.id || '');
-    const { assignee } = req.body;
+    const { assignee, engineerRemark } = req.body;
     
     if (!assignee) {
         return res.status(400).json({ error: 'Assignee is required' });
@@ -283,7 +283,8 @@ const updateData = {
     assignedAt: new Date(),
     // If it's a new assignment or being reassigned from null, set to 'ASSIGNED'
     // Otherwise, keep existing status if it's a reassignment to a different user
-    status: (!existingCall.assignedTo || isReassignment) ? 'ASSIGNED' : existingCall.status
+    status: (!existingCall.assignedTo || isReassignment) ? 'ASSIGNED' : existingCall.status,
+    engineerRemark: engineerRemark || null
 };
 
 const call = await prisma.call.update({
@@ -307,7 +308,7 @@ const call = await prisma.call.update({
 // Complete a call
 app.post('/calls/:id/complete', authMiddleware, async (req: Request, res: Response) => {
     const callId = parseInt(req.params.id || '');
-    const { remark } = req.body;
+    const { remark, engineerRemark } = req.body;
     const user = req.user;
     
     try {
@@ -328,7 +329,8 @@ app.post('/calls/:id/complete', authMiddleware, async (req: Request, res: Respon
                 status: 'COMPLETED',
                 completedBy: user.username,
                 completedAt: new Date(),
-                remark: remark || null
+                remark: remark || null,
+                engineerRemark: engineerRemark !== undefined ? engineerRemark : call.engineerRemark
             },
             include: {
                 customer: true
