@@ -13,6 +13,7 @@ const CallCard = ({ call }) => {
   const [selectedWorker, setSelectedWorker] = useState('');
   const [remark, setRemark] = useState('');
   const [engineerRemark, setEngineerRemark] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
   const [formData, setFormData] = useState({
     customerName: '',
     phone: '',
@@ -125,17 +126,27 @@ const CallCard = ({ call }) => {
   const handleEditSave = async (e) => {
     e.preventDefault();
     
-    const allData = {
-      customerName: formData.customerName,
-      phone: formData.phone,
-      email: formData.email || null,
-      address: formData.address || null,
-      problem: formData.problem,
-      category: formData.category
-    };
+    if (isUpdating) return;
     
-    await updateCall(call.id, allData);
-    setShowEdit(false);
+    setIsUpdating(true);
+    
+    try {
+      const allData = {
+        customerName: formData.customerName,
+        phone: formData.phone,
+        email: formData.email || null,
+        address: formData.address || null,
+        problem: formData.problem,
+        category: formData.category
+      };
+      
+      await updateCall(call.id, allData);
+      setShowEdit(false);
+    } catch (error) {
+      // Error handling is done in updateCall
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleEditOpen = () => {
@@ -195,7 +206,13 @@ const CallCard = ({ call }) => {
 
       <div className="text-xs text-gray-500 mb-3">
         <p>Created by: {call.createdBy} on {new Date(call.createdAt).toLocaleString()}</p>
-        {call.assignedTo && <p>Assigned to: {call.assignedTo}</p>}
+        {call.assignedTo && (
+          <p>
+            Assigned to: <strong>{call.assignedTo}</strong>
+            {call.assignedAt && ` on ${new Date(call.assignedAt).toLocaleString()}`}
+            {call.assignedBy && ` by ${call.assignedBy}`}
+          </p>
+        )}
         {call.completedBy && (
           <>
             <p>Completed by: {call.completedBy} on {new Date(call.completedAt).toLocaleString()}</p>
@@ -359,9 +376,14 @@ const CallCard = ({ call }) => {
               <div className="flex gap-2 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-orange-600 text-white py-2 rounded hover:bg-orange-700 font-medium"
+                  disabled={isUpdating}
+                  className={`flex-1 py-2 rounded font-medium ${
+                    isUpdating 
+                      ? 'bg-orange-400 text-white cursor-not-allowed' 
+                      : 'bg-orange-600 text-white hover:bg-orange-700'
+                  }`}
                 >
-                  Save
+                  {isUpdating ? 'Saving...' : 'Save'}
                 </button>
                 <button
                   type="button"
