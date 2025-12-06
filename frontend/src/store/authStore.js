@@ -32,6 +32,11 @@ const useAuthStore = create(
       },
       
       fetchUsers: async () => {
+        const state = useAuthStore.getState();
+        if (!state.user || state.user.role !== 'HOST') {
+          console.log('Only HOST can fetch users');
+          return;
+        }
         try {
           const response = await apiClient.get('/users');
           set({ users: response.data });
