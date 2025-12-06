@@ -30,6 +30,7 @@ model Call {
   status      String
   assignedTo  String?
   assignedAt  DateTime?
+  assignedBy  String?
   createdBy   String
   createdAt   DateTime @default(now())
   completedBy String?

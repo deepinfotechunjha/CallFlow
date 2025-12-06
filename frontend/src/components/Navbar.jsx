@@ -29,12 +29,20 @@ const Navbar = () => {
               </Link>
               
               {user?.role === 'HOST' && (
-                <Link
-                  to="/users"
-                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  User Management
-                </Link>
+                <>
+                  <Link
+                    to="/users"
+                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    User Management
+                  </Link>
+                  <Link
+                    to="/analytics"
+                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Engineer Analytics
+                  </Link>
+                </>
               )}
             </div>
           </div>

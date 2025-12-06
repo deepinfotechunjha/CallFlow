@@ -281,6 +281,7 @@ const updateData = {
     assignedTo: assignee,
     // Always update assignedAt to current time when assigning/reassigning
     assignedAt: new Date(),
+    assignedBy: req.user?.username || 'system',
     // If it's a new assignment or being reassigned from null, set to 'ASSIGNED'
     // Otherwise, keep existing status if it's a reassignment to a different user
     status: (!existingCall.assignedTo || isReassignment) ? 'ASSIGNED' : existingCall.status,
@@ -531,6 +532,73 @@ app.get('/customers/phone/:phone', authMiddleware, async (req: Request, res: Res
         const customer = await prisma.customer.findUnique({ where: { phone: phone as string } });
         if (!customer) return res.status(404).json({ error: 'Not found' });
         res.json(customer);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// Analytics endpoint
+app.get('/analytics/engineers', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    try {
+        const { days } = req.query;
+        let dateFilter = {};
+        
+        if (days && days !== 'all') {
+            const daysAgo = new Date();
+            daysAgo.setDate(daysAgo.getDate() - parseInt(days as string));
+            dateFilter = { assignedAt: { gte: daysAgo } };
+        }
+        
+        const calls = await prisma.call.findMany({
+            where: {
+                assignedTo: { not: null },
+                ...dateFilter
+            }
+        });
+        
+        // Group by engineer and calculate metrics
+        const engineerStats = calls.reduce((acc: any, call) => {
+            const engineer = call.assignedTo!;
+            if (!acc[engineer]) {
+                acc[engineer] = {
+                    name: engineer,
+                    totalAssigned: 0,
+                    completed: 0,
+                    pending: 0,
+                    totalResolutionTime: 0,
+                    completedCalls: []
+                };
+            }
+            
+            acc[engineer].totalAssigned++;
+            
+            if (call.status === 'COMPLETED') {
+                acc[engineer].completed++;
+                if (call.assignedAt && call.completedAt) {
+                    const resolutionTime = new Date(call.completedAt).getTime() - new Date(call.assignedAt).getTime();
+                    acc[engineer].totalResolutionTime += resolutionTime;
+                    acc[engineer].completedCalls.push(resolutionTime);
+                }
+            } else {
+                acc[engineer].pending++;
+            }
+            
+            return acc;
+        }, {});
+        
+        // Calculate final metrics
+        const result = Object.values(engineerStats).map((stats: any) => ({
+            name: stats.name,
+            totalAssigned: stats.totalAssigned,
+            completed: stats.completed,
+            pending: stats.pending,
+            completionRate: stats.totalAssigned > 0 ? Math.round((stats.completed / stats.totalAssigned) * 100) : 0,
+            avgResolutionTime: stats.completedCalls.length > 0 
+                ? Math.round(stats.totalResolutionTime / stats.completedCalls.length / (1000 * 60 * 60) * 10) / 10 
+                : 0
+        }));
+        
+        res.json(result);
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
     }

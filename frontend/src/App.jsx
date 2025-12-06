@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import UserManagement from './pages/UserManagement';
 import Profile from './pages/Profile';
+import EngineerAnalytics from './pages/EngineerAnalytics';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import useAuthStore from './store/authStore';
@@ -22,6 +23,7 @@ function App() {
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute allowedRoles={['HOST']}><UserManagement /></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute allowedRoles={['HOST']}><EngineerAnalytics /></ProtectedRoute>} />
         </Routes>
       </main>
       <Toaster position="top-right" />
