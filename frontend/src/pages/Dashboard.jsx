@@ -32,7 +32,7 @@ const Dashboard = () => {
     if (filter === 'MY_TASKS') return call.createdBy === user?.username || call.assignedTo === user?.username;
     if (filter === 'MY_CREATED') return call.createdBy === user?.username;
     if (filter === 'ASSIGNED_TO_ME') return call.assignedTo === user?.username;
-    if (filter === 'PENDING') return call.status === 'PENDING';
+    if (filter === 'PENDING') return call.status === 'PENDING' || call.status === 'ASSIGNED';
     if (filter === 'COMPLETED') return call.status === 'COMPLETED';
     return true;
   });
@@ -70,7 +70,7 @@ const Dashboard = () => {
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold text-gray-700">Pending</h3>
           <p className="text-3xl font-bold text-yellow-600">
-            {calls.filter(c => c.status === 'PENDING').length}
+            {calls.filter(c => c.status === 'PENDING' || c.status === 'ASSIGNED').length}
           </p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">

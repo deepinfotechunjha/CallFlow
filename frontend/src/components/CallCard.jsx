@@ -146,6 +146,22 @@ const CallCard = ({ call }) => {
     }
   };
 
+  const getStatusTags = (call) => {
+    const tags = [];
+    
+    if (call.status === 'PENDING') {
+      tags.push({ label: 'PENDING', color: 'bg-yellow-100 text-yellow-800' });
+    } else if (call.status === 'ASSIGNED') {
+      // Show both PENDING and ASSIGNED tags for assigned calls
+      tags.push({ label: 'PENDING', color: 'bg-yellow-100 text-yellow-800' });
+      tags.push({ label: 'ASSIGNED', color: 'bg-blue-100 text-blue-800' });
+    } else if (call.status === 'COMPLETED') {
+      tags.push({ label: 'COMPLETED', color: 'bg-green-100 text-green-800' });
+    }
+    
+    return tags;
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500">
       <div className="flex justify-between items-start mb-3">
@@ -154,9 +170,16 @@ const CallCard = ({ call }) => {
           <p className="text-gray-600">{call?.phone}</p>
           {call?.email && <p className="text-gray-600 text-sm">{call?.email}</p>}
         </div>
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(call.status)}`}>
-          {call.status}
-        </span>
+        <div className="flex gap-1 flex-wrap">
+          {getStatusTags(call).map((tag, index) => (
+            <span 
+              key={index}
+              className={`px-2 py-1 rounded-full text-xs font-medium ${tag.color}`}
+            >
+              {tag.label}
+            </span>
+          ))}
+        </div>
       </div>
 
       <div className="mb-3">
