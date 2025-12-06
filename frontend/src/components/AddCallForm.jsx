@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import useCallStore from '../store/callStore';
 import useAuthStore from '../store/authStore';
+import apiClient from '../api/apiClient';
+import toast from 'react-hot-toast';
 
 const PROBLEM_CATEGORIES = [
   'Technical Issue', 'Billing', 'Product Inquiry', 'Complaint', 'Support', 'Other'
@@ -19,6 +21,8 @@ const AddCallForm = ({ onClose }) => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customerFound, setCustomerFound] = useState(false);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateCall, setDuplicateCall] = useState(null);
   
   const { addCall, findCustomerByPhone } = useCallStore();
   const { user, users } = useAuthStore();
@@ -45,12 +49,40 @@ const AddCallForm = ({ onClose }) => {
     }
   };
 
+  const checkForDuplicate = async () => {
+    try {
+      const response = await apiClient.post('/calls/check-duplicate', {
+        phone: formData.phone,
+        category: formData.category
+      });
+      
+      if (response.data.duplicate) {
+        setDuplicateCall(response.data.existingCall);
+        setShowDuplicateModal(true);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error checking duplicate:', error);
+      return false;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
     
     setIsSubmitting(true);
+    
     try {
+      // Check for duplicates first
+      const isDuplicate = await checkForDuplicate();
+      if (isDuplicate) {
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // No duplicate, proceed with adding call
       await addCall({
         ...formData,
         createdBy: user.username,
@@ -61,6 +93,31 @@ const AddCallForm = ({ onClose }) => {
     } catch (error) {
       console.error('Error adding call:', error);
       setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateExisting = async () => {
+    try {
+      await apiClient.put(`/calls/${duplicateCall.id}/increment`);
+      toast.success('Existing call updated - marked as called again');
+      setShowDuplicateModal(false);
+      onClose();
+    } catch (error) {
+      toast.error('Failed to update existing call');
+    }
+  };
+
+  const handleAddNew = async () => {
+    try {
+      await addCall({
+        ...formData,
+        createdBy: user.username,
+        status: 'PENDING'
+      });
+      setShowDuplicateModal(false);
+      onClose();
+    } catch (error) {
+      toast.error('Failed to add new call');
     }
   };
 
@@ -176,6 +233,58 @@ const AddCallForm = ({ onClose }) => {
             </button>
           </div>
         </form>
+        
+        {/* Duplicate Detection Modal */}
+        {showDuplicateModal && duplicateCall && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-60">
+            <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+              <h3 className="text-lg font-bold mb-4 text-orange-600">Similar Call Found!</h3>
+              
+              <div className="mb-4 p-3 bg-gray-50 rounded">
+                <p className="text-sm text-gray-600 mb-2">Existing call details:</p>
+                <p><strong>Call ID:</strong> #{duplicateCall.id}</p>
+                <p><strong>Customer:</strong> {duplicateCall.customerName}</p>
+                <p><strong>Phone:</strong> {duplicateCall.phone}</p>
+                <p><strong>Category:</strong> {duplicateCall.category}</p>
+                <p><strong>Problem:</strong> {duplicateCall.problem}</p>
+                <p><strong>Status:</strong> {duplicateCall.status}</p>
+                <p><strong>Created:</strong> {new Date(duplicateCall.createdAt).toLocaleString()}</p>
+                {duplicateCall.assignedTo && <p><strong>Assigned to:</strong> {duplicateCall.assignedTo}</p>}
+                {duplicateCall.callCount > 1 && (
+                  <p className="text-orange-600 font-medium">Called {duplicateCall.callCount}x</p>
+                )}
+              </div>
+              
+              <p className="text-gray-700 mb-6">
+                A similar call exists for this customer in the same category. What would you like to do?
+              </p>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={handleUpdateExisting}
+                  className="flex-1 bg-orange-600 text-white py-2 px-4 rounded hover:bg-orange-700 font-medium"
+                >
+                  🔄 Update Existing Call
+                </button>
+                <button
+                  onClick={handleAddNew}
+                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 font-medium"
+                >
+                  ➕ Add New Call
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDuplicateModal(false);
+                    setIsSubmitting(false);
+                  }}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded hover:bg-gray-400"
+                >
+                  ❌ Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

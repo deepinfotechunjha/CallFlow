@@ -348,6 +348,111 @@ app.post('/calls/:id/complete', authMiddleware, async (req: Request, res: Respon
     }
 });
 
+// Check for duplicate calls
+app.post('/calls/check-duplicate', authMiddleware, async (req: Request, res: Response) => {
+    const { phone, category } = req.body;
+    
+    if (!phone || !category) {
+        return res.status(400).json({ error: 'Phone and category are required' });
+    }
+    
+    try {
+        const existingCall = await prisma.call.findFirst({
+            where: {
+                phone,
+                category,
+                status: { in: ['PENDING', 'ASSIGNED'] }
+            },
+            select: {
+                id: true,
+                customerName: true,
+                phone: true,
+                category: true,
+                problem: true,
+                status: true,
+                assignedTo: true,
+                createdAt: true,
+                createdBy: true,
+                callCount: true
+            }
+        });
+        
+        res.json({ duplicate: !!existingCall, existingCall });
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// Update existing call (increment call count)
+app.put('/calls/:id/increment', authMiddleware, async (req: Request, res: Response) => {
+    const callId = parseInt(req.params.id || '');
+    const user = req.user;
+    
+    try {
+        const call = await prisma.call.findUnique({ where: { id: callId } });
+        if (!call) {
+            return res.status(404).json({ error: 'Call not found' });
+        }
+        
+        const updatedCall = await prisma.call.update({
+            where: { id: callId },
+            data: {
+                callCount: call.callCount + 1,
+                lastCalledAt: new Date()
+            }
+        });
+        
+        // Create notifications
+        const notifications = [];
+        
+        // Notify original creator
+        if (call.createdBy && call.createdBy !== user.username) {
+            notifications.push({
+                userId: call.createdBy,
+                message: `Customer ${call.phone} called again about Call #${call.id}`,
+                type: 'DUPLICATE_CALL',
+                callId: call.id
+            });
+        }
+        
+        // Notify assigned engineer
+        if (call.assignedTo && call.assignedTo !== user.username) {
+            notifications.push({
+                userId: call.assignedTo,
+                message: `Customer ${call.phone} called again about your assigned Call #${call.id}`,
+                type: 'DUPLICATE_CALL',
+                callId: call.id
+            });
+        }
+        
+        // Notify all HOSTs and ADMINs
+        const admins = await prisma.user.findMany({
+            where: { role: { in: ['HOST', 'ADMIN'] } },
+            select: { username: true }
+        });
+        
+        admins.forEach(admin => {
+            if (admin.username !== user.username) {
+                notifications.push({
+                    userId: admin.username,
+                    message: `Repeat call detected: Customer ${call.phone} called again about Call #${call.id}`,
+                    type: 'DUPLICATE_CALL',
+                    callId: call.id
+                });
+            }
+        });
+        
+        // Create all notifications
+        if (notifications.length > 0) {
+            await prisma.notification.createMany({ data: notifications });
+        }
+        
+        res.json(updatedCall);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
 // Create a new call
 app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
     const { 
@@ -599,6 +704,54 @@ app.get('/analytics/engineers', authMiddleware, requireRole(['HOST']), async (re
         }));
         
         res.json(result);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// Notifications endpoints
+app.get('/notifications', authMiddleware, async (req: Request, res: Response) => {
+    try {
+        const notifications = await prisma.notification.findMany({
+            where: { userId: req.user?.username },
+            orderBy: { createdAt: 'desc' },
+            take: 50
+        });
+        
+        res.json(notifications);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.put('/notifications/:id/read', authMiddleware, async (req: Request, res: Response) => {
+    const notificationId = parseInt(req.params.id || '');
+    
+    try {
+        await prisma.notification.update({
+            where: { 
+                id: notificationId,
+                userId: req.user?.username
+            },
+            data: { isRead: true }
+        });
+        
+        res.json({ success: true });
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.get('/notifications/unread-count', authMiddleware, async (req: Request, res: Response) => {
+    try {
+        const count = await prisma.notification.count({
+            where: { 
+                userId: req.user?.username,
+                isRead: false
+            }
+        });
+        
+        res.json({ count });
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
     }

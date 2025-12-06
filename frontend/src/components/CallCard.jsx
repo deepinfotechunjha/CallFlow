@@ -186,15 +186,28 @@ const CallCard = ({ call }) => {
           <p className="text-gray-600">{call?.phone}</p>
           {call?.email && <p className="text-gray-600 text-sm">{call?.email}</p>}
         </div>
-        <div className="flex gap-1 flex-wrap">
-          {getStatusTags(call).map((tag, index) => (
-            <span 
-              key={index}
-              className={`px-2 py-1 rounded-full text-xs font-medium ${tag.color}`}
-            >
-              {tag.label}
-            </span>
-          ))}
+        <div>
+          <div className="flex gap-1 flex-wrap mb-1">
+            {getStatusTags(call).map((tag, index) => (
+              <span 
+                key={index}
+                className={`px-2 py-1 rounded-full text-xs font-medium ${tag.color}`}
+              >
+                {tag.label}
+              </span>
+            ))}
+          </div>
+          {call.callCount > 1 && (
+            <div className="flex">
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                call.callCount === 2 ? 'bg-yellow-100 text-yellow-800' :
+                call.callCount === 3 ? 'bg-orange-100 text-orange-800' :
+                'bg-red-100 text-red-800'
+              }`}>
+                Called {call.callCount}x
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

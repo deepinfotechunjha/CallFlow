@@ -37,9 +37,12 @@ model Call {
   completedAt DateTime?
   remark      String?
   engineerRemark String?
+  callCount   Int      @default(1)
+  lastCalledAt DateTime @default(now())
   
   @@index([assignedTo])
   @@index([createdBy])
+  @@index([phone, category, status])
 }
 
 model Customer {
@@ -51,4 +54,16 @@ model Customer {
   createdAt   DateTime @default(now())
 
   calls       Call[]
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  message   String
+  type      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  callId    Int?
+  
+  @@index([userId, isRead])
 }

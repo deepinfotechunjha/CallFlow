@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
+import NotificationBell from './NotificationBell';
 
 const Navbar = () => {
   const { user, logout } = useAuthStore();
@@ -48,6 +49,8 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center space-x-4">
+            <NotificationBell />
+            
             <span className="text-sm text-gray-700">
               {user?.username} ({user?.role})
             </span>
