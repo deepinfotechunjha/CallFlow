@@ -52,6 +52,12 @@ const Navbar = () => {
                     User Management
                   </Link>
                   <Link
+                    to="/customers"
+                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap"
+                  >
+                    Customer Directory
+                  </Link>
+                  <Link
                     to="/analytics"
                     className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap"
                   >
@@ -119,6 +125,13 @@ const Navbar = () => {
                     className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
                   >
                     User Management
+                  </Link>
+                  <Link
+                    to="/customers"
+                    onClick={() => setShowMobileMenu(false)}
+                    className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Customer Directory
                   </Link>
                   <Link
                     to="/analytics"

@@ -579,25 +579,38 @@ app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
                         phone,
                         email: email || null,
                         address: address || null,
+                        totalCalls: 0,
+                        lastCallDate: null
                     }
                 });
             }
         }
 
-        const call = await prisma.call.create({
-            data: {
-                customerName,
-                phone,
-                email: email || null,
-                address: address || null,
-                problem,
-                category,
-                status: assignedTo ? 'ASSIGNED' : 'PENDING',
-                assignedTo: assignedTo || null,
-                createdBy: req.user?.username || createdBy || 'system',
-                customerId: customer?.id || null,
-            }
-        });
+        // Create call and update customer stats in transaction
+        const [call] = await prisma.$transaction([
+            prisma.call.create({
+                data: {
+                    customerName,
+                    phone,
+                    email: email || null,
+                    address: address || null,
+                    problem,
+                    category,
+                    status: assignedTo ? 'ASSIGNED' : 'PENDING',
+                    assignedTo: assignedTo || null,
+                    createdBy: req.user?.username || createdBy || 'system',
+                    customerId: customer?.id || null,
+                }
+            }),
+            // Update customer stats
+            customer ? prisma.customer.update({
+                where: { id: customer.id },
+                data: {
+                    totalCalls: { increment: 1 },
+                    lastCallDate: new Date()
+                }
+            }) : prisma.$queryRaw`SELECT 1` // No-op if no customer
+        ]);
         
         res.status(201).json(call);
     } catch (err: any) {
@@ -729,6 +742,28 @@ app.get('/customers/phone/:phone', authMiddleware, async (req: Request, res: Res
         const customer = await prisma.customer.findUnique({ where: { phone: phone as string } });
         if (!customer) return res.status(404).json({ error: 'Not found' });
         res.json(customer);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.get('/customers/analytics', authMiddleware, requireRole(['HOST']), async (_req: Request, res: Response) => {
+    try {
+        const customers = await prisma.customer.findMany({
+            select: {
+                id: true,
+                name: true,
+                phone: true,
+                email: true,
+                address: true,
+                totalCalls: true,
+                lastCallDate: true,
+                createdAt: true
+            },
+            orderBy: { lastCallDate: 'desc' }
+        });
+        
+        res.json(customers);
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
     }
