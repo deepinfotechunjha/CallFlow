@@ -409,7 +409,7 @@ app.put('/calls/:id/increment', authMiddleware, async (req: Request, res: Respon
         if (call.createdBy && call.createdBy !== user.username) {
             notifications.push({
                 userId: call.createdBy,
-                message: `Customer ${call.phone} called again about Call #${call.id}`,
+                message: `Customer: ${call.customerName} (${call.phone}) called again about: ${call.category}`,
                 type: 'DUPLICATE_CALL',
                 callId: call.id
             });
@@ -419,7 +419,7 @@ app.put('/calls/:id/increment', authMiddleware, async (req: Request, res: Respon
         if (call.assignedTo && call.assignedTo !== user.username) {
             notifications.push({
                 userId: call.assignedTo,
-                message: `Customer ${call.phone} called again about your assigned Call #${call.id}`,
+                message: `Customer: ${call.customerName} (${call.phone}) called again about: ${call.category}`,
                 type: 'DUPLICATE_CALL',
                 callId: call.id
             });
@@ -435,7 +435,7 @@ app.put('/calls/:id/increment', authMiddleware, async (req: Request, res: Respon
             if (admin.username !== user.username) {
                 notifications.push({
                     userId: admin.username,
-                    message: `Repeat call detected: Customer ${call.phone} called again about Call #${call.id}`,
+                    message: `Repeat call: ${call.customerName} (${call.phone}) - ${call.category}`,
                     type: 'DUPLICATE_CALL',
                     callId: call.id
                 });
