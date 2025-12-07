@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import useCallStore from '../store/callStore';
 import useAuthStore from '../store/authStore';
-
-const PROBLEM_CATEGORIES = [
-  'Technical Issue', 'Billing', 'Product Inquiry', 'Complaint', 'Support', 'Other'
-];
+import useCategoryStore from '../store/categoryStore';
 
 const CallCard = ({ call }) => {
   const [showAssign, setShowAssign] = useState(false);
@@ -25,10 +22,15 @@ const CallCard = ({ call }) => {
   
   const { updateCall } = useCallStore();
   const { user, users, token } = useAuthStore();
+  const { categories, fetchCategories } = useCategoryStore();
   
   const canAssign = ['HOST', 'ADMIN'].includes(user?.role) && call.status !== 'COMPLETED';
   const canEdit = user?.role === 'HOST' && call.status !== 'COMPLETED';
   const canComplete = call.assignedTo === user?.username || ['HOST', 'ADMIN'].includes(user?.role);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     if (showEdit) {
@@ -368,8 +370,8 @@ const CallCard = ({ call }) => {
                   className="w-full p-2 border rounded focus:ring-2 focus:ring-orange-500"
                   required
                 >
-                  {PROBLEM_CATEGORIES.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.name}>{cat.name}</option>
                   ))}
                 </select>
               </div>

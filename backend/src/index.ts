@@ -756,3 +756,77 @@ app.get('/notifications/unread-count', authMiddleware, async (req: Request, res:
         res.status(500).json({ error: String(err) });
     }
 });
+
+// Category endpoints
+app.get('/categories', authMiddleware, async (_req: Request, res: Response) => {
+    try {
+        const categories = await prisma.category.findMany({
+            where: { isActive: true },
+            orderBy: { name: 'asc' }
+        });
+        
+        res.json(categories);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/categories', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const { name } = req.body;
+    
+    if (!name || !name.trim()) {
+        return res.status(400).json({ error: 'Category name is required' });
+    }
+    
+    try {
+        const category = await prisma.category.create({
+            data: { name: name.trim() }
+        });
+        
+        res.status(201).json(category);
+    } catch (err: any) {
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'Category already exists' });
+        }
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.put('/categories/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const categoryId = parseInt(req.params.id || '');
+    const { name } = req.body;
+    
+    if (!name || !name.trim()) {
+        return res.status(400).json({ error: 'Category name is required' });
+    }
+    
+    try {
+        const category = await prisma.category.update({
+            where: { id: categoryId },
+            data: { name: name.trim() }
+        });
+        
+        res.json(category);
+    } catch (err: any) {
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'Category already exists' });
+        }
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.delete('/categories/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const categoryId = parseInt(req.params.id || '');
+    
+    try {
+        // Soft delete - deactivate instead of deleting
+        const category = await prisma.category.update({
+            where: { id: categoryId },
+            data: { isActive: false }
+        });
+        
+        res.json({ success: true, category });
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});

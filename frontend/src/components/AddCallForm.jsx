@@ -1,12 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import useCallStore from '../store/callStore';
 import useAuthStore from '../store/authStore';
+import useCategoryStore from '../store/categoryStore';
 import apiClient from '../api/apiClient';
 import toast from 'react-hot-toast';
-
-const PROBLEM_CATEGORIES = [
-  'Technical Issue', 'Billing', 'Product Inquiry', 'Complaint', 'Support', 'Other'
-];
 
 const AddCallForm = ({ onClose }) => {
   const [formData, setFormData] = useState({
@@ -26,7 +23,12 @@ const AddCallForm = ({ onClose }) => {
   
   const { addCall, findCustomerByPhone } = useCallStore();
   const { user, users } = useAuthStore();
+  const { categories, fetchCategories } = useCategoryStore();
   const canAssign = user?.role === 'HOST' || user?.role === 'ADMIN';
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   const handlePhoneChange = async (phone) => {
     setFormData(prev => ({ ...prev, phone }));
@@ -182,8 +184,8 @@ const AddCallForm = ({ onClose }) => {
               required
             >
               <option value="">Select Category</option>
-              {PROBLEM_CATEGORIES.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.name}>{cat.name}</option>
               ))}
             </select>
           </div>

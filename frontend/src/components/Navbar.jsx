@@ -43,6 +43,12 @@ const Navbar = () => {
                   >
                     Engineer Analytics
                   </Link>
+                  <Link
+                    to="/settings/categories"
+                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Category Settings
+                  </Link>
                 </>
               )}
             </div>
