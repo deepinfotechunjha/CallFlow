@@ -274,7 +274,7 @@ const CallTable = ({ calls }) => {
                         )}
                         {canAssign && call.status !== 'COMPLETED' && (
                           <button
-                            onClick={() => setShowAssign(prev => ({ ...prev, [call.id]: !prev[call.id] }))}
+                            onClick={() => setShowAssign(prev => ({ ...prev, [call.id]: true }))}
                             className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-2 py-1 rounded text-xs hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 shadow-sm font-semibold"
                           >
                             {call.assignedTo ? 'Reassign' : 'Assign'}
@@ -292,54 +292,7 @@ const CallTable = ({ calls }) => {
                     </td>
                   </tr>
                   
-                  {/* Assignment Row */}
-                  {showAssign[call.id] && (
-                    <tr>
-                      <td colSpan="9" className="px-3 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-400">
-                        <div className="flex flex-col sm:flex-row gap-3 items-end">
-                          <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Select Worker</label>
-                            <select
-                              value={selectedWorker[call.id] || ''}
-                              onChange={(e) => setSelectedWorker(prev => ({ ...prev, [call.id]: e.target.value }))}
-                              className="w-full p-2 border rounded"
-                            >
-                              <option value="">Select Worker</option>
-                              {users.filter(u => u.role === 'USER').map(u => (
-                                <option key={u.id} value={u.username}>{u.username}</option>
-                              ))}
-                            </select>
-                          </div>
-                          {['HOST', 'ADMIN'].includes(user?.role) && (
-                            <div className="flex-1">
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
-                              <textarea
-                                value={engineerRemark[call.id] || ''}
-                                onChange={(e) => setEngineerRemark(prev => ({ ...prev, [call.id]: e.target.value }))}
-                                className="w-full p-2 border rounded"
-                                rows="2"
-                                placeholder="Engineer instructions (optional)..."
-                              />
-                            </div>
-                          )}
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleAssign(call.id)}
-                              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                            >
-                              Assign
-                            </button>
-                            <button
-                              onClick={() => setShowAssign(prev => ({ ...prev, [call.id]: false }))}
-                              className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
+
                 </React.Fragment>
               );
             })}
@@ -465,6 +418,73 @@ const CallTable = ({ calls }) => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Assign Modal */}
+      {Object.keys(showAssign).map(callId => {
+        if (!showAssign[callId]) return null;
+        const call = calls.find(c => c.id === parseInt(callId));
+        if (!call) return null;
+
+        return (
+          <div key={`assign-${callId}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
+              <h2 className="text-xl font-bold mb-4">{call.assignedTo ? 'Reassign Call' : 'Assign Call'}</h2>
+              <p className="text-gray-600 mb-4">
+                {call.assignedTo ? `Currently assigned to: ${call.assignedTo}` : 'Select a worker to assign this call to:'}
+              </p>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Select Worker *</label>
+                <select
+                  value={selectedWorker[callId] || ''}
+                  onChange={(e) => setSelectedWorker(prev => ({ ...prev, [callId]: e.target.value }))}
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Worker</option>
+                  {users.filter(u => u.role === 'USER').map(u => (
+                    <option key={u.id} value={u.username}>{u.username}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {['HOST', 'ADMIN'].includes(user?.role) && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">Engineer Instructions (optional)</label>
+                  <textarea
+                    value={engineerRemark[callId] || ''}
+                    onChange={(e) => setEngineerRemark(prev => ({ ...prev, [callId]: e.target.value }))}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                    rows="3"
+                    placeholder="Add any special instructions for the engineer..."
+                  />
+                </div>
+              )}
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    handleAssign(parseInt(callId));
+                    setShowAssign(prev => ({ ...prev, [callId]: false }));
+                  }}
+                  className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-medium"
+                >
+                  {call.assignedTo ? 'Reassign' : 'Assign'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAssign(prev => ({ ...prev, [callId]: false }));
+                    setSelectedWorker(prev => ({ ...prev, [callId]: '' }));
+                    setEngineerRemark(prev => ({ ...prev, [callId]: '' }));
+                  }}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         );

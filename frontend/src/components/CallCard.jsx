@@ -254,7 +254,7 @@ const CallCard = ({ call }) => {
         
         {canAssign && call.status !== 'COMPLETED' && (
           <button
-            onClick={() => setShowAssign(!showAssign)}
+            onClick={() => setShowAssign(true)}
             className="px-2 sm:px-3 py-1 bg-blue-600 text-white text-xs sm:text-sm rounded hover:bg-blue-700"
           >
             {call.assignedTo ? 'Reassign' : 'Assign'}
@@ -272,39 +272,58 @@ const CallCard = ({ call }) => {
       </div>
 
       {showAssign && (
-        <div className="mt-3 p-3 bg-gray-50 rounded">
-          <select
-            value={selectedWorker}
-            onChange={(e) => setSelectedWorker(e.target.value)}
-            className="w-full p-2 border rounded mb-2"
-          >
-            <option value="">Select Worker</option>
-            {users.filter(u => u.role === 'USER').map(u => (
-              <option key={u.id} value={u.username}>{u.username}</option>
-            ))}
-          </select>
-          {['HOST', 'ADMIN'].includes(user?.role) && (
-            <textarea
-              value={engineerRemark}
-              onChange={(e) => setEngineerRemark(e.target.value)}
-              className="w-full p-2 border rounded mb-2"
-              rows="2"
-              placeholder="Engineer instructions (optional)..."
-            />
-          )}
-          <div className="flex flex-col sm:flex-row gap-2">
-            <button
-              onClick={handleAssign}
-              className="px-3 py-1 bg-blue-600 text-white text-xs sm:text-sm rounded hover:bg-blue-700"
-            >
-              Assign
-            </button>
-            <button
-              onClick={() => setShowAssign(false)}
-              className="px-3 py-1 bg-gray-300 text-gray-700 text-xs sm:text-sm rounded hover:bg-gray-400"
-            >
-              Cancel
-            </button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">{call.assignedTo ? 'Reassign Call' : 'Assign Call'}</h2>
+            <p className="text-gray-600 mb-4">
+              {call.assignedTo ? `Currently assigned to: ${call.assignedTo}` : 'Select a worker to assign this call to:'}
+            </p>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">Select Worker *</label>
+              <select
+                value={selectedWorker}
+                onChange={(e) => setSelectedWorker(e.target.value)}
+                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Worker</option>
+                {users.filter(u => u.role === 'USER').map(u => (
+                  <option key={u.id} value={u.username}>{u.username}</option>
+                ))}
+              </select>
+            </div>
+            
+            {['HOST', 'ADMIN'].includes(user?.role) && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Engineer Instructions (optional)</label>
+                <textarea
+                  value={engineerRemark}
+                  onChange={(e) => setEngineerRemark(e.target.value)}
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  rows="3"
+                  placeholder="Add any special instructions for the engineer..."
+                />
+              </div>
+            )}
+            
+            <div className="flex gap-2">
+              <button
+                onClick={handleAssign}
+                className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-medium"
+              >
+                {call.assignedTo ? 'Reassign' : 'Assign'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowAssign(false);
+                  setSelectedWorker('');
+                  setEngineerRemark('');
+                }}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
