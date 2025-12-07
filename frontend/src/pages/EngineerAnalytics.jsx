@@ -90,13 +90,13 @@ const EngineerAnalytics = () => {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Engineer Analytics</h1>
+    <div className="p-3 sm:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
+        <h1 className="text-xl sm:text-2xl font-bold">Engineer Analytics</h1>
         <select
           value={timeFilter}
           onChange={(e) => setTimeFilter(e.target.value)}
-          className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm w-full sm:w-auto"
         >
           {timeFilters.map(filter => (
             <option key={filter.value} value={filter.value}>
@@ -107,47 +107,47 @@ const EngineerAnalytics = () => {
       </div>
 
       {loading ? (
-        <div className="text-center py-8">Loading analytics...</div>
+        <div className="text-center py-8 text-sm">Loading analytics...</div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white rounded-lg shadow overflow-x-auto">
           <table className="min-w-full">
             <thead className="bg-gray-50">
               <tr>
                 <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-2 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('name')}
                 >
                   Engineer {getSortIcon('name')}
                 </th>
                 <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="hidden sm:table-cell px-2 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('totalAssigned')}
                 >
-                  Total Assigned {getSortIcon('totalAssigned')}
+                  Total {getSortIcon('totalAssigned')}
                 </th>
                 <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-2 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('completed')}
                 >
-                  Completed {getSortIcon('completed')}
+                  Done {getSortIcon('completed')}
                 </th>
                 <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="hidden md:table-cell px-2 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('pending')}
                 >
                   Pending {getSortIcon('pending')}
                 </th>
                 <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-2 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('completionRate')}
                 >
-                  Completion Rate {getSortIcon('completionRate')}
+                  Rate {getSortIcon('completionRate')}
                 </th>
                 <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="hidden lg:table-cell px-2 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('avgResolutionTime')}
                 >
-                  Avg Resolution Time {getSortIcon('avgResolutionTime')}
+                  Avg Time {getSortIcon('avgResolutionTime')}
                 </th>
               </tr>
             </thead>
@@ -161,19 +161,19 @@ const EngineerAnalytics = () => {
               ) : (
                 sortedAnalytics.map((engineer, index) => (
                   <tr key={engineer.name} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-2 sm:px-4 md:px-6 py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900">
                       {engineer.name}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="hidden sm:table-cell px-2 sm:px-4 md:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
                       {engineer.totalAssigned}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
+                    <td className="px-2 sm:px-4 md:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-green-600">
                       {engineer.completed}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-yellow-600">
+                    <td className="hidden md:table-cell px-2 sm:px-4 md:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-yellow-600">
                       {engineer.pending}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="px-2 sm:px-4 md:px-6 py-4 whitespace-nowrap text-xs sm:text-sm">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         engineer.completionRate >= 80 ? 'bg-green-100 text-green-800' :
                         engineer.completionRate >= 60 ? 'bg-yellow-100 text-yellow-800' :
@@ -182,7 +182,7 @@ const EngineerAnalytics = () => {
                         {engineer.completionRate}%
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="hidden lg:table-cell px-2 sm:px-4 md:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
                       {formatTime(engineer.avgResolutionTime)}
                     </td>
                   </tr>
@@ -194,14 +194,14 @@ const EngineerAnalytics = () => {
       )}
 
       {analytics.length > 0 && (
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="font-medium text-blue-900">Total Engineers</h3>
-            <p className="text-2xl font-bold text-blue-600">{analytics.length}</p>
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
+            <h3 className="font-medium text-blue-900 text-sm sm:text-base">Total Engineers</h3>
+            <p className="text-xl sm:text-2xl font-bold text-blue-600">{analytics.length}</p>
           </div>
-          <div className="bg-green-50 p-4 rounded-lg">
-            <h3 className="font-medium text-green-900">Avg Completion Rate</h3>
-            <p className="text-2xl font-bold text-green-600">
+          <div className="bg-green-50 p-3 sm:p-4 rounded-lg">
+            <h3 className="font-medium text-green-900 text-sm sm:text-base">Avg Completion Rate</h3>
+            <p className="text-xl sm:text-2xl font-bold text-green-600">
               {Math.round(analytics.reduce((sum, eng) => sum + eng.completionRate, 0) / analytics.length)}%
             </p>
           </div>

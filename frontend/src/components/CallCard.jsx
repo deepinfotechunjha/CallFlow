@@ -181,12 +181,12 @@ const CallCard = ({ call }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500">
-      <div className="flex justify-between items-start mb-3">
-        <div>
-          <h3 className="font-semibold text-lg">{call?.customerName}</h3>
-          <p className="text-gray-600">{call?.phone}</p>
-          {call?.email && <p className="text-gray-600 text-sm">{call?.email}</p>}
+    <div className="bg-white rounded-lg shadow-md p-3 sm:p-4 border-l-4 border-blue-500">
+      <div className="flex flex-col sm:flex-row justify-between items-start mb-3 gap-2">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-base sm:text-lg break-words">{call?.customerName}</h3>
+          <p className="text-gray-600 text-sm break-all">{call?.phone}</p>
+          {call?.email && <p className="text-gray-600 text-xs sm:text-sm break-all">{call?.email}</p>}
         </div>
         <div>
           <div className="flex gap-1 flex-wrap mb-1">
@@ -214,15 +214,15 @@ const CallCard = ({ call }) => {
       </div>
 
       <div className="mb-3">
-        <p className="text-sm text-gray-700 mb-1"><strong>Category:</strong> {call.category}</p>
-        <p className="text-sm text-gray-700 mb-2"><strong>Problem:</strong> {call.problem}</p>
-        {call?.address && <p className="text-sm text-gray-600"><strong>Address:</strong> {call?.address}</p>}
+        <p className="text-xs sm:text-sm text-gray-700 mb-1 break-words"><strong>Category:</strong> {call.category}</p>
+        <p className="text-xs sm:text-sm text-gray-700 mb-2 break-words"><strong>Problem:</strong> {call.problem}</p>
+        {call?.address && <p className="text-xs sm:text-sm text-gray-600 break-words"><strong>Address:</strong> {call?.address}</p>}
       </div>
 
-      <div className="text-xs text-gray-500 mb-3">
-        <p>Created by: {call.createdBy} on {new Date(call.createdAt).toLocaleString()}</p>
+      <div className="text-xs text-gray-500 mb-3 break-words">
+        <p className="break-words">Created by: {call.createdBy} on {new Date(call.createdAt).toLocaleString()}</p>
         {call.assignedTo && (
-          <p>
+          <p className="break-words">
             Assigned to: <strong>{call.assignedTo}</strong>
             {call.assignedAt && ` on ${new Date(call.assignedAt).toLocaleString()}`}
             {call.assignedBy && ` by ${call.assignedBy}`}
@@ -230,23 +230,23 @@ const CallCard = ({ call }) => {
         )}
         {call.completedBy && (
           <>
-            <p>Completed by: {call.completedBy} on {new Date(call.completedAt).toLocaleString()}</p>
-            {call.remark && <p className="mt-1"><strong>Remark:</strong> {call.remark}</p>}
+            <p className="break-words">Completed by: {call.completedBy} on {new Date(call.completedAt).toLocaleString()}</p>
+            {call.remark && <p className="mt-1 break-words"><strong>Remark:</strong> {call.remark}</p>}
           </>
         )}
       </div>
 
       {call.engineerRemark && (
         <div className="text-xs text-gray-500 mb-3">
-          <p><strong>Engineer Instructions:</strong> {call.engineerRemark}</p>
+          <p className="break-words"><strong>Engineer Instructions:</strong> {call.engineerRemark}</p>
         </div>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {canEdit && (
           <button
             onClick={handleEditOpen}
-            className="px-3 py-1 bg-orange-600 text-white text-sm rounded hover:bg-orange-700"
+            className="px-2 sm:px-3 py-1 bg-orange-600 text-white text-xs sm:text-sm rounded hover:bg-orange-700"
           >
             Edit
           </button>
@@ -255,7 +255,7 @@ const CallCard = ({ call }) => {
         {canAssign && call.status !== 'COMPLETED' && (
           <button
             onClick={() => setShowAssign(!showAssign)}
-            className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+            className="px-2 sm:px-3 py-1 bg-blue-600 text-white text-xs sm:text-sm rounded hover:bg-blue-700"
           >
             {call.assignedTo ? 'Reassign' : 'Assign'}
           </button>
@@ -264,7 +264,7 @@ const CallCard = ({ call }) => {
         {canComplete && call.status !== 'COMPLETED' && (
           <button
             onClick={handleCompleteClick}
-            className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+            className="px-2 sm:px-3 py-1 bg-green-600 text-white text-xs sm:text-sm rounded hover:bg-green-700"
           >
             Mark Complete
           </button>
@@ -292,16 +292,16 @@ const CallCard = ({ call }) => {
               placeholder="Engineer instructions (optional)..."
             />
           )}
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <button
               onClick={handleAssign}
-              className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+              className="px-3 py-1 bg-blue-600 text-white text-xs sm:text-sm rounded hover:bg-blue-700"
             >
               Assign
             </button>
             <button
               onClick={() => setShowAssign(false)}
-              className="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400"
+              className="px-3 py-1 bg-gray-300 text-gray-700 text-xs sm:text-sm rounded hover:bg-gray-400"
             >
               Cancel
             </button>
@@ -310,8 +310,8 @@ const CallCard = ({ call }) => {
       )}
 
       {showEdit && (
-        <div key={`edit-${call.id}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div key={`edit-${call.id}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">Edit Call Details</h2>
             
             <form onSubmit={handleEditSave} className="space-y-4">
@@ -414,8 +414,8 @@ const CallCard = ({ call }) => {
       )}
 
       {showComplete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Complete Call</h2>
             <p className="text-gray-600 mb-4">
               Are you sure you want to mark this call as completed?

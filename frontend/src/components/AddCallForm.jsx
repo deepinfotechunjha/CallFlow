@@ -124,63 +124,63 @@ const AddCallForm = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Add New Call</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">✕</button>
+          <h2 className="text-lg sm:text-xl font-bold">Add New Call</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-xl">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Phone Number *</label>
+            <label className="block text-xs sm:text-sm font-medium mb-1">Phone Number *</label>
             <input
               type="tel"
               value={formData.phone}
               onChange={(e) => handlePhoneChange(e.target.value)}
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
               required
             />
-            {customerFound && <p className="text-green-600 text-sm">✓ Customer found! Fields auto-filled (you can edit them)</p>}
+            {customerFound && <p className="text-green-600 text-xs sm:text-sm">✓ Customer found! Fields auto-filled (you can edit them)</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Customer Name *</label>
+            <label className="block text-xs sm:text-sm font-medium mb-1">Customer Name *</label>
             <input
               type="text"
               value={formData.customerName}
               onChange={(e) => setFormData(prev => ({ ...prev, customerName: e.target.value }))}
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
+            <label className="block text-xs sm:text-sm font-medium mb-1">Email</label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Address</label>
+            <label className="block text-xs sm:text-sm font-medium mb-1">Address</label>
             <textarea
               value={formData.address}
               onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
               rows="2"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Problem Category *</label>
+            <label className="block text-xs sm:text-sm font-medium mb-1">Problem Category *</label>
             <select
               value={formData.category}
               onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
               required
             >
               <option value="">Select Category</option>
@@ -191,11 +191,11 @@ const AddCallForm = ({ onClose }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Problem Description *</label>
+            <label className="block text-xs sm:text-sm font-medium mb-1">Problem Description *</label>
             <textarea
               value={formData.problem}
               onChange={(e) => setFormData(prev => ({ ...prev, problem: e.target.value }))}
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
               rows="3"
               required
             />
@@ -203,11 +203,11 @@ const AddCallForm = ({ onClose }) => {
 
           {canAssign && (
             <div>
-              <label className="block text-sm font-medium mb-1">Assign To</label>
+              <label className="block text-xs sm:text-sm font-medium mb-1">Assign To</label>
               <select
                 value={formData.assignedTo}
                 onChange={(e) => setFormData(prev => ({ ...prev, assignedTo: e.target.value }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
               >
                 <option value="">Select Worker</option>
                 {users.filter(u => u.role === 'USER').map(u => (
@@ -217,11 +217,11 @@ const AddCallForm = ({ onClose }) => {
             </div>
           )}
 
-          <div className="flex gap-2 pt-4">
+          <div className="flex flex-col sm:flex-row gap-2 pt-4">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed font-medium"
+              className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed font-medium text-sm"
             >
               {isSubmitting ? 'Adding...' : 'Add Call'}
             </button>
@@ -229,7 +229,7 @@ const AddCallForm = ({ onClose }) => {
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed"
+              className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed text-sm"
             >
               Cancel
             </button>
@@ -238,48 +238,48 @@ const AddCallForm = ({ onClose }) => {
         
         {/* Duplicate Detection Modal */}
         {showDuplicateModal && duplicateCall && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-60">
-            <div className="bg-white rounded-lg p-6 w-full max-w-lg">
-              <h3 className="text-lg font-bold mb-4 text-orange-600">Similar Call Found!</h3>
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-60 p-4">
+            <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+              <h3 className="text-base sm:text-lg font-bold mb-4 text-orange-600">Similar Call Found!</h3>
               
               <div className="mb-4 p-3 bg-gray-50 rounded">
-                <p className="text-sm text-gray-600 mb-2">Existing call details:</p>
-                <p><strong>Call ID:</strong> #{duplicateCall.id}</p>
-                <p><strong>Customer:</strong> {duplicateCall.customerName}</p>
-                <p><strong>Phone:</strong> {duplicateCall.phone}</p>
-                <p><strong>Category:</strong> {duplicateCall.category}</p>
-                <p><strong>Problem:</strong> {duplicateCall.problem}</p>
-                <p><strong>Status:</strong> {duplicateCall.status}</p>
-                <p><strong>Created:</strong> {new Date(duplicateCall.createdAt).toLocaleString()}</p>
-                {duplicateCall.assignedTo && <p><strong>Assigned to:</strong> {duplicateCall.assignedTo}</p>}
+                <p className="text-xs sm:text-sm text-gray-600 mb-2">Existing call details:</p>
+                <p className="text-xs sm:text-sm break-words"><strong>Call ID:</strong> #{duplicateCall.id}</p>
+                <p className="text-xs sm:text-sm break-words"><strong>Customer:</strong> {duplicateCall.customerName}</p>
+                <p className="text-xs sm:text-sm break-words"><strong>Phone:</strong> {duplicateCall.phone}</p>
+                <p className="text-xs sm:text-sm break-words"><strong>Category:</strong> {duplicateCall.category}</p>
+                <p className="text-xs sm:text-sm break-words"><strong>Problem:</strong> {duplicateCall.problem}</p>
+                <p className="text-xs sm:text-sm"><strong>Status:</strong> {duplicateCall.status}</p>
+                <p className="text-xs sm:text-sm break-words"><strong>Created:</strong> {new Date(duplicateCall.createdAt).toLocaleString()}</p>
+                {duplicateCall.assignedTo && <p className="text-xs sm:text-sm break-words"><strong>Assigned to:</strong> {duplicateCall.assignedTo}</p>}
                 {duplicateCall.callCount > 1 && (
-                  <p className="text-orange-600 font-medium">Called {duplicateCall.callCount}x</p>
+                  <p className="text-xs sm:text-sm text-orange-600 font-medium">Called {duplicateCall.callCount}x</p>
                 )}
               </div>
               
-              <p className="text-gray-700 mb-6">
+              <p className="text-xs sm:text-sm text-gray-700 mb-6">
                 A similar call exists for this customer in the same category. What would you like to do?
               </p>
               
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   onClick={handleUpdateExisting}
-                  className="flex-1 bg-orange-600 text-white py-2 px-4 rounded hover:bg-orange-700 font-medium"
+                  className="flex-1 bg-orange-600 text-white py-2 px-2 sm:px-4 rounded hover:bg-orange-700 font-medium text-xs sm:text-sm"
                 >
-                  🔄 Update Existing Call
+                  🔄 Update Existing
                 </button>
                 <button
                   onClick={handleAddNew}
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 font-medium"
+                  className="flex-1 bg-blue-600 text-white py-2 px-2 sm:px-4 rounded hover:bg-blue-700 font-medium text-xs sm:text-sm"
                 >
-                  ➕ Add New Call
+                  ➕ Add New
                 </button>
                 <button
                   onClick={() => {
                     setShowDuplicateModal(false);
                     setIsSubmitting(false);
                   }}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded hover:bg-gray-400"
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-2 sm:px-4 rounded hover:bg-gray-400 text-xs sm:text-sm"
                 >
                   ❌ Cancel
                 </button>

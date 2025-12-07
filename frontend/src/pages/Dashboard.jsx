@@ -72,52 +72,52 @@ const Dashboard = () => {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
         <div>
-          <h3 className="text-3xl font-bold text-blue-700">Welcome Back! {user?.username}</h3>
+          <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-700">Welcome Back! {user?.username}</h3>
       
         </div>
         <button
           onClick={() => setShowAddForm(true)}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium"
+          className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm sm:text-base whitespace-nowrap w-full sm:w-auto"
         >
           + Add New Call
         </button>
       </div>
 
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700">Total Calls</h3>
-          <p className="text-3xl font-bold text-blue-600">{calls.length}</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-6">
+        <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
+          <h3 className="text-sm sm:text-lg font-semibold text-gray-700">Total Calls</h3>
+          <p className="text-xl sm:text-3xl font-bold text-blue-600">{calls.length}</p>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700">Today's Calls</h3>
-          <p className="text-3xl font-bold text-green-600">{todaysCalls.length}</p>
+        <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
+          <h3 className="text-sm sm:text-lg font-semibold text-gray-700">Today's Calls</h3>
+          <p className="text-xl sm:text-3xl font-bold text-green-600">{todaysCalls.length}</p>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700">Pending</h3>
-          <p className="text-3xl font-bold text-yellow-600">
+        <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
+          <h3 className="text-sm sm:text-lg font-semibold text-gray-700">Pending</h3>
+          <p className="text-xl sm:text-3xl font-bold text-yellow-600">
             {calls.filter(c => c.status === 'PENDING' || c.status === 'ASSIGNED').length}
           </p>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700">Completed</h3>
-          <p className="text-3xl font-bold text-green-600">
+        <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
+          <h3 className="text-sm sm:text-lg font-semibold text-gray-700">Completed</h3>
+          <p className="text-xl sm:text-3xl font-bold text-green-600">
             {calls.filter(c => c.status === 'COMPLETED').length}
           </p>
         </div>
       </div>
 
-      <div className="mb-6 bg-white p-4 rounded-lg shadow">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">Date Range Filter</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="mb-6 bg-white p-3 sm:p-4 rounded-lg shadow">
+        <h3 className="text-xs sm:text-sm font-semibold text-gray-700 mb-3">Date Range Filter</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Filter By</label>
+            <label className="block text-xs sm:text-sm font-medium text-gray-600 mb-1">Filter By</label>
             <select
               value={dateFilter.type}
               onChange={(e) => setDateFilter(prev => ({ ...prev, type: e.target.value }))}
-              className="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border rounded text-xs sm:text-sm focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Select Type</option>
               <option value="createdAt">Created Date</option>
@@ -127,29 +127,29 @@ const Dashboard = () => {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Start Date</label>
+            <label className="block text-xs sm:text-sm font-medium text-gray-600 mb-1">Start Date</label>
             <input
               type="date"
               value={dateFilter.start}
               onChange={(e) => setDateFilter(prev => ({ ...prev, start: e.target.value }))}
-              className="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border rounded text-xs sm:text-sm focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">End Date</label>
+            <label className="block text-xs sm:text-sm font-medium text-gray-600 mb-1">End Date</label>
             <input
               type="date"
               value={dateFilter.end}
               onChange={(e) => setDateFilter(prev => ({ ...prev, end: e.target.value }))}
-              className="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border rounded text-xs sm:text-sm focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 flex flex-col sm:flex-row gap-2">
           <button
             onClick={() => setAppliedDateFilter(dateFilter)}
             disabled={!dateFilter.type || !dateFilter.start || !dateFilter.end}
-            className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             Apply Filter
           </button>
@@ -159,7 +159,7 @@ const Dashboard = () => {
                 setDateFilter({ type: '', start: '', end: '' });
                 setAppliedDateFilter({ type: '', start: '', end: '' });
               }}
-              className="px-4 py-2 bg-red-600 text-white rounded text-sm font-medium hover:bg-red-700"
+              className="px-3 sm:px-4 py-2 bg-red-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-red-700"
             >
               Clear Filter
             </button>
@@ -173,7 +173,7 @@ const Dashboard = () => {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium ${
                 filter === f
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'

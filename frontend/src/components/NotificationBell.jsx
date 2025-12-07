@@ -72,21 +72,21 @@ const NotificationBell = () => {
       </button>
 
       {showDropdown && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border z-50">
-          <div className="p-3 border-b">
-            <h3 className="font-medium text-gray-900">Notifications</h3>
+        <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-lg shadow-lg border z-50 max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="p-2 sm:p-3 border-b">
+            <h3 className="font-medium text-gray-900 text-sm sm:text-base">Notifications</h3>
           </div>
           
-          <div className="max-h-96 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="p-4 text-center text-gray-500">
+              <div className="p-4 text-center text-gray-500 text-sm">
                 No notifications
               </div>
             ) : (
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-3 border-b hover:bg-gray-50 cursor-pointer ${
+                  className={`p-2 sm:p-3 border-b hover:bg-gray-50 cursor-pointer ${
                     !notification.isRead ? 'bg-blue-50' : ''
                   }`}
                   onClick={() => {
@@ -96,8 +96,8 @@ const NotificationBell = () => {
                   }}
                 >
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <p className={`text-sm ${!notification.isRead ? 'font-medium' : ''}`}>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-xs sm:text-sm break-words ${!notification.isRead ? 'font-medium' : ''}`}>
                         {notification.message}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
@@ -105,7 +105,7 @@ const NotificationBell = () => {
                       </p>
                     </div>
                     {!notification.isRead && (
-                      <div className="w-2 h-2 bg-blue-500 rounded-full ml-2 mt-1"></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full ml-2 mt-1 flex-shrink-0"></div>
                     )}
                   </div>
                 </div>
@@ -114,10 +114,10 @@ const NotificationBell = () => {
           </div>
           
           {notifications.length > 0 && (
-            <div className="p-3 border-t text-center">
+            <div className="p-2 sm:p-3 border-t text-center">
               <button
                 onClick={() => setShowDropdown(false)}
-                className="text-sm text-blue-600 hover:text-blue-800"
+                className="text-xs sm:text-sm text-blue-600 hover:text-blue-800"
               >
                 Close
               </button>
