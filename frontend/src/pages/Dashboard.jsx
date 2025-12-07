@@ -3,6 +3,7 @@ import useCallStore from '../store/callStore';
 import useAuthStore from '../store/authStore';
 import AddCallForm from '../components/AddCallForm';
 import CallCard from '../components/CallCard';
+import CallTable from '../components/CallTable';
 
 const Dashboard = () => {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -185,17 +186,30 @@ const Dashboard = () => {
         </div>
       </div>
 
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Desktop Table View (hidden on mobile) */}
+      <div className="hidden lg:block">
         {filteredCalls.length === 0 ? (
-          <div className="col-span-full text-center py-12">
+          <div className="text-center py-12">
             <p className="text-gray-500 text-lg">No calls found</p>
           </div>
         ) : (
-          filteredCalls.map(call => (
-            <CallCard key={call.id} call={call} />
-          ))
+          <CallTable calls={filteredCalls} />
         )}
+      </div>
+
+      {/* Mobile Card View (hidden on desktop) */}
+      <div className="lg:hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filteredCalls.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <p className="text-gray-500 text-lg">No calls found</p>
+            </div>
+          ) : (
+            filteredCalls.map(call => (
+              <CallCard key={call.id} call={call} />
+            ))
+          )}
+        </div>
       </div>
 
       {showAddForm && <AddCallForm onClose={() => setShowAddForm(false)} />}
