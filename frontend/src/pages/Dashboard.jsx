@@ -8,6 +8,8 @@ const Dashboard = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const { user } = useAuthStore();
   const [filter, setFilter] = useState(user?.role === 'ADMIN' || user?.role === 'HOST' ? 'ALL' : 'MY_TASKS');
+  const [dateFilter, setDateFilter] = useState({ type: '', start: '', end: '' });
+  const [appliedDateFilter, setAppliedDateFilter] = useState({ type: '', start: '', end: '' });
   
   const { calls, fetchCalls } = useCallStore();
   const { fetchUsers } = useAuthStore();
@@ -32,20 +34,34 @@ const Dashboard = () => {
     const isUserRole = user?.role === 'USER';
     const isMyCall = call.createdBy === user?.username || call.assignedTo === user?.username;
     
-    if (filter === 'ALL') return true;
-    if (filter === 'MY_CALLS') return call.createdBy === user?.username;
-    if (filter === 'MY_TASKS') return call.createdBy === user?.username || call.assignedTo === user?.username;
-    if (filter === 'MY_CREATED') return call.createdBy === user?.username;
-    if (filter === 'ASSIGNED_TO_ME') return call.assignedTo === user?.username;
-    if (filter === 'ASSIGNED_AND_PENDING') return call.assignedTo && call.status !== 'COMPLETED';
-    if (filter === 'PENDING') {
-      if (isUserRole) return isMyCall && call.status !== 'COMPLETED';
-      return !call.assignedTo && call.status !== 'COMPLETED';
+    // Status filter
+    let statusMatch = true;
+    if (filter === 'ALL') statusMatch = true;
+    else if (filter === 'MY_CALLS') statusMatch = call.createdBy === user?.username;
+    else if (filter === 'MY_TASKS') statusMatch = call.createdBy === user?.username || call.assignedTo === user?.username;
+    else if (filter === 'MY_CREATED') statusMatch = call.createdBy === user?.username;
+    else if (filter === 'ASSIGNED_TO_ME') statusMatch = call.assignedTo === user?.username;
+    else if (filter === 'ASSIGNED_AND_PENDING') statusMatch = call.assignedTo && call.status !== 'COMPLETED';
+    else if (filter === 'PENDING') {
+      statusMatch = isUserRole ? (isMyCall && call.status !== 'COMPLETED') : (!call.assignedTo && call.status !== 'COMPLETED');
     }
-    if (filter === 'COMPLETED') {
-      if (isUserRole) return isMyCall && call.status === 'COMPLETED';
-      return call.status === 'COMPLETED';
+    else if (filter === 'COMPLETED') {
+      statusMatch = isUserRole ? (isMyCall && call.status === 'COMPLETED') : (call.status === 'COMPLETED');
     }
+    
+    if (!statusMatch) return false;
+    
+    // Date range filter
+    if (appliedDateFilter.type && appliedDateFilter.start && appliedDateFilter.end) {
+      const callDate = call[appliedDateFilter.type];
+      if (!callDate) return false;
+      const date = new Date(callDate);
+      const start = new Date(appliedDateFilter.start);
+      const end = new Date(appliedDateFilter.end);
+      end.setHours(23, 59, 59, 999);
+      if (date < start || date > end) return false;
+    }
+    
     return true;
   });
 
@@ -90,6 +106,64 @@ const Dashboard = () => {
           <p className="text-3xl font-bold text-green-600">
             {calls.filter(c => c.status === 'COMPLETED').length}
           </p>
+        </div>
+      </div>
+
+      <div className="mb-6 bg-white p-4 rounded-lg shadow">
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">Date Range Filter</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Filter By</label>
+            <select
+              value={dateFilter.type}
+              onChange={(e) => setDateFilter(prev => ({ ...prev, type: e.target.value }))}
+              className="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Type</option>
+              <option value="createdAt">Created Date</option>
+              <option value="assignedAt">Assigned Date</option>
+              <option value="completedAt">Completed Date</option>
+              <option value="lastCalledAt">Last Called Date</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Start Date</label>
+            <input
+              type="date"
+              value={dateFilter.start}
+              onChange={(e) => setDateFilter(prev => ({ ...prev, start: e.target.value }))}
+              className="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">End Date</label>
+            <input
+              type="date"
+              value={dateFilter.end}
+              onChange={(e) => setDateFilter(prev => ({ ...prev, end: e.target.value }))}
+              className="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={() => setAppliedDateFilter(dateFilter)}
+            disabled={!dateFilter.type || !dateFilter.start || !dateFilter.end}
+            className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            Apply Filter
+          </button>
+          {appliedDateFilter.type && (
+            <button
+              onClick={() => {
+                setDateFilter({ type: '', start: '', end: '' });
+                setAppliedDateFilter({ type: '', start: '', end: '' });
+              }}
+              className="px-4 py-2 bg-red-600 text-white rounded text-sm font-medium hover:bg-red-700"
+            >
+              Clear Filter
+            </button>
+          )}
         </div>
       </div>
 
