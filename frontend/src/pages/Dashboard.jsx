@@ -7,7 +7,7 @@ import CallCard from '../components/CallCard';
 const Dashboard = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const { user } = useAuthStore();
-  const [filter, setFilter] = useState(['HOST', 'ADMIN'].includes(user?.role) ? 'ALL' : 'MY_TASKS');
+  const [filter, setFilter] = useState(user?.role === 'ADMIN' || user?.role === 'HOST' ? 'ALL' : 'MY_TASKS');
   
   const { calls, fetchCalls } = useCallStore();
   const { fetchUsers } = useAuthStore();
@@ -19,21 +19,33 @@ const Dashboard = () => {
 
   // Role-based filter options
   const getFilterOptions = () => {
-    if (['HOST', 'ADMIN'].includes(user?.role)) {
-      return ['ALL', 'MY_CALLS', 'ASSIGNED_TO_ME', 'PENDING', 'COMPLETED'];
+    if (user?.role === 'HOST') {
+      return ['ALL', 'MY_CALLS', 'ASSIGNED_AND_PENDING', 'PENDING', 'COMPLETED'];
+    } else if (user?.role === 'ADMIN') {
+      return ['ALL', 'MY_CALLS', 'ASSIGNED_TO_ME', 'ASSIGNED_AND_PENDING', 'PENDING', 'COMPLETED'];
     } else {
       return ['MY_TASKS', 'MY_CREATED', 'PENDING', 'COMPLETED'];
     }
   };
 
   const filteredCalls = calls.filter(call => {
+    const isUserRole = user?.role === 'USER';
+    const isMyCall = call.createdBy === user?.username || call.assignedTo === user?.username;
+    
     if (filter === 'ALL') return true;
     if (filter === 'MY_CALLS') return call.createdBy === user?.username;
     if (filter === 'MY_TASKS') return call.createdBy === user?.username || call.assignedTo === user?.username;
     if (filter === 'MY_CREATED') return call.createdBy === user?.username;
     if (filter === 'ASSIGNED_TO_ME') return call.assignedTo === user?.username;
-    if (filter === 'PENDING') return call.status === 'PENDING' || call.status === 'ASSIGNED';
-    if (filter === 'COMPLETED') return call.status === 'COMPLETED';
+    if (filter === 'ASSIGNED_AND_PENDING') return call.assignedTo && call.status !== 'COMPLETED';
+    if (filter === 'PENDING') {
+      if (isUserRole) return isMyCall && call.status !== 'COMPLETED';
+      return !call.assignedTo && call.status !== 'COMPLETED';
+    }
+    if (filter === 'COMPLETED') {
+      if (isUserRole) return isMyCall && call.status === 'COMPLETED';
+      return call.status === 'COMPLETED';
+    }
     return true;
   });
 

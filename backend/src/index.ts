@@ -232,7 +232,7 @@ app.put('/calls/:id', authMiddleware, requireRole(['HOST']), async (req: Request
             address: address || null,
             problem,
             category,
-            status,
+            status: assignedTo !== undefined && assignedTo ? 'ASSIGNED' : (assignedTo === null || assignedTo === '' ? 'PENDING' : status),
         };
         
         // Only update assignedTo if it's explicitly provided
@@ -463,8 +463,7 @@ app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
         problem, 
         category, 
         assignedTo, 
-        createdBy,
-        status = 'PENDING'
+        createdBy
     } = req.body as any;
 
     if (!customerName || !phone || !problem || !category) {
@@ -500,7 +499,7 @@ app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
                 address: address || null,
                 problem,
                 category,
-                status,
+                status: assignedTo ? 'ASSIGNED' : 'PENDING',
                 assignedTo: assignedTo || null,
                 createdBy: req.user?.username || createdBy || 'system',
                 customerId: customer?.id || null,
