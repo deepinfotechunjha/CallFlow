@@ -58,6 +58,7 @@ async function main() {
   console.log('Host User:');
   console.log('Username: host');
   console.log('Password: host123');
+  console.log('Note: Secret password should be set via admin panel');
   console.log('----------------------');
 }
 

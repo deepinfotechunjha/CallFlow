@@ -80,6 +80,35 @@ app.get("/health", async (_req: Request, res: Response) => {
     }
 });
 
+// Secret password verification endpoint
+app.post("/auth/verify-secret", authMiddleware, async (req: Request, res: Response) => {
+    const { secretPassword } = req.body;
+    const user = req.user;
+    
+    if (!secretPassword) {
+        return res.status(400).json({ error: 'Secret password is required' });
+    }
+    
+    try {
+        const dbUser = await prisma.user.findUnique({ 
+            where: { id: user.id },
+            select: { secretPassword: true, role: true }
+        });
+        
+        if (!dbUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        if (dbUser.secretPassword !== secretPassword) {
+            return res.status(401).json({ error: 'Invalid secret password' });
+        }
+        
+        res.json({ success: true, hasAccess: dbUser.role === 'HOST' });
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
 // User endpoints
 app.get("/users", authMiddleware, requireRole(['HOST']), async (_req: Request & { user?: any }, res: Response) => {
     try {
@@ -94,36 +123,93 @@ app.get("/users", authMiddleware, requireRole(['HOST']), async (_req: Request & 
 
 app.put("/users/:id", authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
     const userId = parseInt(req.params.id || '');
-    const { role } = req.body;
-    
-    if (!role || !['HOST', 'ADMIN', 'USER'].includes(role)) {
-        return res.status(400).json({ error: 'Invalid role' });
-    }
+    const { username, password, role, secretPassword } = req.body;
     
     try {
-        // Check HOST limit if promoting to HOST
-        if (role === 'HOST') {
-            const hostCount = await prisma.user.count({ where: { role: 'HOST' } });
-            const currentUser = await prisma.user.findUnique({ where: { id: userId } });
-            if (currentUser?.role !== 'HOST' && hostCount >= 3) {
-                return res.status(400).json({ error: 'Maximum 3 HOSTs allowed' });
+        const currentUser = await prisma.user.findUnique({ where: { id: userId } });
+        if (!currentUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        const updateData: any = {};
+        
+        // Update username if provided
+        if (username && username !== currentUser.username) {
+            updateData.username = username;
+        }
+        
+        // Update password if provided
+        if (password) {
+            updateData.password = await bcrypt.hash(password, 10);
+        }
+        
+        // Update role if provided
+        if (role && ['HOST', 'ADMIN', 'USER'].includes(role)) {
+            // Check HOST limit if promoting to HOST
+            if (role === 'HOST') {
+                const hostCount = await prisma.user.count({ where: { role: 'HOST' } });
+                if (currentUser.role !== 'HOST' && hostCount >= 3) {
+                    return res.status(400).json({ error: 'Maximum 3 HOSTs allowed' });
+                }
+                // Require secret password when promoting to HOST
+                if (currentUser.role !== 'HOST' && !secretPassword) {
+                    return res.status(400).json({ error: 'Secret password is required when promoting to HOST' });
+                }
+            }
+            
+            updateData.role = role;
+            
+            // Update secretPassword based on role change
+            if (role === 'HOST' && currentUser.role !== 'HOST') {
+                // Promoting to HOST - use provided secret password
+                updateData.secretPassword = secretPassword;
+            } else if (role !== 'HOST' && currentUser.role === 'HOST') {
+                // Demoting from HOST - set to default
+                updateData.secretPassword = 'DEFAULTSECRET';
             }
         }
         
         const user = await prisma.user.update({
             where: { id: userId },
-            data: { role },
+            data: updateData,
             select: { id: true, username: true, role: true, createdAt: true }
         });
         
         res.json(user);
+    } catch (err: any) {
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'Username already exists' });
+        }
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.delete("/users/:id", authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const userId = parseInt(req.params.id || '');
+    
+    try {
+        const currentUser = await prisma.user.findUnique({ where: { id: userId } });
+        if (!currentUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Prevent deleting the last HOST
+        if (currentUser.role === 'HOST') {
+            const hostCount = await prisma.user.count({ where: { role: 'HOST' } });
+            if (hostCount <= 1) {
+                return res.status(400).json({ error: 'Cannot delete the last HOST user' });
+            }
+        }
+        
+        await prisma.user.delete({ where: { id: userId } });
+        res.json({ success: true });
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
     }
 });
 
 app.post("/users", authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
-    const { username, password, role } = req.body as { username?: string; password?: string; role?: string };
+    const { username, password, role, secretPassword } = req.body as { username?: string; password?: string; role?: string; secretPassword?: string };
     
     if (!username || !password || !role) {
         return res.status(400).json({ error: "username, password, and role are required" });
@@ -131,6 +217,11 @@ app.post("/users", authMiddleware, requireRole(['HOST']), async (req: Request, r
     
     if (!['HOST', 'ADMIN', 'USER'].includes(role)) {
         return res.status(400).json({ error: "Invalid role. Must be HOST, ADMIN, or USER" });
+    }
+    
+    // Require secret password for HOST role
+    if (role === 'HOST' && !secretPassword) {
+        return res.status(400).json({ error: "Secret password is required for HOST role" });
     }
     
     try {
@@ -143,8 +234,10 @@ app.post("/users", authMiddleware, requireRole(['HOST']), async (req: Request, r
         }
         
         const hashed = await bcrypt.hash(password, 10);
+        const finalSecretPassword = role === 'HOST' ? secretPassword : 'DEFAULTSECRET';
+        
         const user = await prisma.user.create({ 
-            data: { username, password: hashed, role } 
+            data: { username, password: hashed, role, secretPassword: finalSecretPassword } 
         });
         
         res.status(201).json({ 
