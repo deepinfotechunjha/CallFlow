@@ -47,14 +47,16 @@ model Call {
 }
 
 model Customer {
-  id          Int      @id @default(autoincrement())
-  name        String
-  phone       String   @unique
-  email       String?
-  address     String?
-  createdAt   DateTime @default(now())
+  id              Int       @id @default(autoincrement())
+  name            String
+  phone           String    @unique
+  email           String?
+  address         String?
+  createdAt       DateTime  @default(now())
+  totalCalls      Int       @default(0)
+  lastCallDate    DateTime?
 
-  calls       Call[]
+  calls           Call[]
 }
 
 model Notification {
