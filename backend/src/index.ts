@@ -157,6 +157,32 @@ app.put("/users/:id", authMiddleware, requireRole(['HOST']), async (req: Request
                 }
             }
             
+            // Check if user is being changed to HOST role and has assigned calls
+            if (role === 'HOST' && currentUser.role !== 'HOST') {
+                const assignedCalls = await prisma.call.count({
+                    where: { 
+                        assignedTo: currentUser.username,
+                        status: { not: 'COMPLETED' }
+                    }
+                });
+                
+                if (assignedCalls > 0) {
+                    // Unassign all active calls from this user
+                    await prisma.call.updateMany({
+                        where: { 
+                            assignedTo: currentUser.username,
+                            status: { not: 'COMPLETED' }
+                        },
+                        data: {
+                            assignedTo: null,
+                            assignedAt: null,
+                            assignedBy: null,
+                            status: 'PENDING'
+                        }
+                    });
+                }
+            }
+            
             updateData.role = role;
             
             // Update secretPassword based on role change
@@ -200,6 +226,20 @@ app.delete("/users/:id", authMiddleware, requireRole(['HOST']), async (req: Requ
                 return res.status(400).json({ error: 'Cannot delete the last HOST user' });
             }
         }
+        
+        // Unassign all active calls from this user before deletion
+        await prisma.call.updateMany({
+            where: { 
+                assignedTo: currentUser.username,
+                status: { not: 'COMPLETED' }
+            },
+            data: {
+                assignedTo: null,
+                assignedAt: null,
+                assignedBy: null,
+                status: 'PENDING'
+            }
+        });
         
         await prisma.user.delete({ where: { id: userId } });
         res.json({ success: true });

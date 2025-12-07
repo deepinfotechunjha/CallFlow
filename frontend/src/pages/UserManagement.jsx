@@ -106,14 +106,24 @@ const UserManagement = () => {
             setFormData({ username: '', password: '', role: 'USER', secretPassword: '' });
             setShowAddForm(false);
           } else if (pendingAction.type === 'edit') {
-            await updateUser(pendingAction.userId, pendingAction.data);
+            const result = await updateUser(pendingAction.userId, pendingAction.data);
+            
+            // Check if user was changed to HOST and show feedback about call unassignment
+            if (pendingAction.data.role === 'HOST' && editingUser.role !== 'HOST') {
+              alert(`User "${pendingAction.data.username}" has been promoted to HOST. Any assigned calls have been automatically unassigned and set to PENDING status.`);
+            } else {
+              alert(`User "${pendingAction.data.username}" has been updated successfully.`);
+            }
+            
             setShowEditForm(false);
             setEditingUser(null);
           } else if (pendingAction.type === 'delete') {
             await deleteUser(pendingAction.userId);
+            alert(`User has been deleted successfully. Any assigned calls have been automatically unassigned and set to PENDING status.`);
           }
         } catch (error) {
           console.error('Error executing action:', error);
+          alert('Failed to execute action. Please try again.');
         }
         
         setShowActionSecretModal(false);
