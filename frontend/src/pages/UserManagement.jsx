@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import useAuthStore from '../store/authStore';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const UserManagement = () => {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -11,6 +12,10 @@ const UserManagement = () => {
   const [pendingAction, setPendingAction] = useState(null);
   const [secretPassword, setSecretPassword] = useState('');
   const [hasAccess, setHasAccess] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState({ title: '', message: '', onConfirm: null });
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -35,7 +40,8 @@ const UserManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.role === 'HOST' && !formData.secretPassword.trim()) {
-      alert('Secret password is required for HOST role');
+      setAlertMessage('Secret password is required for HOST role');
+      setShowAlert(true);
       return;
     }
     setPendingAction({ type: 'create', data: formData });
@@ -56,7 +62,8 @@ const UserManagement = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (editFormData.role === 'HOST' && editingUser.role !== 'HOST' && !editFormData.secretPassword.trim()) {
-      alert('Secret password is required when promoting to HOST role');
+      setAlertMessage('Secret password is required when promoting to HOST role');
+      setShowAlert(true);
       return;
     }
     const updateData = {
@@ -74,15 +81,22 @@ const UserManagement = () => {
   };
 
   const handleDelete = async (userToDelete) => {
-    if (window.confirm(`Are you sure you want to delete user "${userToDelete.username}"? This action cannot be undone.`)) {
-      setPendingAction({ type: 'delete', userId: userToDelete.id });
-      setShowActionSecretModal(true);
-    }
+    setConfirmConfig({
+      title: 'Confirm Delete',
+      message: `Are you sure you want to delete user "${userToDelete.username}"? This action cannot be undone.`,
+      onConfirm: () => {
+        setPendingAction({ type: 'delete', userId: userToDelete.id });
+        setShowActionSecretModal(true);
+        setShowConfirm(false);
+      }
+    });
+    setShowConfirm(true);
   };
 
   const verifyActionSecret = async () => {
     if (!actionSecretPassword.trim()) {
-      alert('Please enter the secret password');
+      setAlertMessage('Please enter the secret password');
+      setShowAlert(true);
       return;
     }
     
@@ -110,37 +124,44 @@ const UserManagement = () => {
             
             // Check if user was changed to HOST and show feedback about call unassignment
             if (pendingAction.data.role === 'HOST' && editingUser.role !== 'HOST') {
-              alert(`User "${pendingAction.data.username}" has been promoted to HOST. Any assigned calls have been automatically unassigned and set to PENDING status.`);
+              setAlertMessage(`User "${pendingAction.data.username}" has been promoted to HOST. Any assigned calls have been automatically unassigned and set to PENDING status.`);
+              setShowAlert(true);
             } else {
-              alert(`User "${pendingAction.data.username}" has been updated successfully.`);
+              setAlertMessage(`User "${pendingAction.data.username}" has been updated successfully.`);
+              setShowAlert(true);
             }
             
             setShowEditForm(false);
             setEditingUser(null);
           } else if (pendingAction.type === 'delete') {
             await deleteUser(pendingAction.userId);
-            alert(`User has been deleted successfully. Any assigned calls have been automatically unassigned and set to PENDING status.`);
+            setAlertMessage('User has been deleted successfully. Any assigned calls have been automatically unassigned and set to PENDING status.');
+            setShowAlert(true);
           }
         } catch (error) {
           console.error('Error executing action:', error);
-          alert('Failed to execute action. Please try again.');
+          setAlertMessage('Failed to execute action. Please try again.');
+          setShowAlert(true);
         }
         
         setShowActionSecretModal(false);
         setActionSecretPassword('');
         setPendingAction(null);
       } else {
-        alert('Invalid secret password');
+        setAlertMessage('Invalid secret password');
+        setShowAlert(true);
         setActionSecretPassword('');
       }
     } catch (error) {
-      alert('Failed to verify secret password');
+      setAlertMessage('Failed to verify secret password');
+      setShowAlert(true);
     }
   };
 
   const verifySecretPassword = async () => {
     if (!secretPassword.trim()) {
-      alert('Please enter the secret password');
+      setAlertMessage('Please enter the secret password');
+      setShowAlert(true);
       return;
     }
     
@@ -160,11 +181,13 @@ const UserManagement = () => {
         setHasAccess(true);
         setShowSecretModal(false);
       } else {
-        alert('Invalid secret password or insufficient permissions');
+        setAlertMessage('Invalid secret password or insufficient permissions');
+        setShowAlert(true);
         setSecretPassword('');
       }
     } catch (error) {
-      alert('Failed to verify secret password');
+      setAlertMessage('Failed to verify secret password');
+      setShowAlert(true);
     }
   };
 
@@ -497,6 +520,22 @@ const UserManagement = () => {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setShowConfirm(false)}
+      />
+
+      <ConfirmDialog
+        isOpen={showAlert}
+        title="Notice"
+        message={alertMessage}
+        onConfirm={() => setShowAlert(false)}
+        onCancel={() => setShowAlert(false)}
+      />
     </div>
   );
 };
