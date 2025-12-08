@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import useAuthStore from '../store/authStore';
+import useCallStore from '../store/callStore';
 import ConfirmDialog from '../components/ConfirmDialog';
+import ExportModal from '../components/ExportModal';
+import { exportUsersToExcel } from '../utils/excelExport';
+import toast from 'react-hot-toast';
 
 const UserManagement = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [showSecretModal, setShowSecretModal] = useState(true);
   const [showActionSecretModal, setShowActionSecretModal] = useState(false);
@@ -34,6 +39,7 @@ const UserManagement = () => {
   });
   
   const { users, fetchUsers, createUser, updateUser, deleteUser, user, token } = useAuthStore();
+  const { calls } = useCallStore();
 
   useEffect(() => {
     if (hasAccess) {
@@ -223,6 +229,31 @@ const UserManagement = () => {
 
   const canCreateAdmin = user?.role === 'HOST';
 
+  const handleExport = async (exportType, password) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/auth/verify-secret`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ secretPassword: password })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success && data.hasAccess) {
+        exportUsersToExcel(users, calls);
+        toast.success(`Successfully exported ${users.length} users to Excel`);
+        setShowExportModal(false);
+      } else {
+        toast.error('Invalid secret password');
+      }
+    } catch (error) {
+      toast.error('Failed to verify password');
+    }
+  };
+
   if (!hasAccess) {
     return (
       <div className="max-w-6xl mx-auto">
@@ -271,12 +302,22 @@ const UserManagement = () => {
     <div className="max-w-6xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">User Management</h1>
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm sm:text-base w-full sm:w-auto"
-        >
-          + Add User
-        </button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          {user?.role === 'HOST' && (
+            <button
+              onClick={() => setShowExportModal(true)}
+              className="bg-green-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-green-700 font-medium text-sm sm:text-base flex items-center gap-2"
+            >
+              📊 Export
+            </button>
+          )}
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm sm:text-base"
+          >
+            + Add User
+          </button>
+        </div>
       </div>
 
       {/* Users Table */}
@@ -597,6 +638,16 @@ const UserManagement = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {showExportModal && (
+        <ExportModal
+          onClose={() => setShowExportModal(false)}
+          onExport={handleExport}
+          totalCount={users.length}
+          filteredCount={users.length}
+          title="Export Users to Excel"
+        />
       )}
     </div>
   );

@@ -4,10 +4,14 @@ import useAuthStore from '../store/authStore';
 import AddCallForm from '../components/AddCallForm';
 import CallCard from '../components/CallCard';
 import CallTable from '../components/CallTable';
+import ExportModal from '../components/ExportModal';
+import { exportCallsToExcel } from '../utils/excelExport';
+import toast from 'react-hot-toast';
 
 const Dashboard = () => {
   const [showAddForm, setShowAddForm] = useState(false);
-  const { user } = useAuthStore();
+  const [showExportModal, setShowExportModal] = useState(false);
+  const { user, token } = useAuthStore();
   const [filter, setFilter] = useState(user?.role === 'ADMIN' || user?.role === 'HOST' ? 'ALL' : 'MY_TASKS');
   const [dateFilter, setDateFilter] = useState({ type: '', start: '', end: '' });
   const [appliedDateFilter, setAppliedDateFilter] = useState({ type: '', start: '', end: '' });
@@ -95,6 +99,32 @@ const Dashboard = () => {
     return new Date(call.createdAt).toDateString() === today;
   });
 
+  const handleExport = async (exportType, password) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/auth/verify-secret`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ secretPassword: password })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success && data.hasAccess) {
+        const dataToExport = exportType === 'filtered' ? filteredCalls : calls;
+        exportCallsToExcel(dataToExport);
+        toast.success(`Successfully exported ${dataToExport.length} calls to Excel`);
+        setShowExportModal(false);
+      } else {
+        toast.error('Invalid secret password');
+      }
+    } catch (error) {
+      toast.error('Failed to verify password');
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
@@ -102,12 +132,22 @@ const Dashboard = () => {
           <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-700">Welcome Back! {user?.username}</h3>
       
         </div>
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm sm:text-base whitespace-nowrap w-full sm:w-auto"
-        >
-          + Add New Call
-        </button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          {user?.role === 'HOST' && (
+            <button
+              onClick={() => setShowExportModal(true)}
+              className="bg-green-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-green-700 font-medium text-sm sm:text-base whitespace-nowrap flex items-center gap-2"
+            >
+              📊 Export
+            </button>
+          )}
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm sm:text-base whitespace-nowrap"
+          >
+            + Add New Call
+          </button>
+        </div>
       </div>
 
       
@@ -302,6 +342,15 @@ const Dashboard = () => {
       </div>
 
       {showAddForm && <AddCallForm onClose={() => setShowAddForm(false)} />}
+      {showExportModal && (
+        <ExportModal
+          onClose={() => setShowExportModal(false)}
+          onExport={handleExport}
+          totalCount={calls.length}
+          filteredCount={filteredCalls.length}
+          title="Export Calls to Excel"
+        />
+      )}
     </div>
   );
 };

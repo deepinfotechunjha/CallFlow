@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import apiClient from '../api/apiClient';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
+import useAuthStore from '../store/authStore';
+import ExportModal from '../components/ExportModal';
 
 export default function CustomerDirectory() {
   const [customers, setCustomers] = useState([]);
@@ -11,6 +13,8 @@ export default function CustomerDirectory() {
   const [timePeriod, setTimePeriod] = useState(30);
   const [sortConfig, setSortConfig] = useState({ key: 'lastCallDate', direction: 'desc' });
   const [loading, setLoading] = useState(true);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const { user, token } = useAuthStore();
 
   useEffect(() => {
     fetchCustomers();
@@ -117,8 +121,8 @@ export default function CustomerDirectory() {
     return <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-700">🔴 Inactive</span>;
   };
 
-  const exportToExcel = () => {
-    const exportData = filteredCustomers.map(c => ({
+  const exportToExcel = (dataToExport) => {
+    const exportData = dataToExport.map(c => ({
       'Name': c.name,
       'Phone': c.phone,
       'Email': c.email || '',
@@ -132,8 +136,33 @@ export default function CustomerDirectory() {
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Customers');
-    XLSX.writeFile(wb, `customers_${new Date().toISOString().split('T')[0]}.xlsx`);
-    toast.success('Exported to Excel');
+    XLSX.writeFile(wb, `Customers_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success(`Exported ${dataToExport.length} customers to Excel`);
+  };
+
+  const handleExport = async (exportType, password) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/auth/verify-secret`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ secretPassword: password })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success && data.hasAccess) {
+        const dataToExport = exportType === 'filtered' ? filteredCustomers : customers;
+        exportToExcel(dataToExport);
+        setShowExportModal(false);
+      } else {
+        toast.error('Invalid secret password');
+      }
+    } catch (error) {
+      toast.error('Failed to verify password');
+    }
   };
 
   if (loading) {
@@ -148,12 +177,14 @@ export default function CustomerDirectory() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Customer Directory</h1>
-        <button
-          onClick={exportToExcel}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-        >
-          📊 Export to Excel
-        </button>
+        {user?.role === 'HOST' && (
+          <button
+            onClick={() => setShowExportModal(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+          >
+            📊 Export
+          </button>
+        )}
       </div>
 
       {/* Filters */}
@@ -307,6 +338,16 @@ export default function CustomerDirectory() {
           </table>
         </div>
       </div>
+
+      {showExportModal && (
+        <ExportModal
+          onClose={() => setShowExportModal(false)}
+          onExport={handleExport}
+          totalCount={customers.length}
+          filteredCount={filteredCustomers.length}
+          title="Export Customers to Excel"
+        />
+      )}
     </div>
   );
 }
