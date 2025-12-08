@@ -30,8 +30,8 @@ const useAuthStore = create(
       
       fetchUsers: async () => {
         const state = useAuthStore.getState();
-        if (!state.user || state.user.role !== 'HOST') {
-          console.log('Only HOST can fetch users');
+        if (!state.user || !['HOST', 'ADMIN'].includes(state.user.role)) {
+          console.log('Only HOST and ADMIN can fetch users');
           return;
         }
         try {

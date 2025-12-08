@@ -110,7 +110,7 @@ app.post("/auth/verify-secret", authMiddleware, async (req: Request, res: Respon
 });
 
 // User endpoints
-app.get("/users", authMiddleware, requireRole(['HOST']), async (_req: Request & { user?: any }, res: Response) => {
+app.get("/users", authMiddleware, requireRole(['HOST', 'ADMIN']), async (_req: Request & { user?: any }, res: Response) => {
     try {
         const users = await prisma.user.findMany({ 
             select: { id: true, username: true, role: true, createdAt: true } 
