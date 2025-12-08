@@ -210,8 +210,8 @@ const AddCallForm = ({ onClose }) => {
                 className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
               >
                 <option value="">Select Worker</option>
-                {users.filter(u => u.role === 'USER').map(u => (
-                  <option key={u.id} value={u.username}>{u.username}</option>
+                {users.filter(u => u.role === 'USER' || u.role === 'ADMIN').map(u => (
+                  <option key={u.id} value={u.username}>{u.username} ({u.role})</option>
                 ))}
               </select>
             </div>
