@@ -413,8 +413,8 @@ const UserManagement = () => {
                 <input
                   type="text"
                   value={editFormData.username}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, username: e.target.value }))}
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                  readOnly
+                  className="w-full p-2 border rounded bg-gray-100 text-gray-600 cursor-not-allowed text-sm"
                   required
                 />
               </div>
