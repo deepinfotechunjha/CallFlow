@@ -16,6 +16,10 @@ const UserManagement = () => {
   const [confirmConfig, setConfirmConfig] = useState({ title: '', message: '', onConfirm: null });
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const [showHostLimitAlert, setShowHostLimitAlert] = useState(false);
+  const [hostLimitMessage, setHostLimitMessage] = useState('');
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -44,6 +48,14 @@ const UserManagement = () => {
       setShowAlert(true);
       return;
     }
+    if (formData.role === 'HOST') {
+      const hostCount = users.filter(u => u.role === 'HOST').length;
+      if (hostCount >= 3) {
+        setHostLimitMessage('Maximum 3 HOSTs allowed. Cannot create more HOST users.');
+        setShowHostLimitAlert(true);
+        return;
+      }
+    }
     setPendingAction({ type: 'create', data: formData });
     setShowActionSecretModal(true);
   };
@@ -66,8 +78,15 @@ const UserManagement = () => {
       setShowAlert(true);
       return;
     }
+    if (editFormData.role === 'HOST' && editingUser.role !== 'HOST') {
+      const hostCount = users.filter(u => u.role === 'HOST').length;
+      if (hostCount >= 3) {
+        setHostLimitMessage('Maximum 3 HOSTs allowed. Cannot promote more users to HOST.');
+        setShowHostLimitAlert(true);
+        return;
+      }
+    }
     const updateData = {
-      username: editFormData.username,
       role: editFormData.role
     };
     if (editFormData.password) {
@@ -81,6 +100,14 @@ const UserManagement = () => {
   };
 
   const handleDelete = async (userToDelete) => {
+    if (userToDelete.role === 'HOST') {
+      const hostCount = users.filter(u => u.role === 'HOST').length;
+      if (hostCount <= 1) {
+        setHostLimitMessage('Cannot delete the last HOST. At least 1 HOST is required.');
+        setShowHostLimitAlert(true);
+        return;
+      }
+    }
     setConfirmConfig({
       title: 'Confirm Delete',
       message: `Are you sure you want to delete user "${userToDelete.username}"? This action cannot be undone.`,
@@ -117,6 +144,8 @@ const UserManagement = () => {
         try {
           if (pendingAction.type === 'create') {
             await createUser(pendingAction.data);
+            setSuccessMessage(`User "${pendingAction.data.username}" has been created successfully.`);
+            setShowSuccessAlert(true);
             setFormData({ username: '', password: '', role: 'USER', secretPassword: '' });
             setShowAddForm(false);
           } else if (pendingAction.type === 'edit') {
@@ -124,23 +153,24 @@ const UserManagement = () => {
             
             // Check if user was changed to HOST and show feedback about call unassignment
             if (pendingAction.data.role === 'HOST' && editingUser.role !== 'HOST') {
-              setAlertMessage(`User "${pendingAction.data.username}" has been promoted to HOST. Any assigned calls have been automatically unassigned and set to PENDING status.`);
-              setShowAlert(true);
+              setSuccessMessage(`User "${editingUser.username}" has been promoted to HOST. Any assigned calls have been automatically unassigned and set to PENDING status.`);
+              setShowSuccessAlert(true);
             } else {
-              setAlertMessage(`User "${pendingAction.data.username}" has been updated successfully.`);
-              setShowAlert(true);
+              setSuccessMessage(`User "${editingUser.username}" has been updated successfully.`);
+              setShowSuccessAlert(true);
             }
             
             setShowEditForm(false);
             setEditingUser(null);
           } else if (pendingAction.type === 'delete') {
             await deleteUser(pendingAction.userId);
-            setAlertMessage('User has been deleted successfully. Any assigned calls have been automatically unassigned and set to PENDING status.');
-            setShowAlert(true);
+            setSuccessMessage('User has been deleted successfully. Any assigned calls have been automatically unassigned and set to PENDING status.');
+            setShowSuccessAlert(true);
           }
         } catch (error) {
           console.error('Error executing action:', error);
-          setAlertMessage('Failed to execute action. Please try again.');
+          const errorMessage = error?.response?.data?.error || error?.message || 'Failed to execute action. Please try again.';
+          setAlertMessage(errorMessage);
           setShowAlert(true);
         }
         
@@ -536,6 +566,38 @@ const UserManagement = () => {
         onConfirm={() => setShowAlert(false)}
         onCancel={() => setShowAlert(false)}
       />
+
+      {/* HOST Limit Alert Modal */}
+      {showHostLimitAlert && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4 text-red-600">HOST Limit Reached</h2>
+            <p className="text-gray-700 mb-6">{hostLimitMessage}</p>
+            <button
+              onClick={() => setShowHostLimitAlert(false)}
+              className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-medium"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Success Alert Modal */}
+      {showSuccessAlert && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4 text-green-600">Success</h2>
+            <p className="text-gray-700 mb-6">{successMessage}</p>
+            <button
+              onClick={() => setShowSuccessAlert(false)}
+              className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-medium"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
