@@ -43,6 +43,8 @@ function verifyToken(token: string) {
     }
 }
 
+
+
 // Simple auth middleware
 function authMiddleware(req: Request & { user?: any }, res: Response, next: NextFunction) {
     const auth = req.headers['authorization'] as string | undefined;

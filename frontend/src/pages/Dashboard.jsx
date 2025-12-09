@@ -62,9 +62,10 @@ const Dashboard = () => {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       const matchesSearch = 
-        call.customerName?.toLowerCase().includes(query) ||
-        call.phone?.toLowerCase().includes(query) ||
-        call.category?.toLowerCase().includes(query);
+        (call.customerName || '').toLowerCase().includes(query) ||
+        (call.phone || '').toLowerCase().includes(query) ||
+        (call.category || '').toLowerCase().includes(query) ||
+        (call.problem || '').toLowerCase().includes(query);
       if (!matchesSearch) return false;
     }
     
