@@ -1022,6 +1022,75 @@ app.delete('/categories/:id', authMiddleware, requireRole(['HOST']), async (req:
     }
 });
 
+// Service Category endpoints
+app.get('/service-categories', authMiddleware, async (_req: Request, res: Response) => {
+    try {
+        const categories = await prisma.serviceCategory.findMany({
+            where: { isActive: true },
+            orderBy: { name: 'asc' }
+        });
+        res.json(categories);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/service-categories', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const { name } = req.body;
+    
+    if (!name || !name.trim()) {
+        return res.status(400).json({ error: 'Service category name is required' });
+    }
+    
+    try {
+        const category = await prisma.serviceCategory.create({
+            data: { name: name.trim() }
+        });
+        res.status(201).json(category);
+    } catch (err: any) {
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'Service category already exists' });
+        }
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.put('/service-categories/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const categoryId = parseInt(req.params.id || '');
+    const { name } = req.body;
+    
+    if (!name || !name.trim()) {
+        return res.status(400).json({ error: 'Service category name is required' });
+    }
+    
+    try {
+        const category = await prisma.serviceCategory.update({
+            where: { id: categoryId },
+            data: { name: name.trim() }
+        });
+        res.json(category);
+    } catch (err: any) {
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'Service category already exists' });
+        }
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.delete('/service-categories/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const categoryId = parseInt(req.params.id || '');
+    
+    try {
+        const category = await prisma.serviceCategory.update({
+            where: { id: categoryId },
+            data: { isActive: false }
+        });
+        res.json({ success: true, category });
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
 // CarryInService endpoints
 app.get('/carry-in-services', authMiddleware, async (_req: Request, res: Response) => {
     try {
@@ -1035,10 +1104,10 @@ app.get('/carry-in-services', authMiddleware, async (_req: Request, res: Respons
 });
 
 app.post('/carry-in-services', authMiddleware, async (req: Request, res: Response) => {
-    const { customerName, phone, email, address, serviceType } = req.body;
+    const { customerName, phone, email, address, category, serviceDescription } = req.body;
     
-    if (!customerName || !phone || !serviceType) {
-        return res.status(400).json({ error: 'Customer name, phone, and service type are required' });
+    if (!customerName || !phone || !category) {
+        return res.status(400).json({ error: 'Customer name, phone, and category are required' });
     }
     
     try {
@@ -1056,7 +1125,8 @@ app.post('/carry-in-services', authMiddleware, async (req: Request, res: Respons
                 phone,
                 email: email || null,
                 address: address || null,
-                serviceType,
+                category,
+                serviceDescription: serviceDescription || null,
                 customerId: customer.id,
                 createdBy: req.user?.username || 'system'
             }

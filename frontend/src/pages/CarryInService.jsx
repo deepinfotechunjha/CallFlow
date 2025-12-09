@@ -1,23 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import useCarryInServiceStore from '../store/carryInServiceStore';
+import useServiceCategoryStore from '../store/serviceCategoryStore';
 import useAuthStore from '../store/authStore';
 import useClickOutside from '../hooks/useClickOutside';
 
 const CarryInService = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [filter, setFilter] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('ALL_CATEGORIES');
   const [formData, setFormData] = useState({
     customerName: '',
     phone: '',
     email: '',
     address: '',
-    serviceType: ''
+    category: '',
+    serviceDescription: ''
   });
   const [customerFound, setCustomerFound] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(null);
   const [showDeliverConfirm, setShowDeliverConfirm] = useState(null);
 
   const { services, fetchServices, addService, completeService, deliverService, findCustomerByPhone } = useCarryInServiceStore();
+  const { serviceCategories, fetchServiceCategories } = useServiceCategoryStore();
   const { user } = useAuthStore();
 
   const modalRef = useClickOutside(() => {
@@ -30,6 +35,7 @@ const CarryInService = () => {
 
   useEffect(() => {
     fetchServices();
+    fetchServiceCategories();
   }, []);
 
   const handlePhoneChange = async (phone) => {
@@ -57,7 +63,7 @@ const CarryInService = () => {
     e.preventDefault();
     try {
       await addService(formData);
-      setFormData({ customerName: '', phone: '', email: '', address: '', serviceType: '' });
+      setFormData({ customerName: '', phone: '', email: '', address: '', category: '', serviceDescription: '' });
       setShowAddForm(false);
       setCustomerFound(false);
     } catch (error) {
@@ -84,10 +90,26 @@ const CarryInService = () => {
   };
 
   const filteredServices = services.filter(service => {
-    if (filter === 'ALL') return true;
-    if (filter === 'PENDING') return service.status === 'PENDING';
-    if (filter === 'COMPLETED_NOT_COLLECTED') return service.status === 'COMPLETED_NOT_COLLECTED';
-    if (filter === 'COMPLETED_AND_COLLECTED') return service.status === 'COMPLETED_AND_COLLECTED';
+    // Status filter
+    if (filter === 'ALL') ;
+    else if (filter === 'PENDING' && service.status !== 'PENDING') return false;
+    else if (filter === 'COMPLETED_NOT_COLLECTED' && service.status !== 'COMPLETED_NOT_COLLECTED') return false;
+    else if (filter === 'COMPLETED_AND_COLLECTED' && service.status !== 'COMPLETED_AND_COLLECTED') return false;
+    
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = 
+        (service.customerName || '').toLowerCase().includes(query) ||
+        (service.phone || '').toLowerCase().includes(query) ||
+        (service.category || '').toLowerCase().includes(query) ||
+        (service.serviceDescription || '').toLowerCase().includes(query);
+      if (!matchesSearch) return false;
+    }
+    
+    // Category filter
+    if (categoryFilter !== 'ALL_CATEGORIES' && service.category !== categoryFilter) return false;
+    
     return true;
   });
 
@@ -152,9 +174,60 @@ const CarryInService = () => {
         </div>
       </div>
 
-      {/* Filter Buttons */}
-      <div className="mb-6">
-        <div className="flex flex-wrap gap-2">
+      {/* Search and Filters */}
+      <div className="mb-6 bg-white p-4 rounded-lg shadow">
+        {/* Search Bar and Category Filter - Side by Side */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <div className="flex-1 min-w-[200px] relative">
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
+            <input
+              type="text"
+              placeholder="Search by customer, phone, category, or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-10 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg"
+              >
+                ×
+              </button>
+            )}
+          </div>
+          
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+          >
+            <option value="ALL_CATEGORIES">All Categories</option>
+            {serviceCategories.map(cat => (
+              <option key={cat.id} value={cat.name}>{cat.name}</option>
+            ))}
+          </select>
+          
+          {(searchQuery || categoryFilter !== 'ALL_CATEGORIES') && (
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setCategoryFilter('ALL_CATEGORIES');
+              }}
+              className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300"
+            >
+              Clear
+            </button>
+          )}
+          
+          <span className="text-sm text-gray-600">
+            {filteredServices.length} of {services.length}
+          </span>
+        </div>
+
+        {/* Status Filter Tabs */}
+        <div className="border-t pt-4 -mx-4 px-4">
+          <div className="flex flex-wrap gap-2">
           {['ALL', 'PENDING', 'COMPLETED_NOT_COLLECTED', 'COMPLETED_AND_COLLECTED'].map(f => (
             <button
               key={f}
@@ -171,6 +244,7 @@ const CarryInService = () => {
                'Delivered'}
             </button>
           ))}
+          </div>
         </div>
       </div>
 
@@ -181,7 +255,8 @@ const CarryInService = () => {
             <tr>
               <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
               <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service Type</th>
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
               <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Users</th>
               <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -190,7 +265,7 @@ const CarryInService = () => {
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredServices.length === 0 ? (
               <tr>
-                <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
+                <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
                   No services found
                 </td>
               </tr>
@@ -204,7 +279,8 @@ const CarryInService = () => {
                     </div>
                   </td>
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{service.phone}</td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{service.serviceType}</td>
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{service.category}</td>
+                  <td className="px-3 sm:px-6 py-4 text-sm text-gray-500">{service.serviceDescription || '-'}</td>
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(service.status)}`}>
                       {getStatusLabel(service.status)}
@@ -298,14 +374,28 @@ const CarryInService = () => {
               </div>
 
               <div>
-                <label className="block text-xs sm:text-sm font-medium mb-1">Service Type *</label>
-                <input
-                  type="text"
-                  value={formData.serviceType}
-                  onChange={(e) => setFormData(prev => ({ ...prev, serviceType: e.target.value }))}
+                <label className="block text-xs sm:text-sm font-medium mb-1">Category *</label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
                   className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
-                  placeholder="e.g., Laptop Repair, Phone Screen Replacement"
                   required
+                >
+                  <option value="">Select Category</option>
+                  {serviceCategories.map(cat => (
+                    <option key={cat.id} value={cat.name}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1">Service Description</label>
+                <textarea
+                  value={formData.serviceDescription}
+                  onChange={(e) => setFormData(prev => ({ ...prev, serviceDescription: e.target.value }))}
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                  rows="3"
+                  placeholder="Additional details about the service..."
                 />
               </div>
 
