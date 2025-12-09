@@ -14,6 +14,8 @@ const CarryInService = () => {
     serviceType: ''
   });
   const [customerFound, setCustomerFound] = useState(false);
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(null);
+  const [showDeliverConfirm, setShowDeliverConfirm] = useState(null);
 
   const { services, fetchServices, addService, completeService, deliverService, findCustomerByPhone } = useCarryInServiceStore();
   const { user } = useAuthStore();
@@ -23,6 +25,8 @@ const CarryInService = () => {
       setShowAddForm(false);
     }
   });
+  const completeConfirmRef = useClickOutside(() => setShowCompleteConfirm(null));
+  const deliverConfirmRef = useClickOutside(() => setShowDeliverConfirm(null));
 
   useEffect(() => {
     fetchServices();
@@ -58,6 +62,24 @@ const CarryInService = () => {
       setCustomerFound(false);
     } catch (error) {
       console.error('Error adding service:', error);
+    }
+  };
+
+  const handleCompleteService = async (serviceId) => {
+    try {
+      await completeService(serviceId);
+      setShowCompleteConfirm(null);
+    } catch (error) {
+      console.error('Error completing service:', error);
+    }
+  };
+
+  const handleDeliverService = async (serviceId) => {
+    try {
+      await deliverService(serviceId);
+      setShowDeliverConfirm(null);
+    } catch (error) {
+      console.error('Error delivering service:', error);
     }
   };
 
@@ -199,7 +221,7 @@ const CarryInService = () => {
                     <div className="flex gap-2">
                       {service.status === 'PENDING' && (
                         <button
-                          onClick={() => completeService(service.id)}
+                          onClick={() => setShowCompleteConfirm(service.id)}
                           className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700"
                         >
                           Complete
@@ -207,7 +229,7 @@ const CarryInService = () => {
                       )}
                       {service.status === 'COMPLETED_NOT_COLLECTED' && (
                         <button
-                          onClick={() => deliverService(service.id)}
+                          onClick={() => setShowDeliverConfirm(service.id)}
                           className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700"
                         >
                           Deliver
@@ -303,6 +325,58 @@ const CarryInService = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Complete Service Confirmation Modal */}
+      {showCompleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div ref={completeConfirmRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
+            <h2 className="text-lg sm:text-xl font-bold mb-4">Complete Service</h2>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to mark this service as completed?
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                onClick={() => handleCompleteService(showCompleteConfirm)}
+                className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-medium text-sm"
+              >
+                Yes, Complete
+              </button>
+              <button
+                onClick={() => setShowCompleteConfirm(null)}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deliver Service Confirmation Modal */}
+      {showDeliverConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div ref={deliverConfirmRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
+            <h2 className="text-lg sm:text-xl font-bold mb-4">Deliver Service</h2>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to mark this service as delivered to the customer?
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                onClick={() => handleDeliverService(showDeliverConfirm)}
+                className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 font-medium text-sm"
+              >
+                Yes, Deliver
+              </button>
+              <button
+                onClick={() => setShowDeliverConfirm(null)}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 text-sm"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
