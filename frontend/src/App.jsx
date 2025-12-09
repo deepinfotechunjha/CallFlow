@@ -7,6 +7,7 @@ import Profile from './pages/Profile';
 import EngineerAnalytics from './pages/EngineerAnalytics';
 import CategorySettings from './pages/CategorySettings';
 import CustomerDirectory from './pages/CustomerDirectory';
+import CarryInService from './pages/CarryInService';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import useAuthStore from './store/authStore';
@@ -27,6 +28,7 @@ function App() {
           <Route path="/users" element={<ProtectedRoute allowedRoles={['HOST']}><UserManagement /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute allowedRoles={['HOST']}><EngineerAnalytics /></ProtectedRoute>} />
           <Route path="/customers" element={<ProtectedRoute allowedRoles={['HOST']}><CustomerDirectory /></ProtectedRoute>} />
+          <Route path="/carry-in-service" element={<ProtectedRoute><CarryInService /></ProtectedRoute>} />
           <Route path="/settings/categories" element={<ProtectedRoute allowedRoles={['HOST']}><CategorySettings /></ProtectedRoute>} />
         </Routes>
       </main>

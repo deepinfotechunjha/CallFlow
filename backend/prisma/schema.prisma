@@ -78,3 +78,36 @@ model Category {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model CarryInCustomer {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String   @unique
+  email     String?
+  address   String?
+  createdAt DateTime @default(now())
+  
+  services  CarryInService[]
+}
+
+model CarryInService {
+  id          Int      @id @default(autoincrement())
+  customerName String
+  phone       String
+  email       String?
+  address     String?
+  serviceType String
+  status      String   @default("PENDING")
+  customerId  Int?
+  customer    CarryInCustomer? @relation(fields: [customerId], references: [id])
+  createdBy   String
+  createdAt   DateTime @default(now())
+  completedBy String?
+  completedAt DateTime?
+  deliveredBy String?
+  deliveredAt DateTime?
+  
+  @@index([phone])
+  @@index([status])
+  @@index([createdBy])
+}

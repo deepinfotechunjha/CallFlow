@@ -274,7 +274,7 @@ app.post("/users", authMiddleware, requireRole(['HOST']), async (req: Request, r
         }
         
         const hashed = await bcrypt.hash(password, 10);
-        const finalSecretPassword = role === 'HOST' ? secretPassword : 'DEFAULTSECRET';
+        const finalSecretPassword = role === 'HOST' ? (secretPassword || 'DEFAULTSECRET') : 'DEFAULTSECRET';
         
         const user = await prisma.user.create({ 
             data: { username, password: hashed, role, secretPassword: finalSecretPassword } 
@@ -787,6 +787,18 @@ app.get('/customers/phone/:phone', authMiddleware, async (req: Request, res: Res
     }
 });
 
+app.get('/carry-in-customers/phone/:phone', authMiddleware, async (req: Request, res: Response) => {
+    const phone = req.params.phone;
+    if (!phone) return res.status(400).json({ error: 'phone is required' });
+    try {
+        const customer = await prisma.carryInCustomer.findUnique({ where: { phone: phone as string } });
+        if (!customer) return res.status(404).json({ error: 'Not found' });
+        res.json(customer);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
 app.get('/customers/analytics', authMiddleware, requireRole(['HOST']), async (_req: Request, res: Response) => {
     try {
         const customers = await prisma.customer.findMany({
@@ -993,6 +1005,90 @@ app.delete('/categories/:id', authMiddleware, requireRole(['HOST']), async (req:
         });
         
         res.json({ success: true, category });
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// CarryInService endpoints
+app.get('/carry-in-services', authMiddleware, async (_req: Request, res: Response) => {
+    try {
+        const services = await prisma.carryInService.findMany({
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json(services);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/carry-in-services', authMiddleware, async (req: Request, res: Response) => {
+    const { customerName, phone, email, address, serviceType } = req.body;
+    
+    if (!customerName || !phone || !serviceType) {
+        return res.status(400).json({ error: 'Customer name, phone, and service type are required' });
+    }
+    
+    try {
+        // Find or create customer
+        let customer = await prisma.carryInCustomer.findUnique({ where: { phone } });
+        if (!customer) {
+            customer = await prisma.carryInCustomer.create({
+                data: { name: customerName, phone, email: email || null, address: address || null }
+            });
+        }
+        
+        const service = await prisma.carryInService.create({
+            data: {
+                customerName,
+                phone,
+                email: email || null,
+                address: address || null,
+                serviceType,
+                customerId: customer.id,
+                createdBy: req.user?.username || 'system'
+            }
+        });
+        
+        res.status(201).json(service);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/carry-in-services/:id/complete', authMiddleware, async (req: Request, res: Response) => {
+    const serviceId = parseInt(req.params.id || '');
+    
+    try {
+        const service = await prisma.carryInService.update({
+            where: { id: serviceId },
+            data: {
+                status: 'COMPLETED_NOT_COLLECTED',
+                completedBy: req.user?.username,
+                completedAt: new Date()
+            }
+        });
+        
+        res.json(service);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/carry-in-services/:id/deliver', authMiddleware, async (req: Request, res: Response) => {
+    const serviceId = parseInt(req.params.id || '');
+    
+    try {
+        const service = await prisma.carryInService.update({
+            where: { id: serviceId },
+            data: {
+                status: 'COMPLETED_AND_COLLECTED',
+                deliveredBy: req.user?.username,
+                deliveredAt: new Date()
+            }
+        });
+        
+        res.json(service);
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
     }

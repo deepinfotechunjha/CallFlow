@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import useAuthStore from '../store/authStore';
 import useCategoryStore from '../store/categoryStore';
+import useClickOutside from '../hooks/useClickOutside';
 
 const CategorySettings = () => {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -11,6 +12,20 @@ const CategorySettings = () => {
   
   const { user } = useAuthStore();
   const { categories, fetchCategories, addCategory, updateCategory, deleteCategory } = useCategoryStore();
+
+  const addModalRef = useClickOutside(() => {
+    if (showAddModal) {
+      setShowAddModal(false);
+      setNewCategoryName('');
+    }
+  });
+  const editModalRef = useClickOutside(() => {
+    if (showEditModal) {
+      setShowEditModal(false);
+      setEditingCategory(null);
+      setEditCategoryName('');
+    }
+  });
 
   useEffect(() => {
     if (user?.role === 'HOST') {
@@ -140,7 +155,7 @@ const CategorySettings = () => {
       {/* Add Category Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
+          <div ref={addModalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <h2 className="text-lg sm:text-xl font-bold mb-4">Add New Category</h2>
             <form onSubmit={handleAddCategory}>
               <div className="mb-4">
@@ -181,7 +196,7 @@ const CategorySettings = () => {
       {/* Edit Category Modal */}
       {showEditModal && editingCategory && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
+          <div ref={editModalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <h2 className="text-lg sm:text-xl font-bold mb-4">Edit Category</h2>
             <form onSubmit={handleEditCategory}>
               <div className="mb-4">
