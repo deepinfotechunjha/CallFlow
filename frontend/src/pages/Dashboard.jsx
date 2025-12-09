@@ -24,7 +24,9 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchCalls();
-    fetchUsers();
+    if (user?.role === 'HOST' || user?.role === 'ADMIN') {
+      fetchUsers();
+    }
   }, []);
 
   // Role-based filter options

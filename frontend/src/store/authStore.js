@@ -31,13 +31,16 @@ const useAuthStore = create(
       fetchUsers: async () => {
         const state = useAuthStore.getState();
         if (!state.user || !['HOST', 'ADMIN'].includes(state.user.role)) {
-          console.log('Only HOST and ADMIN can fetch users');
           return;
         }
         try {
           const response = await apiClient.get('/users');
           set({ users: response.data });
         } catch (err) {
+          if (err.response?.status === 403 || err.response?.status === 401) {
+            // Silently handle permission errors
+            return;
+          }
           console.error('Failed to fetch users', err);
         }
       },

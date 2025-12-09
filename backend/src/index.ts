@@ -47,26 +47,36 @@ function verifyToken(token: string) {
 
 // Simple auth middleware
 function authMiddleware(req: Request & { user?: any }, res: Response, next: NextFunction) {
-    const auth = req.headers['authorization'] as string | undefined;
-    if (!auth) return res.status(401).json({ error: 'Missing Authorization header' });
-    const parts = auth.split(' ');
-    if (parts.length !== 2 || parts[0] !== 'Bearer') return res.status(401).json({ error: 'Invalid Authorization format' });
-    const token = parts[1];
-    if (!token) return res.status(401).json({ error: 'Missing token' });
-    const payload = verifyToken(token as string);
-    if (!payload) return res.status(401).json({ error: 'Invalid token' });
-    req.user = payload;
-    next();
+    try {
+        const auth = req.headers['authorization'] as string | undefined;
+        if (!auth) return res.status(401).json({ error: 'Missing Authorization header' });
+        const parts = auth.split(' ');
+        if (parts.length !== 2 || parts[0] !== 'Bearer') return res.status(401).json({ error: 'Invalid Authorization format' });
+        const token = parts[1];
+        if (!token) return res.status(401).json({ error: 'Missing token' });
+        const payload = verifyToken(token as string);
+        if (!payload) return res.status(401).json({ error: 'Invalid token' });
+        req.user = payload;
+        next();
+    } catch (err: any) {
+        console.error('Auth middleware error:', err);
+        res.status(401).json({ error: 'Authentication failed' });
+    }
 }
 
 // Role-based authorization middleware
 function requireRole(roles: string[]) {
     return (req: Request & { user?: any }, res: Response, next: NextFunction) => {
-        if (!req.user) return res.status(401).json({ error: 'Unauthenticated' });
-        if (!roles.includes(req.user.role)) {
-            return res.status(403).json({ error: 'Insufficient permissions' });
+        try {
+            if (!req.user) return res.status(401).json({ error: 'Unauthenticated' });
+            if (!roles.includes(req.user.role)) {
+                return res.status(403).json({ error: 'Insufficient permissions' });
+            }
+            next();
+        } catch (err: any) {
+            console.error('Role check error:', err);
+            res.status(403).json({ error: 'Authorization failed' });
         }
-        next();
     };
 }
 
