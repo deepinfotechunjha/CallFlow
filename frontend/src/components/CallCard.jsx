@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import useCallStore from '../store/callStore';
 import useAuthStore from '../store/authStore';
 import useCategoryStore from '../store/categoryStore';
+import useClickOutside from '../hooks/useClickOutside';
 
 const CallCard = ({ call }) => {
   const [showAssign, setShowAssign] = useState(false);
@@ -23,6 +24,17 @@ const CallCard = ({ call }) => {
   const { updateCall } = useCallStore();
   const { user, users, token } = useAuthStore();
   const { categories, fetchCategories } = useCategoryStore();
+
+  const assignModalRef = useClickOutside(() => {
+    setShowAssign(false);
+    setSelectedWorker('');
+    setEngineerRemark('');
+  });
+  const editModalRef = useClickOutside(() => setShowEdit(false));
+  const completeModalRef = useClickOutside(() => {
+    setShowComplete(false);
+    setRemark('');
+  });
   
   const canAssign = ['HOST', 'ADMIN'].includes(user?.role) && call.status !== 'COMPLETED';
   const canEdit = user?.role === 'HOST' && call.status !== 'COMPLETED';
@@ -273,7 +285,7 @@ const CallCard = ({ call }) => {
 
       {showAssign && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
+          <div ref={assignModalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">{call.assignedTo ? 'Reassign Call' : 'Assign Call'}</h2>
             <p className="text-gray-600 mb-4">
               {call.assignedTo ? `Currently assigned to: ${call.assignedTo}` : 'Select a worker to assign this call to:'}
@@ -330,7 +342,7 @@ const CallCard = ({ call }) => {
 
       {showEdit && (
         <div key={`edit-${call.id}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div ref={editModalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">Edit Call Details</h2>
             
             <form onSubmit={handleEditSave} className="space-y-4">
@@ -434,7 +446,7 @@ const CallCard = ({ call }) => {
 
       {showComplete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
+          <div ref={completeModalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Complete Call</h2>
             <p className="text-gray-600 mb-4">
               Are you sure you want to mark this call as completed?

@@ -1,11 +1,14 @@
 import React from 'react';
+import useClickOutside from '../hooks/useClickOutside';
 
 const ConfirmDialog = ({ isOpen, title, message, onConfirm, onCancel }) => {
+  const modalRef = useClickOutside(() => onCancel());
+  
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl animate-slideIn">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn p-4">
+      <div ref={modalRef} className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl animate-slideIn">
         <h2 className="text-xl font-bold mb-4 text-gray-900">{title}</h2>
         <p className="text-gray-700 mb-6">{message}</p>
         

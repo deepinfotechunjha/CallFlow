@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import useCallStore from '../store/callStore';
 import useAuthStore from '../store/authStore';
 import useCategoryStore from '../store/categoryStore';
+import useClickOutside from '../hooks/useClickOutside';
 import apiClient from '../api/apiClient';
 import toast from 'react-hot-toast';
 
@@ -25,6 +26,14 @@ const AddCallForm = ({ onClose }) => {
   const { user, users } = useAuthStore();
   const { categories, fetchCategories } = useCategoryStore();
   const canAssign = user?.role === 'HOST' || user?.role === 'ADMIN';
+
+  const modalRef = useClickOutside(() => {
+    if (!showDuplicateModal) onClose();
+  });
+  const duplicateModalRef = useClickOutside(() => {
+    setShowDuplicateModal(false);
+    setIsSubmitting(false);
+  });
 
   useEffect(() => {
     fetchCategories();
@@ -125,7 +134,7 @@ const AddCallForm = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div ref={modalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg sm:text-xl font-bold">Add New Call</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-xl">✕</button>
@@ -239,7 +248,7 @@ const AddCallForm = ({ onClose }) => {
         {/* Duplicate Detection Modal */}
         {showDuplicateModal && duplicateCall && (
           <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-60 p-4">
-            <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div ref={duplicateModalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
               <h3 className="text-base sm:text-lg font-bold mb-4 text-orange-600">Similar Call Found!</h3>
               
               <div className="mb-4 p-3 bg-gray-50 rounded">

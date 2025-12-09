@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
+import useClickOutside from '../hooks/useClickOutside';
 
 const ExportModal = ({ onClose, onExport, totalCount, filteredCount, title = "Export Data" }) => {
   const [step, setStep] = useState(1);
   const [exportType, setExportType] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+
+  const modalRef = useClickOutside(() => onClose());
 
   const handleContinue = () => {
     if (!exportType) {
@@ -25,7 +28,7 @@ const ExportModal = ({ onClose, onExport, totalCount, filteredCount, title = "Ex
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+      <div ref={modalRef} className="bg-white rounded-lg p-6 w-full max-w-md">
         {step === 1 ? (
           <>
             <h2 className="text-xl font-bold mb-4">{title}</h2>

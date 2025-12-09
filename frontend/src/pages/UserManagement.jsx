@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import useAuthStore from '../store/authStore';
 import useCallStore from '../store/callStore';
+import useClickOutside from '../hooks/useClickOutside';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ExportModal from '../components/ExportModal';
 import { exportUsersToExcel } from '../utils/excelExport';
@@ -40,6 +41,19 @@ const UserManagement = () => {
   
   const { users, fetchUsers, createUser, updateUser, deleteUser, user, token } = useAuthStore();
   const { calls } = useCallStore();
+
+  const secretModalRef = useClickOutside(() => {
+    if (showSecretModal) window.history.back();
+  });
+  const addModalRef = useClickOutside(() => setShowAddForm(false));
+  const editModalRef = useClickOutside(() => setShowEditForm(false));
+  const actionSecretModalRef = useClickOutside(() => {
+    setShowActionSecretModal(false);
+    setActionSecretPassword('');
+    setPendingAction(null);
+  });
+  const hostLimitModalRef = useClickOutside(() => setShowHostLimitAlert(false));
+  const successModalRef = useClickOutside(() => setShowSuccessAlert(false));
 
   useEffect(() => {
     if (hasAccess) {
@@ -259,7 +273,7 @@ const UserManagement = () => {
       <div className="max-w-6xl mx-auto">
         {showSecretModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div ref={secretModalRef} className="bg-white rounded-lg p-6 w-full max-w-md">
               <h2 className="text-xl font-bold mb-4">User Management Access</h2>
               <p className="text-gray-600 mb-4">
                 Enter your secret password to access user management:
@@ -382,7 +396,7 @@ const UserManagement = () => {
       {/* Add User Modal */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
+          <div ref={addModalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg sm:text-xl font-bold">Add New User</h2>
               <button
@@ -467,7 +481,7 @@ const UserManagement = () => {
       {/* Edit User Modal */}
       {showEditForm && editingUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
+          <div ref={editModalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg sm:text-xl font-bold">Edit User</h2>
               <button
@@ -552,7 +566,7 @@ const UserManagement = () => {
       {/* Action Secret Password Modal */}
       {showActionSecretModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div ref={actionSecretModalRef} className="bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Confirm Action</h2>
             <p className="text-gray-600 mb-4">
               Enter your secret password to confirm this action:
@@ -610,8 +624,8 @@ const UserManagement = () => {
 
       {/* HOST Limit Alert Modal */}
       {showHostLimitAlert && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div ref={hostLimitModalRef} className="bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4 text-red-600">HOST Limit Reached</h2>
             <p className="text-gray-700 mb-6">{hostLimitMessage}</p>
             <button
@@ -626,8 +640,8 @@ const UserManagement = () => {
 
       {/* Success Alert Modal */}
       {showSuccessAlert && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div ref={successModalRef} className="bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4 text-green-600">Success</h2>
             <p className="text-gray-700 mb-6">{successMessage}</p>
             <button

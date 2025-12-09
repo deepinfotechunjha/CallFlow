@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import useCallStore from '../store/callStore';
 import useAuthStore from '../store/authStore';
 import useCategoryStore from '../store/categoryStore';
+import useClickOutside from '../hooks/useClickOutside';
 
 const CallTable = ({ calls }) => {
   const [showAssign, setShowAssign] = useState({});
@@ -17,6 +18,24 @@ const CallTable = ({ calls }) => {
   const { updateCall } = useCallStore();
   const { user, users, token } = useAuthStore();
   const { categories, fetchCategories } = useCategoryStore();
+
+  const detailModalRef = useClickOutside(() => setSelectedCall(null));
+  const editModalRefs = {};
+  const assignModalRefs = {};
+  const completeModalRefs = {};
+  
+  calls.forEach(call => {
+    editModalRefs[call.id] = useClickOutside(() => setShowEdit(prev => ({ ...prev, [call.id]: false })));
+    assignModalRefs[call.id] = useClickOutside(() => {
+      setShowAssign(prev => ({ ...prev, [call.id]: false }));
+      setSelectedWorker(prev => ({ ...prev, [call.id]: '' }));
+      setEngineerRemark(prev => ({ ...prev, [call.id]: '' }));
+    });
+    completeModalRefs[call.id] = useClickOutside(() => {
+      setShowComplete(prev => ({ ...prev, [call.id]: false }));
+      setRemark(prev => ({ ...prev, [call.id]: '' }));
+    });
+  });
 
   useEffect(() => {
     fetchCategories();
@@ -308,7 +327,7 @@ const CallTable = ({ calls }) => {
 
         return (
           <div key={`edit-${callId}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div ref={editModalRefs[parseInt(callId)]} className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
               <h2 className="text-xl font-bold mb-4">Edit Call Details</h2>
               
               <form onSubmit={(e) => handleEditSave(parseInt(callId), e)} className="space-y-4">
@@ -431,7 +450,7 @@ const CallTable = ({ calls }) => {
 
         return (
           <div key={`assign-${callId}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
+            <div ref={assignModalRefs[parseInt(callId)]} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
               <h2 className="text-xl font-bold mb-4">{call.assignedTo ? 'Reassign Call' : 'Assign Call'}</h2>
               <p className="text-gray-600 mb-4">
                 {call.assignedTo ? `Currently assigned to: ${call.assignedTo}` : 'Select a worker to assign this call to:'}
@@ -496,7 +515,7 @@ const CallTable = ({ calls }) => {
 
         return (
           <div key={`complete-${callId}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div ref={completeModalRefs[parseInt(callId)]} className="bg-white rounded-lg p-6 w-full max-w-md">
               <h2 className="text-xl font-bold mb-4">Complete Call</h2>
               <p className="text-gray-600 mb-4">
                 Are you sure you want to mark this call as completed?
@@ -541,7 +560,7 @@ const CallTable = ({ calls }) => {
       {/* Call Detail Modal */}
       {selectedCall && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div ref={detailModalRef} className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-gray-900">Call Details</h2>
               <button
