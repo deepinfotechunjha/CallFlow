@@ -174,18 +174,20 @@ const CallTable = ({ calls }) => {
   return (
     <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-xl overflow-hidden border border-gray-200">
       <div className="w-full">
-        <table className="w-full table-fixed divide-y divide-gray-300">
+        <table className="w-full divide-y divide-gray-300">
           <thead className="bg-gradient-to-r from-blue-600 to-purple-600">
             <tr>
-              <th className="w-16 px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500">Sr.No</th>
-              <th className="w-32 px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500">Customer & Address</th>
-              <th className="w-32 px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500">Phone & Email</th>
-              <th className="w-24 px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500">Category</th>
-              <th className="w-40 px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500">Problem</th>
-              <th className="w-28 px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500">Status</th>
-              <th className="w-32 px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500">Assignment</th>
-              <th className="w-28 px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500">Date & Time</th>
-              <th className="w-24 px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Actions</th>
+              <th className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500" style={{width: '4%'}}>Sr.No</th>
+              <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500" style={{width: '15%'}}>Customer & Address</th>
+              <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500" style={{width: '12%'}}>Phone & Email</th>
+              <th className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500" style={{width: '8%'}}>Category</th>
+              <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500" style={{width: '20%'}}>Problem</th>
+              <th className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500" style={{width: '8%'}}>Status</th>
+              <th className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500" style={{width: '10%'}}>Assignment</th>
+              <th className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500" style={{width: '8%'}}>Date & Time</th>
+              <th className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden lg:table-cell" style={{width: '7%'}}>Engineer Remark</th>
+              <th className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden lg:table-cell" style={{width: '7%'}}>Completion Remark</th>
+              <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider" style={{width: '6%'}}>Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -200,84 +202,79 @@ const CallTable = ({ calls }) => {
                     index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
                   }`} onClick={() => setSelectedCall(call)}>
                     <td className="px-2 py-4 border-r border-gray-200">
-                      <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold rounded-full text-xs">
+                      <div className="flex items-center justify-center w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold rounded-full text-xs">
                         {index + 1}
                       </div>
                     </td>
                     <td className="px-3 py-4 border-r border-gray-200">
                       <div className="space-y-1">
-                        <div className="text-xs text-gray-500 font-medium">Customer:</div>
-                        <div className="text-sm font-semibold text-gray-900 truncate">{call?.customerName}</div>
+                        <div className="text-sm font-semibold text-gray-900">{call?.customerName}</div>
                         {call?.address && (
-                          <>
-                            <div className="text-xs text-gray-500 font-medium">Address:</div>
-                            <div className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded break-words">{call?.address}</div>
-                          </>
+                          <div className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">{call?.address}</div>
                         )}
                       </div>
                     </td>
                     <td className="px-3 py-4 border-r border-gray-200">
                       <div className="space-y-1">
-                        <div className="text-xs text-gray-500 font-medium">Phone:</div>
-                        <div className="text-sm font-medium text-gray-900 bg-blue-50 px-2 py-1 rounded truncate">{call?.phone}</div>
+                        <div className="text-sm font-medium text-gray-900 bg-blue-50 px-2 py-1 rounded">{call?.phone}</div>
                         {call?.email && (
-                          <>
-                            <div className="text-xs text-gray-500 font-medium">Email:</div>
-                            <div className="text-[10px] text-gray-600 bg-green-50 px-2 py-1 rounded whitespace-nowrap">{call?.email}</div>
-                          </>
+                          <div className="text-xs text-gray-600 bg-green-50 px-2 py-1 rounded">{call?.email}</div>
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-4 border-r border-gray-200">
-                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-800 border border-indigo-200 truncate">
+                    <td className="px-2 py-4 border-r border-gray-200">
+                      <span className="inline-block px-1 py-1 text-xs font-semibold rounded bg-indigo-100 text-indigo-800 truncate" title={call.category}>
                         {call.category}
                       </span>
                     </td>
                     <td className="px-3 py-4 border-r border-gray-200">
-                      <div className="text-xs text-gray-900 bg-yellow-50 p-2 rounded border-l-4 border-yellow-400 break-words" title={call.problem}>{call.problem}</div>
+                      <div className="text-xs text-gray-900 bg-yellow-50 p-2 rounded border-l-4 border-yellow-400 leading-relaxed" style={{maxHeight: '60px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical'}} title={call.problem}>
+                        {call.problem}
+                      </div>
                     </td>
-                    <td className="px-3 py-4 border-r border-gray-200">
+                    <td className="px-2 py-4 border-r border-gray-200">
                       <div className="flex flex-col gap-1">
                         {getStatusTags(call).map((tag, tagIndex) => (
-                          <span key={tagIndex} className={`inline-flex px-2 py-1 text-xs font-bold rounded-full shadow-sm ${tag.color} border truncate`}>
+                          <span key={tagIndex} className={`inline-flex px-1 py-1 text-xs font-bold rounded ${tag.color} truncate`}>
                             {tag.label}
                           </span>
                         ))}
                         {call.callCount > 1 && (
-                          <span className={`inline-flex px-2 py-1 text-xs font-bold rounded-full shadow-sm border truncate ${
-                            call.callCount === 2 ? 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border-yellow-300' :
-                            call.callCount === 3 ? 'bg-gradient-to-r from-orange-100 to-orange-200 text-orange-800 border-orange-300' :
-                            'bg-gradient-to-r from-red-100 to-red-200 text-red-800 border-red-300'
+                          <span className={`inline-flex px-1 py-1 text-xs font-bold rounded truncate ${
+                            call.callCount === 2 ? 'bg-yellow-100 text-yellow-800' :
+                            call.callCount === 3 ? 'bg-orange-100 text-orange-800' :
+                            'bg-red-100 text-red-800'
                           }`}>
                             {call.callCount}x
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-4 border-r border-gray-200">
+                    <td className="px-2 py-4 border-r border-gray-200">
                       <div className="space-y-1">
-                        <div className="text-xs text-gray-500 font-medium">Created By:</div>
-                        <div className="bg-gray-100 px-2 py-1 rounded text-xs font-medium text-gray-900 truncate">{call.createdBy}</div>
+                        <div className="bg-gray-100 px-1 py-1 rounded text-xs font-medium text-gray-900 truncate" title={call.createdBy}>{call.createdBy}</div>
                         {call.assignedTo && (
-                          <>
-                            <div className="text-xs text-gray-500 font-medium">Assigned To:</div>
-                            <div className="bg-green-100 px-2 py-1 rounded text-xs font-medium text-green-800 truncate">{call.assignedTo}</div>
-                          </>
+                          <div className="bg-green-100 px-1 py-1 rounded text-xs font-medium text-green-800 truncate" title={call.assignedTo}>{call.assignedTo}</div>
                         )}
                         {call.completedBy && (
-                          <>
-                            <div className="text-xs text-gray-500 font-medium">Completed By:</div>
-                            <div className="bg-blue-100 px-2 py-1 rounded text-xs font-medium text-blue-800 truncate">{call.completedBy}</div>
-                          </>
+                          <div className="bg-blue-100 px-1 py-1 rounded text-xs font-medium text-blue-800 truncate" title={call.completedBy}>{call.completedBy}</div>
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-4 border-r border-gray-200">
-                      <div className="bg-gradient-to-r from-gray-100 to-gray-200 p-2 rounded space-y-1">
-                        <div className="text-xs text-gray-500 font-medium">Date:</div>
+                    <td className="px-2 py-4 border-r border-gray-200">
+                      <div className="bg-gray-100 p-1 rounded space-y-1">
                         <div className="text-xs font-medium text-gray-900">{new Date(call.createdAt).toLocaleDateString()}</div>
-                        <div className="text-xs text-gray-500 font-medium">Time:</div>
                         <div className="text-xs text-gray-600">{new Date(call.createdAt).toLocaleTimeString()}</div>
+                      </div>
+                    </td>
+                    <td className="px-2 py-4 border-r border-gray-200 hidden lg:table-cell">
+                      <div className="text-xs text-gray-700 bg-blue-50 p-1 rounded truncate" title={call.engineerRemark || 'No instructions'}>
+                        {call.engineerRemark ? (call.engineerRemark.length > 25 ? call.engineerRemark.substring(0, 25) + '...' : call.engineerRemark) : '-'}
+                      </div>
+                    </td>
+                    <td className="px-2 py-4 border-r border-gray-200 hidden lg:table-cell">
+                      <div className="text-xs text-gray-700 bg-green-50 p-1 rounded truncate" title={call.remark || 'No completion remark'}>
+                        {call.remark ? (call.remark.length > 25 ? call.remark.substring(0, 25) + '...' : call.remark) : '-'}
                       </div>
                     </td>
                     <td className="px-3 py-4 text-sm font-medium" onClick={(e) => e.stopPropagation()}>

@@ -608,6 +608,7 @@ app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
         problem, 
         category, 
         assignedTo, 
+        engineerRemark,
         createdBy
     } = req.body as any;
 
@@ -651,6 +652,7 @@ app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
                     category,
                     status: assignedTo ? 'ASSIGNED' : 'PENDING',
                     assignedTo: assignedTo || null,
+                    engineerRemark: engineerRemark || null,
                     createdBy: req.user?.username || createdBy || 'system',
                     customerId: customer?.id || null,
                 }

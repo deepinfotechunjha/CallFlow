@@ -14,7 +14,8 @@ const AddCallForm = ({ onClose }) => {
     address: '',
     problem: '',
     category: '',
-    assignedTo: ''
+    assignedTo: '',
+    engineerRemark: ''
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -223,6 +224,20 @@ const AddCallForm = ({ onClose }) => {
                   <option key={u.id} value={u.username}>{u.username} ({u.role})</option>
                 ))}
               </select>
+            </div>
+          )}
+
+          {formData.assignedTo && (
+            <div>
+              <label className="block text-xs sm:text-sm font-medium mb-1">Engineer Instructions</label>
+              <textarea
+                value={formData.engineerRemark}
+                onChange={(e) => setFormData(prev => ({ ...prev, engineerRemark: e.target.value }))}
+                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                rows="2"
+                placeholder="Optional instructions for the assigned engineer..."
+                readOnly={!canAssign}
+              />
             </div>
           )}
 

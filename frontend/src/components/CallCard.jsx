@@ -57,6 +57,13 @@ const CallCard = ({ call }) => {
     }
   }, [showEdit, call]);
 
+  // Pre-populate engineer remark when opening assign modal
+  useEffect(() => {
+    if (showAssign && call.engineerRemark) {
+      setEngineerRemark(call.engineerRemark);
+    }
+  }, [showAssign, call.engineerRemark]);
+
  const handleAssign = async () => {
   if (selectedWorker) {
     if (!token) {
