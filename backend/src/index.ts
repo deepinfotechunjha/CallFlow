@@ -631,8 +631,9 @@ app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
                         phone,
                         email: email || null,
                         address: address || null,
-                        totalCalls: 0,
-                        lastCallDate: null
+                        outsideCalls: 0,
+                        carryInServices: 0,
+                        totalInteractions: 0
                     }
                 });
             }
@@ -658,8 +659,10 @@ app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
             customer ? prisma.customer.update({
                 where: { id: customer.id },
                 data: {
-                    totalCalls: { increment: 1 },
-                    lastCallDate: new Date()
+                    outsideCalls: { increment: 1 },
+                    totalInteractions: { increment: 1 },
+                    lastCallDate: new Date(),
+                    lastActivityDate: new Date()
                 }
             }) : prisma.$queryRaw`SELECT 1` // No-op if no customer
         ]);
@@ -803,7 +806,7 @@ app.get('/carry-in-customers/phone/:phone', authMiddleware, async (req: Request,
     const phone = req.params.phone;
     if (!phone) return res.status(400).json({ error: 'phone is required' });
     try {
-        const customer = await prisma.carryInCustomer.findUnique({ where: { phone: phone as string } });
+        const customer = await prisma.customer.findUnique({ where: { phone: phone as string } });
         if (!customer) return res.status(404).json({ error: 'Not found' });
         res.json(customer);
     } catch (err: any) {
@@ -820,11 +823,39 @@ app.get('/customers/analytics', authMiddleware, requireRole(['HOST']), async (_r
                 phone: true,
                 email: true,
                 address: true,
-                totalCalls: true,
+                outsideCalls: true,
+                carryInServices: true,
+                totalInteractions: true,
                 lastCallDate: true,
+                lastServiceDate: true,
+                lastActivityDate: true,
                 createdAt: true
             },
-            orderBy: { lastCallDate: 'desc' }
+            orderBy: { lastActivityDate: 'desc' }
+        });
+        
+        res.json(customers);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// Unified Customer Directory endpoint
+app.get('/customers/directory', authMiddleware, async (_req: Request, res: Response) => {
+    try {
+        const customers = await prisma.customer.findMany({
+            select: {
+                id: true,
+                name: true,
+                phone: true,
+                email: true,
+                outsideCalls: true,
+                carryInServices: true,
+                totalInteractions: true,
+                lastActivityDate: true,
+                createdAt: true
+            },
+            orderBy: { lastActivityDate: 'desc' }
         });
         
         res.json(customers);
@@ -1111,26 +1142,47 @@ app.post('/carry-in-services', authMiddleware, async (req: Request, res: Respons
     }
     
     try {
-        // Find or create customer
-        let customer = await prisma.carryInCustomer.findUnique({ where: { phone } });
+        // Find or create customer in unified Customer table
+        let customer = await prisma.customer.findUnique({ where: { phone } });
         if (!customer) {
-            customer = await prisma.carryInCustomer.create({
-                data: { name: customerName, phone, email: email || null, address: address || null }
+            customer = await prisma.customer.create({
+                data: { 
+                    name: customerName, 
+                    phone, 
+                    email: email || null, 
+                    address: address || null,
+                    outsideCalls: 0,
+                    carryInServices: 0,
+                    totalInteractions: 0
+                }
             });
         }
         
-        const service = await prisma.carryInService.create({
-            data: {
-                customerName,
-                phone,
-                email: email || null,
-                address: address || null,
-                category,
-                serviceDescription: serviceDescription || null,
-                customerId: customer.id,
-                createdBy: req.user?.username || 'system'
-            }
-        });
+        // Create service and update customer stats in transaction
+        const [service] = await prisma.$transaction([
+            prisma.carryInService.create({
+                data: {
+                    customerName,
+                    phone,
+                    email: email || null,
+                    address: address || null,
+                    category,
+                    serviceDescription: serviceDescription || null,
+                    customerId: customer.id,
+                    createdBy: req.user?.username || 'system'
+                }
+            }),
+            // Update customer stats
+            prisma.customer.update({
+                where: { id: customer.id },
+                data: {
+                    carryInServices: { increment: 1 },
+                    totalInteractions: { increment: 1 },
+                    lastServiceDate: new Date(),
+                    lastActivityDate: new Date()
+                }
+            })
+        ]);
         
         res.status(201).json(service);
     } catch (err: any) {

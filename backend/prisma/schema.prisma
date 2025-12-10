@@ -45,15 +45,20 @@ model Call {
 }
 
 model Customer {
-  id           Int       @id @default(autoincrement())
-  email        String?
-  address      String?
-  name         String
-  phone        String    @unique
-  createdAt    DateTime  @default(now())
-  lastCallDate DateTime?
-  totalCalls   Int       @default(0)
-  calls        Call[]
+  id                Int       @id @default(autoincrement())
+  name              String
+  phone             String    @unique
+  email             String?
+  address           String?
+  createdAt         DateTime  @default(now())
+  outsideCalls      Int       @default(0)
+  carryInServices   Int       @default(0)
+  totalInteractions Int       @default(0)
+  lastCallDate      DateTime?
+  lastServiceDate   DateTime?
+  lastActivityDate  DateTime?
+  calls             Call[]
+  services          CarryInService[]
 }
 
 model Notification {
@@ -84,33 +89,25 @@ model ServiceCategory {
   updatedAt DateTime @updatedAt
 }
 
-model CarryInCustomer {
-  id        Int              @id @default(autoincrement())
-  name      String
-  phone     String           @unique
-  email     String?
-  address   String?
-  createdAt DateTime         @default(now())
-  services  CarryInService[]
-}
+
 
 model CarryInService {
-  id                 Int              @id @default(autoincrement())
+  id                 Int       @id @default(autoincrement())
   customerName       String
   phone              String
   email              String?
   address            String?
   category           String
   serviceDescription String?
-  status             String           @default("PENDING")
+  status             String    @default("PENDING")
   customerId         Int?
   createdBy          String
-  createdAt          DateTime         @default(now())
+  createdAt          DateTime  @default(now())
   completedBy        String?
   completedAt        DateTime?
   deliveredBy        String?
   deliveredAt        DateTime?
-  customer           CarryInCustomer? @relation(fields: [customerId], references: [id])
+  customer           Customer? @relation(fields: [customerId], references: [id])
 
   @@index([phone])
   @@index([status])
