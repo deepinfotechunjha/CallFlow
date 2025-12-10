@@ -6,6 +6,7 @@ const CustomerDirectory = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   const { user } = useAuthStore();
 
   useEffect(() => {
@@ -23,7 +24,23 @@ const CustomerDirectory = () => {
     }
   };
 
-  const filteredCustomers = customers.filter(customer => {
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key) {
+      if (sortConfig.direction === 'asc') direction = 'desc';
+      else if (sortConfig.direction === 'desc') direction = null;
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (columnKey) => {
+    if (sortConfig.key !== columnKey) return '↕️';
+    if (sortConfig.direction === 'asc') return '↑';
+    if (sortConfig.direction === 'desc') return '↓';
+    return '↕️';
+  };
+
+  let filteredCustomers = customers.filter(customer => {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -32,6 +49,29 @@ const CustomerDirectory = () => {
       (customer.email && customer.email.toLowerCase().includes(query))
     );
   });
+
+  // Apply sorting
+  if (sortConfig.key && sortConfig.direction) {
+    filteredCustomers.sort((a, b) => {
+      let aVal, bVal;
+      switch (sortConfig.key) {
+        case 'customer': aVal = a.name || ''; bVal = b.name || ''; break;
+        case 'phone': aVal = a.phone || ''; bVal = b.phone || ''; break;
+        case 'outsideCalls': aVal = a.outsideCalls || 0; bVal = b.outsideCalls || 0; break;
+        case 'carryInServices': aVal = a.carryInServices || 0; bVal = b.carryInServices || 0; break;
+        case 'total': aVal = a.totalInteractions || 0; bVal = b.totalInteractions || 0; break;
+        case 'lastActivity': aVal = a.lastActivityDate || ''; bVal = b.lastActivityDate || ''; break;
+        default: return 0;
+      }
+      if (typeof aVal === 'string') {
+        if (sortConfig.direction === 'asc') return aVal.localeCompare(bVal);
+        return bVal.localeCompare(aVal);
+      } else {
+        if (sortConfig.direction === 'asc') return aVal - bVal;
+        return bVal - aVal;
+      }
+    });
+  }
 
   if (loading) {
     return (
@@ -103,23 +143,23 @@ const CustomerDirectory = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Customer
+              <th onClick={() => handleSort('customer')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                1. Customer {getSortIcon('customer')}
               </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Phone
+              <th onClick={() => handleSort('phone')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                2. Phone {getSortIcon('phone')}
               </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Outside Calls
+              <th onClick={() => handleSort('outsideCalls')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                3. Outside Calls {getSortIcon('outsideCalls')}
               </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Carry-In Services
+              <th onClick={() => handleSort('carryInServices')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                4. Carry-In Services {getSortIcon('carryInServices')}
               </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Total
+              <th onClick={() => handleSort('total')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                5. Total {getSortIcon('total')}
               </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Last Activity
+              <th onClick={() => handleSort('lastActivity')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                6. Last Activity {getSortIcon('lastActivity')}
               </th>
             </tr>
           </thead>

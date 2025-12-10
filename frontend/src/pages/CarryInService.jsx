@@ -9,6 +9,7 @@ const CarryInService = () => {
   const [filter, setFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL_CATEGORIES');
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   const [formData, setFormData] = useState({
     customerName: '',
     phone: '',
@@ -89,7 +90,23 @@ const CarryInService = () => {
     }
   };
 
-  const filteredServices = services.filter(service => {
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key) {
+      if (sortConfig.direction === 'asc') direction = 'desc';
+      else if (sortConfig.direction === 'desc') direction = null;
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (columnKey) => {
+    if (sortConfig.key !== columnKey) return '↕️';
+    if (sortConfig.direction === 'asc') return '↑';
+    if (sortConfig.direction === 'desc') return '↓';
+    return '↕️';
+  };
+
+  let filteredServices = services.filter(service => {
     // Status filter
     if (filter === 'ALL') ;
     else if (filter === 'PENDING' && service.status !== 'PENDING') return false;
@@ -112,6 +129,24 @@ const CarryInService = () => {
     
     return true;
   });
+
+  // Apply sorting
+  if (sortConfig.key && sortConfig.direction) {
+    filteredServices.sort((a, b) => {
+      let aVal, bVal;
+      switch (sortConfig.key) {
+        case 'customer': aVal = a.customerName || ''; bVal = b.customerName || ''; break;
+        case 'phone': aVal = a.phone || ''; bVal = b.phone || ''; break;
+        case 'category': aVal = a.category || ''; bVal = b.category || ''; break;
+        case 'description': aVal = a.serviceDescription || ''; bVal = b.serviceDescription || ''; break;
+        case 'status': aVal = a.status || ''; bVal = b.status || ''; break;
+        case 'users': aVal = a.createdBy || ''; bVal = b.createdBy || ''; break;
+        default: return 0;
+      }
+      if (sortConfig.direction === 'asc') return aVal.localeCompare(bVal);
+      return bVal.localeCompare(aVal);
+    });
+  }
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -253,13 +288,27 @@ const CarryInService = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Users</th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th onClick={() => handleSort('customer')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                1. Customer {getSortIcon('customer')}
+              </th>
+              <th onClick={() => handleSort('phone')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                2. Phone {getSortIcon('phone')}
+              </th>
+              <th onClick={() => handleSort('category')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                3. Category {getSortIcon('category')}
+              </th>
+              <th onClick={() => handleSort('description')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                4. Description {getSortIcon('description')}
+              </th>
+              <th onClick={() => handleSort('status')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                5. Status {getSortIcon('status')}
+              </th>
+              <th onClick={() => handleSort('users')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                6. Users {getSortIcon('users')}
+              </th>
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                7. Actions
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
