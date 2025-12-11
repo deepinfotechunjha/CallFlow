@@ -368,13 +368,23 @@ const CustomerDirectory = () => {
                   </td>
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {customer.createdAt 
-                      ? new Date(customer.createdAt).toLocaleDateString()
+                      ? (
+                        <div>
+                          <div>{new Date(customer.createdAt).toLocaleDateString()}</div>
+                          <div className="text-xs text-gray-400">{new Date(customer.createdAt).toLocaleTimeString()}</div>
+                        </div>
+                      )
                       : 'N/A'
                     }
                   </td>
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {customer.lastActivityDate 
-                      ? new Date(customer.lastActivityDate).toLocaleDateString()
+                      ? (
+                        <div>
+                          <div>{new Date(customer.lastActivityDate).toLocaleDateString()}</div>
+                          <div className="text-xs text-gray-400">{new Date(customer.lastActivityDate).toLocaleTimeString()}</div>
+                        </div>
+                      )
                       : 'Never'
                     }
                   </td>

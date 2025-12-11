@@ -218,20 +218,20 @@ const CallTable = ({ calls }) => {
   return (
     <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-xl overflow-hidden border border-gray-200">
       <div className="w-full overflow-x-auto">
-        <table className="w-full table-auto divide-y divide-gray-300">
+        <table className="w-full table-fixed divide-y divide-gray-300">
           <thead className="bg-gradient-to-r from-blue-600 to-purple-600">
             <tr>
-              <th className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500" style={{width: '3%'}}>#</th>
-              <th onClick={() => handleSort('customer')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '18%'}}>Customer & Address {getSortIcon('customer')}</th>
-              <th onClick={() => handleSort('phone')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '13%'}}>Phone & Email {getSortIcon('phone')}</th>
-              <th onClick={() => handleSort('category')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '9%'}}>Category {getSortIcon('category')}</th>
-              <th onClick={() => handleSort('problem')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '22%'}}>Problem {getSortIcon('problem')}</th>
-              <th onClick={() => handleSort('status')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '9%'}}>Status {getSortIcon('status')}</th>
-              <th onClick={() => handleSort('assignment')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '11%'}}>Assignment {getSortIcon('assignment')}</th>
-              <th onClick={() => handleSort('date')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '9%'}}>Date & Time {getSortIcon('date')}</th>
-              <th onClick={() => handleSort('engineerRemark')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden lg:table-cell cursor-pointer hover:bg-blue-700" style={{width: '8%'}}>Engineer Remark {getSortIcon('engineerRemark')}</th>
-              <th onClick={() => handleSort('completionRemark')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden lg:table-cell cursor-pointer hover:bg-blue-700" style={{width: '8%'}}>Completion Remark {getSortIcon('completionRemark')}</th>
-              <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider" style={{width: '7%'}}>Actions</th>
+              <th className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500" style={{width: '4%'}}>#</th>
+              <th onClick={() => handleSort('customer')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '20%'}}>Customer & Address {getSortIcon('customer')}</th>
+              <th onClick={() => handleSort('phone')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '14%'}}>Phone & Email {getSortIcon('phone')}</th>
+              <th onClick={() => handleSort('category')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '8%'}}>Category {getSortIcon('category')}</th>
+              <th onClick={() => handleSort('problem')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '20%'}}>Problem {getSortIcon('problem')}</th>
+              <th onClick={() => handleSort('status')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '7%'}}>Status {getSortIcon('status')}</th>
+              <th onClick={() => handleSort('assignment')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '10%'}}>Assignment {getSortIcon('assignment')}</th>
+              <th onClick={() => handleSort('date')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '8%'}}>Date & Time {getSortIcon('date')}</th>
+              <th onClick={() => handleSort('engineerRemark')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden lg:table-cell cursor-pointer hover:bg-blue-700" style={{width: '7%'}}>Engineer Remark {getSortIcon('engineerRemark')}</th>
+              <th onClick={() => handleSort('completionRemark')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden lg:table-cell cursor-pointer hover:bg-blue-700" style={{width: '7%'}}>Completion Remark {getSortIcon('completionRemark')}</th>
+              <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider" style={{width: '8%'}}>Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -278,11 +278,24 @@ const CallTable = ({ calls }) => {
                     </td>
                     <td className="px-1 py-3 border-r border-gray-200">
                       <div className="flex flex-col gap-1">
-                        {getStatusTags(call).slice(0, 1).map((tag, tagIndex) => (
-                          <span key={tagIndex} className={`inline-flex px-1 py-1 text-xs font-bold rounded ${tag.color} truncate`}>
-                            {tag.label.slice(0, 4)}
+                        {call.status === 'ASSIGNED' ? (
+                          <>
+                            <span className="inline-flex px-1 py-1 text-xs font-bold rounded bg-yellow-100 text-yellow-800 truncate">
+                              PEND
+                            </span>
+                            <span className="inline-flex px-1 py-1 text-xs font-bold rounded bg-blue-100 text-blue-800 truncate">
+                              ASSGN
+                            </span>
+                          </>
+                        ) : call.status === 'COMPLETED' ? (
+                          <span className="inline-flex px-1 py-1 text-xs font-bold rounded bg-green-100 text-green-800 truncate">
+                            COMP
                           </span>
-                        ))}
+                        ) : (
+                          <span className="inline-flex px-1 py-1 text-xs font-bold rounded bg-yellow-100 text-yellow-800 truncate">
+                            PEND
+                          </span>
+                        )}
                         {call.callCount > 1 && (
                           <span className={`inline-flex px-1 py-1 text-xs font-bold rounded truncate ${
                             call.callCount === 2 ? 'bg-yellow-100 text-yellow-800' :
