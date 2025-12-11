@@ -295,17 +295,17 @@ const CallCard = ({ call }) => {
           <div ref={assignModalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">{call.assignedTo ? 'Reassign Call' : 'Assign Call'}</h2>
             <p className="text-gray-600 mb-4">
-              {call.assignedTo ? `Currently assigned to: ${call.assignedTo}` : 'Select a worker to assign this call to:'}
+              {call.assignedTo ? `Currently assigned to: ${call.assignedTo}` : 'Select an engineer to assign this call to:'}
             </p>
             
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Select Worker *</label>
+              <label className="block text-sm font-medium mb-1">Select Engineer *</label>
               <select
                 value={selectedWorker}
                 onChange={(e) => setSelectedWorker(e.target.value)}
                 className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Select Worker</option>
+                <option value="">Select Engineer</option>
                 {users.filter(u => u.role === 'USER').map(u => (
                   <option key={u.id} value={u.username}>{u.username}</option>
                 ))}

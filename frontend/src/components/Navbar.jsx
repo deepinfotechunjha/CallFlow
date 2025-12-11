@@ -56,7 +56,7 @@ const Navbar = () => {
                     to="/users"
                     className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap"
                   >
-                    User Management
+                    Engineer Management
                   </Link>
                   <Link
                     to="/customers"
@@ -139,7 +139,7 @@ const Navbar = () => {
                     onClick={() => setShowMobileMenu(false)}
                     className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
                   >
-                    User Management
+                    Engineer Management
                   </Link>
                   <Link
                     to="/customers"

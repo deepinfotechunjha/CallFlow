@@ -234,9 +234,9 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Search Bar - Second */}
-        <div className="mb-4">
-          <div className="relative">
+        {/* Search Bar and Filters - Same Row */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <div className="relative flex-1 min-w-[200px]">
             <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
             <input
               type="text"
@@ -254,14 +254,11 @@ const Dashboard = () => {
               </button>
             )}
           </div>
-        </div>
-
-        {/* Dropdown Filters - Third */}
-        <div className="flex flex-wrap items-center gap-2 mb-4">
+          
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border rounded-lg text-xs focus:ring-2 focus:ring-blue-500 bg-white"
+            className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white min-w-[120px]"
           >
             <option value="ALL_STATUS">All Status</option>
             <option value="PENDING">Pending</option>
@@ -272,7 +269,7 @@ const Dashboard = () => {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3 py-2 border rounded-lg text-xs focus:ring-2 focus:ring-blue-500 bg-white"
+            className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white min-w-[140px]"
           >
             <option value="ALL_CATEGORIES">All Categories</option>
             {uniqueCategories.map(cat => (
@@ -287,13 +284,13 @@ const Dashboard = () => {
                 setStatusFilter('ALL_STATUS');
                 setCategoryFilter('ALL_CATEGORIES');
               }}
-              className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-300"
+              className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300"
             >
               Clear
             </button>
           )}
           
-          <div className="ml-auto text-xs text-gray-600">
+          <div className="text-sm text-gray-600 whitespace-nowrap">
             {filteredCalls.length} of {calls.length}
           </div>
         </div>
