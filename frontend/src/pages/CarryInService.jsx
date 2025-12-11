@@ -288,39 +288,45 @@ const CarryInService = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Sr.No
+              </th>
               <th onClick={() => handleSort('customer')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                1. Customer {getSortIcon('customer')}
+                Customer {getSortIcon('customer')}
               </th>
               <th onClick={() => handleSort('phone')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                2. Phone {getSortIcon('phone')}
+                Phone {getSortIcon('phone')}
               </th>
               <th onClick={() => handleSort('category')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                3. Category {getSortIcon('category')}
+                Category {getSortIcon('category')}
               </th>
               <th onClick={() => handleSort('description')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                4. Description {getSortIcon('description')}
+                Description {getSortIcon('description')}
               </th>
               <th onClick={() => handleSort('status')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                5. Status {getSortIcon('status')}
+                Status {getSortIcon('status')}
               </th>
               <th onClick={() => handleSort('users')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                6. Users {getSortIcon('users')}
+                Users {getSortIcon('users')}
               </th>
               <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                7. Actions
+                Actions
               </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredServices.length === 0 ? (
               <tr>
-                <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
+                <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
                   No services found
                 </td>
               </tr>
             ) : (
-              filteredServices.map((service) => (
+              filteredServices.map((service, index) => (
                 <tr key={service.id}>
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {index + 1}
+                  </td>
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                     <div>
                       <div className="text-sm font-medium text-gray-900">{service.customerName}</div>
