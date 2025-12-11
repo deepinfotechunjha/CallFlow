@@ -396,7 +396,7 @@ app.put('/calls/:id', authMiddleware, requireRole(['HOST']), async (req: Request
     }
 });
 
-// Assign or reassign call to worker
+// Assign or reassign call to engineer
 app.post('/calls/:id/assign', authMiddleware, requireRole(['HOST', 'ADMIN']), async (req: Request, res: Response) => {
     const callId = parseInt(req.params.id || '');
     const { assignee, engineerRemark } = req.body;

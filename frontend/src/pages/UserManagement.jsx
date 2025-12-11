@@ -315,7 +315,7 @@ const UserManagement = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">User Management</h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Engineer Management</h1>
         <div className="flex gap-2 w-full sm:w-auto">
           {user?.role === 'HOST' && (
             <button
@@ -329,7 +329,7 @@ const UserManagement = () => {
             onClick={() => setShowAddForm(true)}
             className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm sm:text-base"
           >
-            + Add User
+            + Add Engineer
           </button>
         </div>
       </div>
@@ -398,7 +398,7 @@ const UserManagement = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div ref={addModalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg sm:text-xl font-bold">Add New User</h2>
+              <h2 className="text-lg sm:text-xl font-bold">Add New Engineer</h2>
               <button
                 onClick={() => setShowAddForm(false)}
                 className="text-gray-500 hover:text-gray-700"
@@ -438,7 +438,7 @@ const UserManagement = () => {
                   className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
                   required
                 >
-                  <option value="USER">Worker (USER)</option>
+                  <option value="USER">Engineer (USER)</option>
                   {canCreateAdmin && <option value="ADMIN">Admin</option>}
                   {user?.role === 'HOST' && <option value="HOST">Host</option>}
                 </select>
@@ -463,7 +463,7 @@ const UserManagement = () => {
                   type="submit"
                   className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 text-sm"
                 >
-                  Create User
+                  Create Engineer
                 </button>
                 <button
                   type="button"
@@ -483,7 +483,7 @@ const UserManagement = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div ref={editModalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg sm:text-xl font-bold">Edit User</h2>
+              <h2 className="text-lg sm:text-xl font-bold">Edit Engineer</h2>
               <button
                 onClick={() => setShowEditForm(false)}
                 className="text-gray-500 hover:text-gray-700"
@@ -523,7 +523,7 @@ const UserManagement = () => {
                   className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
                   required
                 >
-                  <option value="USER">Worker (USER)</option>
+                  <option value="USER">Engineer (USER)</option>
                   <option value="ADMIN">Admin</option>
                   <option value="HOST">Host</option>
                 </select>
@@ -548,7 +548,7 @@ const UserManagement = () => {
                   type="submit"
                   className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 text-sm"
                 >
-                  Update User
+                  Update Engineer
                 </button>
                 <button
                   type="button"

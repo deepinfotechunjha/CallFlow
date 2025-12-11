@@ -14,10 +14,54 @@ const CallTable = ({ calls }) => {
   const [isUpdating, setIsUpdating] = useState({});
   const [formData, setFormData] = useState({});
   const [selectedCall, setSelectedCall] = useState(null);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   
   const { updateCall } = useCallStore();
   const { user, users, token } = useAuthStore();
   const { categories, fetchCategories } = useCategoryStore();
+
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key) {
+      if (sortConfig.direction === 'asc') direction = 'desc';
+      else if (sortConfig.direction === 'desc') direction = null;
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (columnKey) => {
+    if (sortConfig.key !== columnKey) return '↕️';
+    if (sortConfig.direction === 'asc') return '↑';
+    if (sortConfig.direction === 'desc') return '↓';
+    return '↕️';
+  };
+
+  // Apply sorting to calls
+  let sortedCalls = [...calls];
+  if (sortConfig.key && sortConfig.direction) {
+    sortedCalls.sort((a, b) => {
+      let aVal, bVal;
+      switch (sortConfig.key) {
+        case 'customer': aVal = a.customerName || ''; bVal = b.customerName || ''; break;
+        case 'phone': aVal = a.phone || ''; bVal = b.phone || ''; break;
+        case 'category': aVal = a.category || ''; bVal = b.category || ''; break;
+        case 'problem': aVal = a.problem || ''; bVal = b.problem || ''; break;
+        case 'status': aVal = a.status || ''; bVal = b.status || ''; break;
+        case 'assignment': aVal = a.createdBy || ''; bVal = b.createdBy || ''; break;
+        case 'date': aVal = new Date(a.createdAt); bVal = new Date(b.createdAt); break;
+        case 'engineerRemark': aVal = a.engineerRemark || ''; bVal = b.engineerRemark || ''; break;
+        case 'completionRemark': aVal = a.remark || ''; bVal = b.remark || ''; break;
+        default: return 0;
+      }
+      if (aVal instanceof Date) {
+        if (sortConfig.direction === 'asc') return aVal - bVal;
+        return bVal - aVal;
+      } else {
+        if (sortConfig.direction === 'asc') return aVal.localeCompare(bVal);
+        return bVal.localeCompare(aVal);
+      }
+    });
+  }
 
   const detailModalRef = useClickOutside(() => setSelectedCall(null));
   
@@ -177,21 +221,21 @@ const CallTable = ({ calls }) => {
         <table className="w-full table-auto divide-y divide-gray-300">
           <thead className="bg-gradient-to-r from-blue-600 to-purple-600">
             <tr>
-              <th className="px-1 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 w-12">No</th>
-              <th className="px-2 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 min-w-[150px]">Customer</th>
-              <th className="px-2 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 min-w-[120px]">Contact</th>
-              <th className="px-1 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 w-20">Category</th>
-              <th className="px-2 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 min-w-[200px]">Problem</th>
-              <th className="px-1 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 w-20">Status</th>
-              <th className="px-1 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 w-24">Assignment</th>
-              <th className="px-1 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 w-20">Date</th>
-              <th className="px-1 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden xl:table-cell w-24">Eng. Remark</th>
-              <th className="px-1 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden xl:table-cell w-24">Comp. Remark</th>
-              <th className="px-2 py-3 text-left text-xs font-bold text-white uppercase tracking-wider w-20">Actions</th>
+              <th className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500" style={{width: '3%'}}>#</th>
+              <th onClick={() => handleSort('customer')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '18%'}}>Customer & Address {getSortIcon('customer')}</th>
+              <th onClick={() => handleSort('phone')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '13%'}}>Phone & Email {getSortIcon('phone')}</th>
+              <th onClick={() => handleSort('category')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '9%'}}>Category {getSortIcon('category')}</th>
+              <th onClick={() => handleSort('problem')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '22%'}}>Problem {getSortIcon('problem')}</th>
+              <th onClick={() => handleSort('status')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '9%'}}>Status {getSortIcon('status')}</th>
+              <th onClick={() => handleSort('assignment')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '11%'}}>Assignment {getSortIcon('assignment')}</th>
+              <th onClick={() => handleSort('date')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '9%'}}>Date & Time {getSortIcon('date')}</th>
+              <th onClick={() => handleSort('engineerRemark')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden lg:table-cell cursor-pointer hover:bg-blue-700" style={{width: '8%'}}>Engineer Remark {getSortIcon('engineerRemark')}</th>
+              <th onClick={() => handleSort('completionRemark')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden lg:table-cell cursor-pointer hover:bg-blue-700" style={{width: '8%'}}>Completion Remark {getSortIcon('completionRemark')}</th>
+              <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider" style={{width: '7%'}}>Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {calls.map((call, index) => {
+            {sortedCalls.map((call, index) => {
               const canAssign = ['HOST', 'ADMIN'].includes(user?.role) && call.status !== 'COMPLETED';
               const canEdit = user?.role === 'HOST' && call.status !== 'COMPLETED';
               const canComplete = call.assignedTo === user?.username || ['HOST', 'ADMIN'].includes(user?.role);
@@ -314,7 +358,7 @@ const CallTable = ({ calls }) => {
       {/* Edit Modal */}
       {Object.keys(showEdit).map(callId => {
         if (!showEdit[callId]) return null;
-        const call = calls.find(c => c.id === parseInt(callId));
+        const call = sortedCalls.find(c => c.id === parseInt(callId));
         if (!call) return null;
 
         return (
@@ -437,7 +481,7 @@ const CallTable = ({ calls }) => {
       {/* Assign Modal */}
       {Object.keys(showAssign).map(callId => {
         if (!showAssign[callId]) return null;
-        const call = calls.find(c => c.id === parseInt(callId));
+        const call = sortedCalls.find(c => c.id === parseInt(callId));
         if (!call) return null;
 
         return (
