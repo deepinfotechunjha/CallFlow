@@ -6,6 +6,8 @@ const NotificationBell = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedNotifications, setSelectedNotifications] = useState(new Set());
+  const [selectAll, setSelectAll] = useState(false);
   const { user } = useAuthStore();
 
   const fetchUnreadCount = async () => {
@@ -20,7 +22,14 @@ const NotificationBell = () => {
   const fetchNotifications = async () => {
     try {
       const response = await apiClient.get('/notifications');
-      setNotifications(response.data);
+      // Filter out notifications older than 24 hours
+      const now = new Date();
+      const filtered = response.data.filter(notification => {
+        const notificationDate = new Date(notification.createdAt);
+        const hoursDiff = (now - notificationDate) / (1000 * 60 * 60);
+        return hoursDiff <= 24;
+      });
+      setNotifications(filtered);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
     }
@@ -38,18 +47,68 @@ const NotificationBell = () => {
     }
   };
 
+  const deleteNotifications = async (notificationIds) => {
+    try {
+      await apiClient.delete('/notifications/bulk', {
+        data: { notificationIds }
+      });
+      setNotifications(prev => 
+        prev.filter(n => !notificationIds.includes(n.id))
+      );
+      setSelectedNotifications(new Set());
+      setSelectAll(false);
+      fetchUnreadCount();
+    } catch (error) {
+      console.error('Failed to delete notifications:', error);
+    }
+  };
+
+  const handleSelectNotification = (notificationId) => {
+    setSelectedNotifications(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(notificationId)) {
+        newSet.delete(notificationId);
+      } else {
+        newSet.add(notificationId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedNotifications(new Set());
+    } else {
+      setSelectedNotifications(new Set(notifications.map(n => n.id)));
+    }
+    setSelectAll(!selectAll);
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedNotifications.size > 0) {
+      deleteNotifications(Array.from(selectedNotifications));
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchUnreadCount();
       // Poll for new notifications every 30 seconds
-      const interval = setInterval(fetchUnreadCount, 30000);
+      const interval = setInterval(() => {
+        fetchUnreadCount();
+        if (showDropdown) {
+          fetchNotifications(); // Refresh notifications to remove old ones
+        }
+      }, 30000);
       return () => clearInterval(interval);
     }
-  }, [user]);
+  }, [user, showDropdown]);
 
   useEffect(() => {
     if (showDropdown) {
       fetchNotifications();
+      setSelectedNotifications(new Set());
+      setSelectAll(false);
     }
   }, [showDropdown]);
 
@@ -74,7 +133,30 @@ const NotificationBell = () => {
       {showDropdown && (
         <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-lg shadow-lg border z-50 max-h-[80vh] overflow-hidden flex flex-col">
           <div className="p-2 sm:p-3 border-b">
-            <h3 className="font-medium text-gray-900 text-sm sm:text-base">Notifications</h3>
+            <div className="flex justify-between items-center">
+              <h3 className="font-medium text-gray-900 text-sm sm:text-base">Notifications</h3>
+              {notifications.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center text-xs">
+                    <input
+                      type="checkbox"
+                      checked={selectAll}
+                      onChange={handleSelectAll}
+                      className="mr-1"
+                    />
+                    All
+                  </label>
+                  {selectedNotifications.size > 0 && (
+                    <button
+                      onClick={handleDeleteSelected}
+                      className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600"
+                    >
+                      Delete ({selectedNotifications.size})
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="flex-1 overflow-y-auto">
@@ -86,17 +168,26 @@ const NotificationBell = () => {
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-2 sm:p-3 border-b hover:bg-gray-50 cursor-pointer ${
+                  className={`p-2 sm:p-3 border-b hover:bg-gray-50 ${
                     !notification.isRead ? 'bg-blue-50' : ''
-                  }`}
-                  onClick={() => {
-                    if (!notification.isRead) {
-                      markAsRead(notification.id);
-                    }
-                  }}
+                  } ${selectedNotifications.has(notification.id) ? 'bg-yellow-50' : ''}`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
+                  <div className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedNotifications.has(notification.id)}
+                      onChange={() => handleSelectNotification(notification.id)}
+                      className="mt-1 flex-shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <div 
+                      className="flex-1 min-w-0 cursor-pointer"
+                      onClick={() => {
+                        if (!notification.isRead) {
+                          markAsRead(notification.id);
+                        }
+                      }}
+                    >
                       <p className={`text-xs sm:text-sm break-words ${!notification.isRead ? 'font-medium' : ''}`}>
                         {notification.message}
                       </p>
@@ -105,7 +196,7 @@ const NotificationBell = () => {
                       </p>
                     </div>
                     {!notification.isRead && (
-                      <div className="w-2 h-2 bg-blue-500 rounded-full ml-2 mt-1 flex-shrink-0"></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-1 flex-shrink-0"></div>
                     )}
                   </div>
                 </div>
