@@ -65,6 +65,18 @@ const UserManagement = () => {
     }
   }, [hasAccess]);
 
+  useEffect(() => {
+    // Check if current user still exists in the users list
+    if (hasAccess && users.length > 0 && user) {
+      const userExists = users.find(u => u.id === user.id);
+      if (!userExists) {
+        // Current user was deleted, logout
+        alert('Your account has been removed. You will be logged out.');
+        window.location.href = '/login';
+      }
+    }
+  }, [users, user, hasAccess]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.role === 'HOST' && !formData.secretPassword.trim()) {
@@ -170,6 +182,20 @@ const UserManagement = () => {
       const data = await response.json();
       
       if (response.ok && data.success && data.hasAccess) {
+        // Check if deleting current user
+        if (pendingAction.type === 'delete' && pendingAction.userId === user.id) {
+          setAlertMessage('You cannot delete your own account');
+          setShowAlert(true);
+          setShowActionSecretModal(false);
+          setActionSecretPassword('');
+          setPendingAction(null);
+          setIsCreating(false);
+          setIsEditing(false);
+          setIsDeleting({});
+          setIsConfirming(false);
+          return;
+        }
+        
         // Execute the pending action
         try {
           if (pendingAction.type === 'create') {

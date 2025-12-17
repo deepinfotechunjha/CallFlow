@@ -38,13 +38,15 @@ const Dashboard = () => {
       return ['ALL', 'MY_CALLS', 'ASSIGNED_AND_PENDING', 'PENDING', 'COMPLETED'];
     } else if (user?.role === 'ADMIN') {
       return ['ALL', 'MY_CALLS', 'ASSIGNED_TO_ME', 'ASSIGNED_AND_PENDING', 'PENDING', 'COMPLETED'];
+    } else if (user?.role === 'ENGINEER') {
+      return ['MY_TASKS', 'MY_CREATED', 'PENDING', 'COMPLETED'];
     } else {
       return ['MY_TASKS', 'MY_CREATED', 'PENDING', 'COMPLETED'];
     }
   };
 
   const filteredCalls = calls.filter(call => {
-    const isUserRole = user?.role === 'USER';
+    const isEngineerRole = user?.role === 'ENGINEER';
     const isMyCall = call.createdBy === user?.username || call.assignedTo === user?.username;
     
     // Tab filter
@@ -56,10 +58,10 @@ const Dashboard = () => {
     else if (filter === 'ASSIGNED_TO_ME') tabMatch = call.assignedTo === user?.username;
     else if (filter === 'ASSIGNED_AND_PENDING') tabMatch = call.assignedTo && call.status !== 'COMPLETED';
     else if (filter === 'PENDING') {
-      tabMatch = isUserRole ? (isMyCall && call.status !== 'COMPLETED') : (!call.assignedTo && call.status !== 'COMPLETED');
+      tabMatch = isEngineerRole ? (isMyCall && call.status !== 'COMPLETED') : (!call.assignedTo && call.status !== 'COMPLETED');
     }
     else if (filter === 'COMPLETED') {
-      tabMatch = isUserRole ? (isMyCall && call.status === 'COMPLETED') : (call.status === 'COMPLETED');
+      tabMatch = isEngineerRole ? (isMyCall && call.status === 'COMPLETED') : (call.status === 'COMPLETED');
     }
     if (!tabMatch) return false;
     

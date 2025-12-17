@@ -1,6 +1,8 @@
 /*  */import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
+import { createServer } from "http";
+import { Server } from "socket.io";
 import { PrismaClient } from "@prisma/client";
 import { execSync } from "child_process";
 import bcrypt from 'bcryptjs';
@@ -16,6 +18,14 @@ dotenv.config();
 // don't yet include the new option.
 const prisma = new PrismaClient();
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+    cors: {
+        origin: [process.env.FRONTEND_ORIGIN ?? 'https://call-manage.netlify.app', 'http://localhost:5173'],
+        methods: ["GET", "POST"]
+    }
+});
+
 app.use(express.json());
 
 const allowedOrigins = [process.env.FRONTEND_ORIGIN ?? 'https://call-manage.netlify.app', 'http://localhost:5173'];
@@ -253,7 +263,14 @@ app.delete("/users/:id", authMiddleware, requireRole(['HOST']), async (req: Requ
             }
         });
         
-        await prisma.user.delete({ where: { id: userId } });
+        const deletedUser = await prisma.user.delete({ where: { id: userId } });
+        
+        // Notify the deleted user via WebSocket
+        const socketId = userSockets.get(userId);
+        if (socketId) {
+            io.to(socketId).emit('user_deleted', { message: 'Your account has been removed by an administrator.' });
+        }
+        
         res.json({ success: true });
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
@@ -766,8 +783,31 @@ app.post('/auth/login', async (req: Request, res: Response) => {
     }
 });
 
+// WebSocket connection handling
+const userSockets = new Map(); // Map userId to socketId
+
+io.on('connection', (socket) => {
+    console.log('Client connected:', socket.id);
+    
+    socket.on('register', (userId) => {
+        userSockets.set(userId, socket.id);
+        console.log(`User ${userId} registered with socket ${socket.id}`);
+    });
+    
+    socket.on('disconnect', () => {
+        // Remove user from map on disconnect
+        for (const [userId, socketId] of userSockets.entries()) {
+            if (socketId === socket.id) {
+                userSockets.delete(userId);
+                break;
+            }
+        }
+        console.log('Client disconnected:', socket.id);
+    });
+});
+
 // Start server
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
 

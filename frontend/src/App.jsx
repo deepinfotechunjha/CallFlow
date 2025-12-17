@@ -11,11 +11,15 @@ import CarryInService from './pages/CarryInService';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import useAuthStore from './store/authStore';
+import useSocket from './hooks/useSocket';
 
 function App() {
   const { pathname } = useLocation();
   const { user } = useAuthStore();
   const showNavbar = user && pathname !== '/login';
+  
+  // Initialize WebSocket connection for real-time notifications
+  useSocket();
 
   return (
     <div className="bg-gray-50 min-h-screen font-sans">
