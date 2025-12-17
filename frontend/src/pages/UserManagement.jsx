@@ -30,6 +30,7 @@ const UserManagement = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState({});
   const [isConfirming, setIsConfirming] = useState(false);
+  const [showWrongPasswordAlert, setShowWrongPasswordAlert] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -238,23 +239,20 @@ const UserManagement = () => {
         setIsDeleting({});
         setIsConfirming(false);
       } else {
-        setAlertMessage('Invalid secret password');
-        setShowAlert(true);
+        setShowActionSecretModal(false);
         setActionSecretPassword('');
-        setIsCreating(false);
-        setIsEditing(false);
-        setIsDeleting({});
         setIsConfirming(false);
+        setShowWrongPasswordAlert(true);
       }
     } catch (error) {
-      setAlertMessage('Failed to verify secret password');
-      setShowAlert(true);
-      setIsCreating(false);
-      setIsEditing(false);
-      setIsDeleting({});
+      setShowActionSecretModal(false);
+      setActionSecretPassword('');
       setIsConfirming(false);
+      setShowWrongPasswordAlert(true);
     }
   };
+
+  const [showInitialWrongPassword, setShowInitialWrongPassword] = useState(false);
 
   const verifySecretPassword = async () => {
     if (!secretPassword.trim()) {
@@ -279,13 +277,14 @@ const UserManagement = () => {
         setHasAccess(true);
         setShowSecretModal(false);
       } else {
-        setAlertMessage('Invalid secret password or insufficient permissions');
-        setShowAlert(true);
+        setShowSecretModal(false);
         setSecretPassword('');
+        setShowInitialWrongPassword(true);
       }
     } catch (error) {
-      setAlertMessage('Failed to verify secret password');
-      setShowAlert(true);
+      setShowSecretModal(false);
+      setSecretPassword('');
+      setShowInitialWrongPassword(true);
     }
   };
 
@@ -356,6 +355,43 @@ const UserManagement = () => {
             </div>
           </div>
         )}
+
+        {showInitialWrongPassword && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+              <h2 className="text-xl font-bold mb-4 text-red-600">Invalid Secret</h2>
+              <p className="text-gray-700 mb-6">The secret you entered is incorrect. Please try again.</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setShowInitialWrongPassword(false);
+                    setShowSecretModal(true);
+                  }}
+                  className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-medium"
+                >
+                  Retry
+                </button>
+                <button
+                  onClick={() => {
+                    setShowInitialWrongPassword(false);
+                    window.history.back();
+                  }}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <ConfirmDialog
+          isOpen={showAlert}
+          title="Notice"
+          message={alertMessage}
+          onConfirm={() => setShowAlert(false)}
+          onCancel={() => setShowAlert(false)}
+        />
       </div>
     );
   }
@@ -734,6 +770,39 @@ const UserManagement = () => {
           filteredCount={users.length}
           title="Export Users to Excel"
         />
+      )}
+
+      {/* Wrong Password Alert - Action Confirmation */}
+      {showWrongPasswordAlert && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4 text-red-600">Invalid Secret</h2>
+            <p className="text-gray-700 mb-6">The secret you entered is incorrect. Please try again.</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setShowWrongPasswordAlert(false);
+                  setShowActionSecretModal(true);
+                }}
+                className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-medium"
+              >
+                Retry
+              </button>
+              <button
+                onClick={() => {
+                  setShowWrongPasswordAlert(false);
+                  setPendingAction(null);
+                  setIsCreating(false);
+                  setIsEditing(false);
+                  setIsDeleting({});
+                }}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
