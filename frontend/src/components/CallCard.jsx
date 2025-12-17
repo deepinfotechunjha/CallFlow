@@ -12,6 +12,8 @@ const CallCard = ({ call }) => {
   const [remark, setRemark] = useState('');
   const [engineerRemark, setEngineerRemark] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
   const [formData, setFormData] = useState({
     customerName: '',
     phone: '',
@@ -25,16 +27,20 @@ const CallCard = ({ call }) => {
   const { user, users, token } = useAuthStore();
   const { categories, fetchCategories } = useCategoryStore();
 
-  const assignModalRef = useClickOutside(() => {
-    setShowAssign(false);
-    setSelectedWorker('');
-    setEngineerRemark('');
-  });
-  const editModalRef = useClickOutside(() => setShowEdit(false));
-  const completeModalRef = useClickOutside(() => {
-    setShowComplete(false);
-    setRemark('');
-  });
+  const handleModalBackdropClick = (e, modalType) => {
+    if (e.target === e.currentTarget) {
+      if (modalType === 'assign' && !isAssigning) {
+        setShowAssign(false);
+        setSelectedWorker('');
+        setEngineerRemark('');
+      } else if (modalType === 'edit' && !isUpdating) {
+        setShowEdit(false);
+      } else if (modalType === 'complete' && !isCompleting) {
+        setShowComplete(false);
+        setRemark('');
+      }
+    }
+  };
   
   const canAssign = ['HOST', 'ADMIN'].includes(user?.role) && call.status !== 'COMPLETED';
   const canEdit = user?.role === 'HOST' && call.status !== 'COMPLETED';
@@ -65,11 +71,13 @@ const CallCard = ({ call }) => {
   }, [showAssign, call.engineerRemark]);
 
  const handleAssign = async () => {
-  if (selectedWorker) {
+  if (selectedWorker && !isAssigning) {
     if (!token) {
       alert('Please login to assign calls');
       return;
     }
+    
+    setIsAssigning(true);
     
     try {
       console.log('Using token from store:', token);
@@ -89,6 +97,7 @@ const CallCard = ({ call }) => {
         const errorData = await response.json();
         console.error('Assignment failed:', errorData);
         alert(`Assignment failed: ${errorData.error || 'Unknown error'}`);
+        setIsAssigning(false);
         return;
       }
       
@@ -97,10 +106,8 @@ const CallCard = ({ call }) => {
     } catch (error) {
       console.error('Assignment failed:', error);
       alert('Assignment failed. Please try again.');
+      setIsAssigning(false);
     }
-    setShowAssign(false);
-    setSelectedWorker('');
-    setEngineerRemark('');
   }
 };
 
@@ -109,6 +116,10 @@ const CallCard = ({ call }) => {
       alert('Please login to complete calls');
       return;
     }
+    
+    if (isCompleting) return;
+    
+    setIsCompleting(true);
     
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/calls/${call.id}/complete`, {
@@ -124,6 +135,7 @@ const CallCard = ({ call }) => {
         const errorData = await response.json();
         console.error('Complete failed:', errorData);
         alert(`Complete failed: ${errorData.error || 'Unknown error'}`);
+        setIsCompleting(false);
         return;
       }
       
@@ -131,6 +143,7 @@ const CallCard = ({ call }) => {
     } catch (error) {
       console.error('Complete failed:', error);
       alert('Failed to complete call. Please try again.');
+      setIsCompleting(false);
     }
   };
 
@@ -140,8 +153,6 @@ const CallCard = ({ call }) => {
 
   const handleCompleteConfirm = () => {
     handleComplete();
-    setShowComplete(false);
-    setRemark('');
   };
 
   const handleEditSave = async (e) => {
@@ -291,8 +302,8 @@ const CallCard = ({ call }) => {
       </div>
 
       {showAssign && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div ref={assignModalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={(e) => handleModalBackdropClick(e, 'assign')}>
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">{call.assignedTo ? 'Reassign Call' : 'Assign Call'}</h2>
             <p className="text-gray-600 mb-4">
               {call.assignedTo ? `Currently assigned to: ${call.assignedTo}` : 'Select an engineer to assign this call to:'}
@@ -306,7 +317,7 @@ const CallCard = ({ call }) => {
                 className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select Engineer</option>
-                {users.filter(u => u.role === 'USER').map(u => (
+                {users.filter(u => u.role === 'ENGINEER').map(u => (
                   <option key={u.id} value={u.username}>{u.username}</option>
                 ))}
               </select>
@@ -328,9 +339,14 @@ const CallCard = ({ call }) => {
             <div className="flex gap-2">
               <button
                 onClick={handleAssign}
-                className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-medium"
+                disabled={isAssigning}
+                className={`flex-1 py-2 rounded font-medium ${
+                  isAssigning 
+                    ? 'bg-blue-400 text-white cursor-not-allowed' 
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
               >
-                {call.assignedTo ? 'Reassign' : 'Assign'}
+                {isAssigning ? 'Processing...' : (call.assignedTo ? 'Reassign' : 'Assign')}
               </button>
               <button
                 onClick={() => {
@@ -348,8 +364,8 @@ const CallCard = ({ call }) => {
       )}
 
       {showEdit && (
-        <div key={`edit-${call.id}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div ref={editModalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div key={`edit-${call.id}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={(e) => handleModalBackdropClick(e, 'edit')}>
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">Edit Call Details</h2>
             
             <form onSubmit={handleEditSave} className="space-y-4">
@@ -452,8 +468,8 @@ const CallCard = ({ call }) => {
       )}
 
       {showComplete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div ref={completeModalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={(e) => handleModalBackdropClick(e, 'complete')}>
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Complete Call</h2>
             <p className="text-gray-600 mb-4">
               Are you sure you want to mark this call as completed?
@@ -473,9 +489,14 @@ const CallCard = ({ call }) => {
             <div className="flex gap-2">
               <button
                 onClick={handleCompleteConfirm}
-                className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 font-medium"
+                disabled={isCompleting}
+                className={`flex-1 py-2 rounded font-medium ${
+                  isCompleting 
+                    ? 'bg-green-400 text-white cursor-not-allowed' 
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
               >
-                Confirm
+                {isCompleting ? 'Processing...' : 'Confirm'}
               </button>
               <button
                 onClick={() => {

@@ -12,6 +12,8 @@ const CallTable = ({ calls }) => {
   const [remark, setRemark] = useState({});
   const [engineerRemark, setEngineerRemark] = useState({});
   const [isUpdating, setIsUpdating] = useState({});
+  const [isAssigning, setIsAssigning] = useState({});
+  const [isCompleting, setIsCompleting] = useState({});
   const [formData, setFormData] = useState({});
   const [selectedCall, setSelectedCall] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
@@ -65,19 +67,19 @@ const CallTable = ({ calls }) => {
 
   const detailModalRef = useClickOutside(() => setSelectedCall(null));
   
-  const handleClickOutsideEdit = (callId) => {
-    setShowEdit(prev => ({ ...prev, [callId]: false }));
-  };
-  
-  const handleClickOutsideAssign = (callId) => {
-    setShowAssign(prev => ({ ...prev, [callId]: false }));
-    setSelectedWorker(prev => ({ ...prev, [callId]: '' }));
-    setEngineerRemark(prev => ({ ...prev, [callId]: '' }));
-  };
-  
-  const handleClickOutsideComplete = (callId) => {
-    setShowComplete(prev => ({ ...prev, [callId]: false }));
-    setRemark(prev => ({ ...prev, [callId]: '' }));
+  const handleModalBackdropClick = (e, callId, modalType) => {
+    if (e.target === e.currentTarget) {
+      if (modalType === 'edit' && !isUpdating[callId]) {
+        setShowEdit(prev => ({ ...prev, [callId]: false }));
+      } else if (modalType === 'assign' && !isAssigning[callId]) {
+        setShowAssign(prev => ({ ...prev, [callId]: false }));
+        setSelectedWorker(prev => ({ ...prev, [callId]: '' }));
+        setEngineerRemark(prev => ({ ...prev, [callId]: '' }));
+      } else if (modalType === 'complete' && !isCompleting[callId]) {
+        setShowComplete(prev => ({ ...prev, [callId]: false }));
+        setRemark(prev => ({ ...prev, [callId]: '' }));
+      }
+    }
   };
 
   useEffect(() => {
@@ -86,11 +88,13 @@ const CallTable = ({ calls }) => {
 
   const handleAssign = async (callId) => {
     const worker = selectedWorker[callId];
-    if (worker) {
+    if (worker && !isAssigning[callId]) {
       if (!token) {
         alert('Please login to assign calls');
         return;
       }
+      
+      setIsAssigning(prev => ({ ...prev, [callId]: true }));
       
       try {
         const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/calls/${callId}/assign`, {
@@ -108,16 +112,15 @@ const CallTable = ({ calls }) => {
         if (!response.ok) {
           const errorData = await response.json();
           alert(`Assignment failed: ${errorData.error || 'Unknown error'}`);
+          setIsAssigning(prev => ({ ...prev, [callId]: false }));
           return;
         }
         
         window.location.reload();
       } catch (error) {
         alert('Assignment failed. Please try again.');
+        setIsAssigning(prev => ({ ...prev, [callId]: false }));
       }
-      setShowAssign(prev => ({ ...prev, [callId]: false }));
-      setSelectedWorker(prev => ({ ...prev, [callId]: '' }));
-      setEngineerRemark(prev => ({ ...prev, [callId]: '' }));
     }
   };
 
@@ -126,6 +129,10 @@ const CallTable = ({ calls }) => {
       alert('Please login to complete calls');
       return;
     }
+    
+    if (isCompleting[callId]) return;
+    
+    setIsCompleting(prev => ({ ...prev, [callId]: true }));
     
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/calls/${callId}/complete`, {
@@ -140,12 +147,14 @@ const CallTable = ({ calls }) => {
       if (!response.ok) {
         const errorData = await response.json();
         alert(`Complete failed: ${errorData.error || 'Unknown error'}`);
+        setIsCompleting(prev => ({ ...prev, [callId]: false }));
         return;
       }
       
       window.location.reload();
     } catch (error) {
       alert('Failed to complete call. Please try again.');
+      setIsCompleting(prev => ({ ...prev, [callId]: false }));
     }
   };
 
@@ -225,10 +234,10 @@ const CallTable = ({ calls }) => {
               <th onClick={() => handleSort('customer')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '20%'}}>Customer & Address {getSortIcon('customer')}</th>
               <th onClick={() => handleSort('phone')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '14%'}}>Phone & Email {getSortIcon('phone')}</th>
               <th onClick={() => handleSort('category')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '8%'}}>Category {getSortIcon('category')}</th>
-              <th onClick={() => handleSort('problem')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '20%'}}>Problem {getSortIcon('problem')}</th>
+              <th onClick={() => handleSort('problem')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '18%'}}>Problem {getSortIcon('problem')}</th>
               <th onClick={() => handleSort('status')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '7%'}}>Status {getSortIcon('status')}</th>
-              <th onClick={() => handleSort('assignment')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '10%'}}>Assignment {getSortIcon('assignment')}</th>
-              <th onClick={() => handleSort('date')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '8%'}}>Date & Time {getSortIcon('date')}</th>
+              <th onClick={() => handleSort('assignment')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '8%'}}>Assignment {getSortIcon('assignment')}</th>
+              <th onClick={() => handleSort('date')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '10%'}}>Date & Time {getSortIcon('date')}</th>
               <th onClick={() => handleSort('engineerRemark')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden lg:table-cell cursor-pointer hover:bg-blue-700" style={{width: '7%'}}>Engineer Remark {getSortIcon('engineerRemark')}</th>
               <th onClick={() => handleSort('completionRemark')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden lg:table-cell cursor-pointer hover:bg-blue-700" style={{width: '7%'}}>Completion Remark {getSortIcon('completionRemark')}</th>
               <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider" style={{width: '8%'}}>Actions</th>
@@ -254,7 +263,7 @@ const CallTable = ({ calls }) => {
                       <div className="space-y-1">
                         <div className="text-xs font-semibold text-gray-900 truncate" title={call?.customerName}>{call?.customerName}</div>
                         {call?.address && (
-                          <div className="text-xs text-gray-600 bg-gray-100 px-1 py-1 rounded truncate" title={call?.address}>{call?.address}</div>
+                          <div className="text-xs text-gray-600 bg-gray-100 px-1 py-1 rounded break-words" style={{maxHeight: '60px', overflow: 'auto'}} title={call?.address}>{call?.address}</div>
                         )}
                       </div>
                     </td>
@@ -272,7 +281,7 @@ const CallTable = ({ calls }) => {
                       </span>
                     </td>
                     <td className="px-2 py-3 border-r border-gray-200">
-                      <div className="text-xs text-gray-900 bg-yellow-50 p-1 rounded border-l-2 border-yellow-400 leading-tight" style={{maxHeight: '50px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'}} title={call.problem}>
+                      <div className="text-xs text-gray-900 bg-yellow-50 p-1 rounded border-l-2 border-yellow-400 leading-tight" style={{maxHeight: '60px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical'}} title={call.problem}>
                         {call.problem}
                       </div>
                     </td>
@@ -316,8 +325,9 @@ const CallTable = ({ calls }) => {
                       </div>
                     </td>
                     <td className="px-1 py-3 border-r border-gray-200">
-                      <div className="bg-gray-100 p-1 rounded">
+                      <div className="bg-gray-100 p-1 rounded space-y-1">
                         <div className="text-xs font-medium text-gray-900">{new Date(call.createdAt).toLocaleDateString()}</div>
+                        <div className="text-xs text-gray-600">{new Date(call.createdAt).toLocaleTimeString()}</div>
                       </div>
                     </td>
                     <td className="px-1 py-3 border-r border-gray-200 hidden xl:table-cell">
@@ -375,7 +385,7 @@ const CallTable = ({ calls }) => {
         if (!call) return null;
 
         return (
-          <div key={`edit-${callId}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div key={`edit-${callId}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={(e) => handleModalBackdropClick(e, parseInt(callId), 'edit')}>
             <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
               <h2 className="text-xl font-bold mb-4">Edit Call Details</h2>
               
@@ -498,7 +508,7 @@ const CallTable = ({ calls }) => {
         if (!call) return null;
 
         return (
-          <div key={`assign-${callId}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div key={`assign-${callId}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={(e) => handleModalBackdropClick(e, parseInt(callId), 'assign')}>
             <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
               <h2 className="text-xl font-bold mb-4">{call.assignedTo ? 'Reassign Call' : 'Assign Call'}</h2>
               <p className="text-gray-600 mb-4">
@@ -513,7 +523,7 @@ const CallTable = ({ calls }) => {
                   className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select Worker</option>
-                  {users.filter(u => u.role === 'USER' || u.role === 'ADMIN').map(u => (
+                  {users.filter(u => u.role === 'ENGINEER' || u.role === 'ADMIN').map(u => (
                     <option key={u.id} value={u.username}>{u.username} ({u.role})</option>
                   ))}
                 </select>
@@ -534,13 +544,15 @@ const CallTable = ({ calls }) => {
               
               <div className="flex gap-2">
                 <button
-                  onClick={() => {
-                    handleAssign(parseInt(callId));
-                    setShowAssign(prev => ({ ...prev, [callId]: false }));
-                  }}
-                  className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-medium"
+                  onClick={() => handleAssign(parseInt(callId))}
+                  disabled={isAssigning[callId]}
+                  className={`flex-1 py-2 rounded font-medium ${
+                    isAssigning[callId] 
+                      ? 'bg-blue-400 text-white cursor-not-allowed' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
                 >
-                  {call.assignedTo ? 'Reassign' : 'Assign'}
+                  {isAssigning[callId] ? 'Processing...' : (call.assignedTo ? 'Reassign' : 'Assign')}
                 </button>
                 <button
                   onClick={() => {
@@ -563,7 +575,7 @@ const CallTable = ({ calls }) => {
         if (!showComplete[callId]) return null;
 
         return (
-          <div key={`complete-${callId}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div key={`complete-${callId}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={(e) => handleModalBackdropClick(e, parseInt(callId), 'complete')}>
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
               <h2 className="text-xl font-bold mb-4">Complete Call</h2>
               <p className="text-gray-600 mb-4">
@@ -583,13 +595,15 @@ const CallTable = ({ calls }) => {
               
               <div className="flex gap-2">
                 <button
-                  onClick={() => {
-                    handleComplete(parseInt(callId));
-                    setShowComplete(prev => ({ ...prev, [callId]: false }));
-                  }}
-                  className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 font-medium"
+                  onClick={() => handleComplete(parseInt(callId))}
+                  disabled={isCompleting[callId]}
+                  className={`flex-1 py-2 rounded font-medium ${
+                    isCompleting[callId] 
+                      ? 'bg-green-400 text-white cursor-not-allowed' 
+                      : 'bg-green-600 text-white hover:bg-green-700'
+                  }`}
                 >
-                  Confirm
+                  {isCompleting[callId] ? 'Processing...' : 'Confirm'}
                 </button>
                 <button
                   onClick={() => {

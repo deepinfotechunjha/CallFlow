@@ -156,7 +156,7 @@ app.put("/users/:id", authMiddleware, requireRole(['HOST']), async (req: Request
         }
         
         // Update role if provided
-        if (role && ['HOST', 'ADMIN', 'USER'].includes(role)) {
+        if (role && ['HOST', 'ADMIN', 'ENGINEER'].includes(role)) {
             // Check HOST limit if promoting to HOST
             if (role === 'HOST') {
                 const hostCount = await prisma.user.count({ where: { role: 'HOST' } });
@@ -267,8 +267,8 @@ app.post("/users", authMiddleware, requireRole(['HOST']), async (req: Request, r
         return res.status(400).json({ error: "username, password, and role are required" });
     }
     
-    if (!['HOST', 'ADMIN', 'USER'].includes(role)) {
-        return res.status(400).json({ error: "Invalid role. Must be HOST, ADMIN, or USER" });
+    if (!['HOST', 'ADMIN', 'ENGINEER'].includes(role)) {
+        return res.status(400).json({ error: "Invalid role. Must be HOST, ADMIN, or ENGINEER" });
     }
     
     // Require secret password for HOST role
@@ -312,7 +312,7 @@ app.get('/calls', authMiddleware, async (req: Request & { user?: any }, res: Res
         const username = req.user?.username as string;
         
         let whereClause = {};
-        if (userRole === 'USER') {
+        if (userRole === 'ENGINEER') {
             whereClause = {
                 OR: [
                     { createdBy: username },
@@ -652,6 +652,8 @@ app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
                     category,
                     status: assignedTo ? 'ASSIGNED' : 'PENDING',
                     assignedTo: assignedTo || null,
+                    assignedAt: assignedTo ? new Date() : null,
+                    assignedBy: assignedTo ? (req.user?.username || 'system') : null,
                     engineerRemark: engineerRemark || null,
                     createdBy: req.user?.username || createdBy || 'system',
                     customerId: customer?.id || null,
@@ -981,6 +983,27 @@ app.get('/notifications/unread-count', authMiddleware, async (req: Request, res:
     }
 });
 
+app.delete('/notifications/bulk', authMiddleware, async (req: Request, res: Response) => {
+    const { notificationIds } = req.body;
+    
+    if (!notificationIds || !Array.isArray(notificationIds)) {
+        return res.status(400).json({ error: 'notificationIds array is required' });
+    }
+    
+    try {
+        await prisma.notification.deleteMany({
+            where: {
+                id: { in: notificationIds },
+                userId: req.user?.username
+            }
+        });
+        
+        res.json({ success: true });
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
 // Category endpoints
 app.get('/categories', authMiddleware, async (_req: Request, res: Response) => {
     try {
@@ -1035,6 +1058,23 @@ app.put('/categories/:id', authMiddleware, requireRole(['HOST']), async (req: Re
         if (err.code === 'P2002') {
             return res.status(400).json({ error: 'Category already exists' });
         }
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.delete('/notifications/:id', authMiddleware, async (req: Request, res: Response) => {
+    const notificationId = parseInt(req.params.id || '');
+    
+    try {
+        await prisma.notification.delete({
+            where: { 
+                id: notificationId,
+                userId: req.user?.username
+            }
+        });
+        
+        res.json({ success: true });
+    } catch (err: any) {
         res.status(500).json({ error: String(err) });
     }
 });
@@ -1194,6 +1234,7 @@ app.post('/carry-in-services', authMiddleware, async (req: Request, res: Respons
 
 app.post('/carry-in-services/:id/complete', authMiddleware, async (req: Request, res: Response) => {
     const serviceId = parseInt(req.params.id || '');
+    const { completeRemark } = req.body;
     
     try {
         const service = await prisma.carryInService.update({
@@ -1201,7 +1242,8 @@ app.post('/carry-in-services/:id/complete', authMiddleware, async (req: Request,
             data: {
                 status: 'COMPLETED_NOT_COLLECTED',
                 completedBy: req.user?.username,
-                completedAt: new Date()
+                completedAt: new Date(),
+                completeRemark: completeRemark || null
             }
         });
         
@@ -1213,6 +1255,7 @@ app.post('/carry-in-services/:id/complete', authMiddleware, async (req: Request,
 
 app.post('/carry-in-services/:id/deliver', authMiddleware, async (req: Request, res: Response) => {
     const serviceId = parseInt(req.params.id || '');
+    const { deliverRemark } = req.body;
     
     try {
         const service = await prisma.carryInService.update({
@@ -1220,7 +1263,8 @@ app.post('/carry-in-services/:id/deliver', authMiddleware, async (req: Request, 
             data: {
                 status: 'COMPLETED_AND_COLLECTED',
                 deliveredBy: req.user?.username,
-                deliveredAt: new Date()
+                deliveredAt: new Date(),
+                deliverRemark: deliverRemark || null
             }
         });
         

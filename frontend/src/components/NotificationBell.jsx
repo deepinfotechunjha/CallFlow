@@ -52,11 +52,13 @@ const NotificationBell = () => {
       await apiClient.delete('/notifications/bulk', {
         data: { notificationIds }
       });
-      setNotifications(prev => 
-        prev.filter(n => !notificationIds.includes(n.id))
-      );
-      setSelectedNotifications(new Set());
-      setSelectAll(false);
+      setNotifications(prev => {
+        const filtered = prev.filter(n => !notificationIds.includes(n.id));
+        // Reset selection states after deletion
+        setSelectedNotifications(new Set());
+        setSelectAll(false);
+        return filtered;
+      });
       fetchUnreadCount();
     } catch (error) {
       console.error('Failed to delete notifications:', error);
@@ -71,6 +73,8 @@ const NotificationBell = () => {
       } else {
         newSet.add(notificationId);
       }
+      // Update selectAll state based on whether all notifications are selected
+      setSelectAll(newSet.size === notifications.length);
       return newSet;
     });
   };

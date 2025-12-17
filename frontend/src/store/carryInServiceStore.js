@@ -29,9 +29,9 @@ const useCarryInServiceStore = create((set, get) => ({
     }
   },
 
-  completeService: async (serviceId) => {
+  completeService: async (serviceId, completeRemark) => {
     try {
-      const response = await apiClient.post(`/carry-in-services/${serviceId}/complete`);
+      const response = await apiClient.post(`/carry-in-services/${serviceId}/complete`, { completeRemark });
       set(state => ({
         services: state.services.map(service =>
           service.id === serviceId ? response.data : service
@@ -45,9 +45,9 @@ const useCarryInServiceStore = create((set, get) => ({
     }
   },
 
-  deliverService: async (serviceId) => {
+  deliverService: async (serviceId, deliverRemark) => {
     try {
-      const response = await apiClient.post(`/carry-in-services/${serviceId}/deliver`);
+      const response = await apiClient.post(`/carry-in-services/${serviceId}/deliver`, { deliverRemark });
       set(state => ({
         services: state.services.map(service =>
           service.id === serviceId ? response.data : service

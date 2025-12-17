@@ -105,8 +105,10 @@ model CarryInService {
   createdAt          DateTime  @default(now())
   completedBy        String?
   completedAt        DateTime?
+  completeRemark     String?
   deliveredBy        String?
   deliveredAt        DateTime?
+  deliverRemark      String?
   customer           Customer? @relation(fields: [customerId], references: [id])
 
   @@index([phone])

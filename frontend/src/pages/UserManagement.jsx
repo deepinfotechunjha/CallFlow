@@ -26,16 +26,20 @@ const UserManagement = () => {
   const [hostLimitMessage, setHostLimitMessage] = useState('');
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState({});
+  const [isConfirming, setIsConfirming] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     password: '',
-    role: 'USER',
+    role: 'ENGINEER',
     secretPassword: ''
   });
   const [editFormData, setEditFormData] = useState({
     username: '',
     password: '',
-    role: 'USER',
+    role: 'ENGINEER',
     secretPassword: ''
   });
   
@@ -76,6 +80,7 @@ const UserManagement = () => {
         return;
       }
     }
+    setIsCreating(true);
     setPendingAction({ type: 'create', data: formData });
     setShowActionSecretModal(true);
   };
@@ -115,6 +120,7 @@ const UserManagement = () => {
     if (editFormData.secretPassword) {
       updateData.secretPassword = editFormData.secretPassword;
     }
+    setIsEditing(true);
     setPendingAction({ type: 'edit', data: updateData, userId: editingUser.id });
     setShowActionSecretModal(true);
   };
@@ -132,6 +138,7 @@ const UserManagement = () => {
       title: 'Confirm Delete',
       message: `Are you sure you want to delete user "${userToDelete.username}"? This action cannot be undone.`,
       onConfirm: () => {
+        setIsDeleting(prev => ({ ...prev, [userToDelete.id]: true }));
         setPendingAction({ type: 'delete', userId: userToDelete.id });
         setShowActionSecretModal(true);
         setShowConfirm(false);
@@ -146,6 +153,9 @@ const UserManagement = () => {
       setShowAlert(true);
       return;
     }
+    
+    if (isConfirming) return;
+    setIsConfirming(true);
     
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/auth/verify-secret`, {
@@ -197,14 +207,26 @@ const UserManagement = () => {
         setShowActionSecretModal(false);
         setActionSecretPassword('');
         setPendingAction(null);
+        setIsCreating(false);
+        setIsEditing(false);
+        setIsDeleting({});
+        setIsConfirming(false);
       } else {
         setAlertMessage('Invalid secret password');
         setShowAlert(true);
         setActionSecretPassword('');
+        setIsCreating(false);
+        setIsEditing(false);
+        setIsDeleting({});
+        setIsConfirming(false);
       }
     } catch (error) {
       setAlertMessage('Failed to verify secret password');
       setShowAlert(true);
+      setIsCreating(false);
+      setIsEditing(false);
+      setIsDeleting({});
+      setIsConfirming(false);
     }
   };
 
@@ -381,9 +403,14 @@ const UserManagement = () => {
                     </button>
                     <button
                       onClick={() => handleDelete(u)}
-                      className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600"
+                      disabled={isDeleting[u.id]}
+                      className={`px-2 py-1 rounded text-xs ${
+                        isDeleting[u.id]
+                          ? 'bg-red-400 text-white cursor-not-allowed'
+                          : 'bg-red-500 text-white hover:bg-red-600'
+                      }`}
                     >
-                      Remove
+                      {isDeleting[u.id] ? 'Pending...' : 'Remove'}
                     </button>
                   </div>
                 </td>
@@ -438,7 +465,7 @@ const UserManagement = () => {
                   className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
                   required
                 >
-                  <option value="USER">Engineer (USER)</option>
+                  <option value="ENGINEER">Engineer</option>
                   {canCreateAdmin && <option value="ADMIN">Admin</option>}
                   {user?.role === 'HOST' && <option value="HOST">Host</option>}
                 </select>
@@ -461,9 +488,14 @@ const UserManagement = () => {
               <div className="flex flex-col sm:flex-row gap-2 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 text-sm"
+                  disabled={isCreating}
+                  className={`flex-1 py-2 rounded text-sm ${
+                    isCreating 
+                      ? 'bg-blue-400 text-white cursor-not-allowed' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
                 >
-                  Create Engineer
+                  {isCreating ? 'Pending...' : 'Create'}
                 </button>
                 <button
                   type="button"
@@ -523,7 +555,7 @@ const UserManagement = () => {
                   className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
                   required
                 >
-                  <option value="USER">Engineer (USER)</option>
+                  <option value="ENGINEER">Engineer</option>
                   <option value="ADMIN">Admin</option>
                   <option value="HOST">Host</option>
                 </select>
@@ -546,9 +578,14 @@ const UserManagement = () => {
               <div className="flex flex-col sm:flex-row gap-2 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 text-sm"
+                  disabled={isEditing}
+                  className={`flex-1 py-2 rounded text-sm ${
+                    isEditing 
+                      ? 'bg-blue-400 text-white cursor-not-allowed' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
                 >
-                  Update Engineer
+                  {isEditing ? 'Pending...' : 'Update'}
                 </button>
                 <button
                   type="button"
@@ -587,15 +624,24 @@ const UserManagement = () => {
             <div className="flex gap-2">
               <button
                 onClick={verifyActionSecret}
-                className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-medium"
+                disabled={isConfirming}
+                className={`flex-1 py-2 rounded font-medium ${
+                  isConfirming
+                    ? 'bg-blue-400 text-white cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
               >
-                Confirm
+                {isConfirming ? 'Pending...' : 'Confirm'}
               </button>
               <button
                 onClick={() => {
                   setShowActionSecretModal(false);
                   setActionSecretPassword('');
                   setPendingAction(null);
+                  setIsCreating(false);
+                  setIsEditing(false);
+                  setIsDeleting({});
+                  setIsConfirming(false);
                 }}
                 className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
               >

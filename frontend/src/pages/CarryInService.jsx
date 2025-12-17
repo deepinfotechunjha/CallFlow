@@ -21,6 +21,11 @@ const CarryInService = () => {
   const [customerFound, setCustomerFound] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(null);
   const [showDeliverConfirm, setShowDeliverConfirm] = useState(null);
+  const [completeRemark, setCompleteRemark] = useState('');
+  const [deliverRemark, setDeliverRemark] = useState('');
+  const [selectedService, setSelectedService] = useState(null);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [isDelivering, setIsDelivering] = useState(false);
 
   const { services, fetchServices, addService, completeService, deliverService, findCustomerByPhone } = useCarryInServiceStore();
   const { serviceCategories, fetchServiceCategories } = useServiceCategoryStore();
@@ -31,8 +36,19 @@ const CarryInService = () => {
       setShowAddForm(false);
     }
   });
-  const completeConfirmRef = useClickOutside(() => setShowCompleteConfirm(null));
-  const deliverConfirmRef = useClickOutside(() => setShowDeliverConfirm(null));
+  const completeConfirmRef = useClickOutside(() => {
+    if (!isCompleting) {
+      setShowCompleteConfirm(null);
+      setCompleteRemark('');
+    }
+  });
+  const deliverConfirmRef = useClickOutside(() => {
+    if (!isDelivering) {
+      setShowDeliverConfirm(null);
+      setDeliverRemark('');
+    }
+  });
+  const detailModalRef = useClickOutside(() => setSelectedService(null));
 
   useEffect(() => {
     fetchServices();
@@ -73,20 +89,32 @@ const CarryInService = () => {
   };
 
   const handleCompleteService = async (serviceId) => {
+    if (isCompleting) return;
+    setIsCompleting(true);
+    
     try {
-      await completeService(serviceId);
+      await completeService(serviceId, completeRemark);
       setShowCompleteConfirm(null);
+      setCompleteRemark('');
+      setIsCompleting(false);
     } catch (error) {
       console.error('Error completing service:', error);
+      setIsCompleting(false);
     }
   };
 
   const handleDeliverService = async (serviceId) => {
+    if (isDelivering) return;
+    setIsDelivering(true);
+    
     try {
-      await deliverService(serviceId);
+      await deliverService(serviceId, deliverRemark);
       setShowDeliverConfirm(null);
+      setDeliverRemark('');
+      setIsDelivering(false);
     } catch (error) {
       console.error('Error delivering service:', error);
+      setIsDelivering(false);
     }
   };
 
@@ -254,10 +282,6 @@ const CarryInService = () => {
               Clear
             </button>
           )}
-          
-          <span className="text-sm text-gray-600">
-            {filteredServices.length} of {services.length}
-          </span>
         </div>
 
         {/* Status Filter Tabs */}
@@ -323,7 +347,7 @@ const CarryInService = () => {
               </tr>
             ) : (
               filteredServices.map((service, index) => (
-                <tr key={service.id}>
+                <tr key={service.id} onClick={() => setSelectedService(service)} className="cursor-pointer hover:bg-gray-50">
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {index + 1}
                   </td>
@@ -348,7 +372,7 @@ const CarryInService = () => {
                       {service.deliveredBy && <div>Delivered: {service.deliveredBy}</div>}
                     </div>
                   </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium" onClick={(e) => e.stopPropagation()}>
                     <div className="flex gap-2">
                       {service.status === 'PENDING' && (
                         <button
@@ -479,15 +503,30 @@ const CarryInService = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div ref={completeConfirmRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <h2 className="text-lg sm:text-xl font-bold mb-4">Complete Service</h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-4">
               Are you sure you want to mark this service as completed?
             </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">Complete Remark (optional)</label>
+              <textarea
+                value={completeRemark}
+                onChange={(e) => setCompleteRemark(e.target.value)}
+                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                rows="3"
+                placeholder="Add any notes about the completion..."
+              />
+            </div>
             <div className="flex flex-col sm:flex-row gap-2">
               <button
                 onClick={() => handleCompleteService(showCompleteConfirm)}
-                className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-medium text-sm"
+                disabled={isCompleting}
+                className={`flex-1 py-2 rounded font-medium text-sm ${
+                  isCompleting
+                    ? 'bg-blue-400 text-white cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
               >
-                Yes, Complete
+                {isCompleting ? 'Processing...' : 'Yes, Complete'}
               </button>
               <button
                 onClick={() => setShowCompleteConfirm(null)}
@@ -505,15 +544,30 @@ const CarryInService = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div ref={deliverConfirmRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <h2 className="text-lg sm:text-xl font-bold mb-4">Deliver Service</h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-4">
               Are you sure you want to mark this service as delivered to the customer?
             </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">Deliver Remark (optional)</label>
+              <textarea
+                value={deliverRemark}
+                onChange={(e) => setDeliverRemark(e.target.value)}
+                className="w-full p-2 border rounded focus:ring-2 focus:ring-green-500 text-sm"
+                rows="3"
+                placeholder="Add any notes about the delivery..."
+              />
+            </div>
             <div className="flex flex-col sm:flex-row gap-2">
               <button
                 onClick={() => handleDeliverService(showDeliverConfirm)}
-                className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 font-medium text-sm"
+                disabled={isDelivering}
+                className={`flex-1 py-2 rounded font-medium text-sm ${
+                  isDelivering
+                    ? 'bg-green-400 text-white cursor-not-allowed'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
               >
-                Yes, Deliver
+                {isDelivering ? 'Processing...' : 'Yes, Deliver'}
               </button>
               <button
                 onClick={() => setShowDeliverConfirm(null)}
@@ -522,6 +576,117 @@ const CarryInService = () => {
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Service Detail Modal */}
+      {selectedService && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div ref={detailModalRef} className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Service Details</h2>
+              <button
+                onClick={() => setSelectedService(null)}
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Customer Name</label>
+                  <div className="mt-1 p-2 bg-gray-50 rounded border">{selectedService.customerName}</div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Phone</label>
+                  <div className="mt-1 p-2 bg-blue-50 rounded border">{selectedService.phone}</div>
+                </div>
+                
+                {selectedService.email && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Email</label>
+                    <div className="mt-1 p-2 bg-green-50 rounded border break-all">{selectedService.email}</div>
+                  </div>
+                )}
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Category</label>
+                  <div className="mt-1 p-2 bg-indigo-50 rounded border">{selectedService.category}</div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Status</label>
+                  <div className="mt-1">
+                    <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(selectedService.status)}`}>
+                      {getStatusLabel(selectedService.status)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                {selectedService.address && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Address</label>
+                    <div className="mt-1 p-2 bg-gray-50 rounded border">{selectedService.address}</div>
+                  </div>
+                )}
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Created By</label>
+                  <div className="mt-1 p-2 bg-gray-100 rounded border">{selectedService.createdBy}</div>
+                </div>
+                
+                {selectedService.completedBy && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Completed By</label>
+                    <div className="mt-1 p-2 bg-blue-100 rounded border">{selectedService.completedBy}</div>
+                  </div>
+                )}
+                
+                {selectedService.deliveredBy && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Delivered By</label>
+                    <div className="mt-1 p-2 bg-green-100 rounded border">{selectedService.deliveredBy}</div>
+                  </div>
+                )}
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Created At</label>
+                  <div className="mt-1 p-2 bg-gray-100 rounded border">
+                    {new Date(selectedService.createdAt).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {selectedService.serviceDescription && (
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700">Service Description</label>
+                <div className="mt-1 p-3 bg-yellow-50 rounded border border-yellow-200">{selectedService.serviceDescription}</div>
+              </div>
+            )}
+            
+            {(selectedService.completeRemark || selectedService.deliverRemark) && (
+              <div className="mt-4 space-y-3">
+                {selectedService.completeRemark && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Complete Remark</label>
+                    <div className="mt-1 p-2 bg-blue-50 rounded border">{selectedService.completeRemark}</div>
+                  </div>
+                )}
+                {selectedService.deliverRemark && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Deliver Remark</label>
+                    <div className="mt-1 p-2 bg-green-50 rounded border">{selectedService.deliverRemark}</div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

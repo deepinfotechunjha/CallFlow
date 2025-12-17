@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import useCallStore from '../store/callStore';
 import useAuthStore from '../store/authStore';
+import useCategoryStore from '../store/categoryStore';
 import AddCallForm from '../components/AddCallForm';
 import CallCard from '../components/CallCard';
 import CallTable from '../components/CallTable';
@@ -21,9 +22,11 @@ const Dashboard = () => {
   
   const { calls, fetchCalls } = useCallStore();
   const { fetchUsers } = useAuthStore();
+  const { categories, fetchCategories } = useCategoryStore();
 
   useEffect(() => {
     fetchCalls();
+    fetchCategories();
     if (user?.role === 'HOST' || user?.role === 'ADMIN') {
       fetchUsers();
     }
@@ -95,7 +98,7 @@ const Dashboard = () => {
     return true;
   });
 
-  const uniqueCategories = [...new Set(calls.map(c => c.category).filter(Boolean))];
+  const uniqueCategories = categories.map(c => c.name);
 
   const todaysCalls = calls.filter(call => {
     const today = new Date().toDateString();
@@ -272,8 +275,8 @@ const Dashboard = () => {
             className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white min-w-[140px]"
           >
             <option value="ALL_CATEGORIES">All Categories</option>
-            {uniqueCategories.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
+            {uniqueCategories.map((cat, index) => (
+              <option key={index} value={cat}>{cat}</option>
             ))}
           </select>
           
@@ -289,10 +292,6 @@ const Dashboard = () => {
               Clear
             </button>
           )}
-          
-          <div className="text-sm text-gray-600 whitespace-nowrap">
-            {filteredCalls.length} of {calls.length}
-          </div>
         </div>
 
         {/* Tabs - Last */}
