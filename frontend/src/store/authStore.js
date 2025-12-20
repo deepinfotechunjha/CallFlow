@@ -10,6 +10,25 @@ const useAuthStore = create(
       token: null,
       users: [],
       
+      // WebSocket event handlers
+      handleUserCreated: (user) => {
+        set(state => ({
+          users: [...state.users.filter(u => u.id !== user.id), user]
+        }));
+      },
+      
+      handleUserUpdated: (user) => {
+        set(state => ({
+          users: state.users.map(u => u.id === user.id ? user : u)
+        }));
+      },
+      
+      handleUserDeleted: (deletedUser) => {
+        set(state => ({
+          users: state.users.filter(u => u.id !== deletedUser.id)
+        }));
+      },
+      
       login: async (username, password) => {
         try {
           const response = await apiClient.post('/auth/login', { username, password });
@@ -38,7 +57,6 @@ const useAuthStore = create(
           set({ users: response.data });
         } catch (err) {
           if (err.response?.status === 403 || err.response?.status === 401) {
-            // Silently handle permission errors
             return;
           }
           console.error('Failed to fetch users', err);
@@ -48,8 +66,7 @@ const useAuthStore = create(
       createUser: async (userData) => {
         try {
           const response = await apiClient.post('/users', userData);
-          // append the created user to the list
-          set(state => ({ users: [...state.users, response.data] }));
+          // Don't update state here - WebSocket will handle it
           toast.success('User created successfully');
           return response.data;
         } catch (err) {
@@ -65,7 +82,7 @@ const useAuthStore = create(
             payload.secretPassword = secretPassword;
           }
           const response = await apiClient.put(`/users/${userId}`, payload);
-          set(state => ({ users: state.users.map(u => u.id === userId ? response.data : u) }));
+          // Don't update state here - WebSocket will handle it
           toast.success('User role updated successfully');
         } catch (err) {
           toast.error('Failed to update role');
@@ -76,7 +93,7 @@ const useAuthStore = create(
       updateUser: async (userId, userData) => {
         try {
           const response = await apiClient.put(`/users/${userId}`, userData);
-          set(state => ({ users: state.users.map(u => u.id === userId ? response.data : u) }));
+          // Don't update state here - WebSocket will handle it
           toast.success('User updated successfully');
           return response.data;
         } catch (err) {
@@ -88,7 +105,7 @@ const useAuthStore = create(
       deleteUser: async (userId) => {
         try {
           await apiClient.delete(`/users/${userId}`);
-          set(state => ({ users: state.users.filter(u => u.id !== userId) }));
+          // Don't update state here - WebSocket will handle it
           toast.success('User deleted successfully');
         } catch (err) {
           toast.error('Failed to delete user');
@@ -98,6 +115,7 @@ const useAuthStore = create(
     }),
     {
       name: 'auth-storage',
+      partialize: (state) => ({ user: state.user, token: state.token, users: state.users })
     }
   )
 );

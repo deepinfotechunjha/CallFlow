@@ -1,21 +1,37 @@
-/*  */import dotenv from "dotenv";
+import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { PrismaClient } from "@prisma/client";
-import { execSync } from "child_process";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import type { Request, Response, NextFunction } from "express";
 
+// Extend Express Request type
+declare global {
+    namespace Express {
+        interface Request {
+            user?: {
+                id: number;
+                username: string;
+                role: string;
+            };
+        }
+    }
+}
+
+interface AuthenticatedRequest extends Request {
+    user?: {
+        id: number;
+        username: string;
+        role: string;
+    };
+}
+
 dotenv.config();
 
-// Pass the adapter option to PrismaClient so it can connect directly
-// using the DATABASE_URL at runtime (Prisma 7+ style). Use a cast to
-// avoid TypeScript type mismatch if the installed @prisma/client types
-// don't yet include the new option.
 const prisma = new PrismaClient();
 const app = express();
 const httpServer = createServer(app);
@@ -53,10 +69,16 @@ function verifyToken(token: string) {
     }
 }
 
+// WebSocket connection handling
+const userSockets = new Map<number, string>();
 
+// Helper function to emit to all connected clients
+const emitToAll = (event: string, data: any) => {
+    io.emit(event, data);
+};
 
 // Simple auth middleware
-function authMiddleware(req: Request & { user?: any }, res: Response, next: NextFunction) {
+function authMiddleware(req: Request, res: Response, next: NextFunction) {
     try {
         const auth = req.headers['authorization'] as string | undefined;
         if (!auth) return res.status(401).json({ error: 'Missing Authorization header' });
@@ -76,7 +98,7 @@ function authMiddleware(req: Request & { user?: any }, res: Response, next: Next
 
 // Role-based authorization middleware
 function requireRole(roles: string[]) {
-    return (req: Request & { user?: any }, res: Response, next: NextFunction) => {
+    return (req: Request, res: Response, next: NextFunction) => {
         try {
             if (!req.user) return res.status(401).json({ error: 'Unauthenticated' });
             if (!roles.includes(req.user.role)) {
@@ -102,13 +124,61 @@ app.get("/health", async (_req: Request, res: Response) => {
     }
 });
 
-// Secret password verification endpoint
+// Auth endpoints
+app.post('/auth/login', async (req: Request, res: Response) => {
+    const { username, password } = req.body as { username: string; password: string };
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    try {
+        const user = await prisma.user.findUnique({ where: { username } });
+        if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+
+        let ok = false;
+        try {
+            ok = await bcrypt.compare(password, user.password);
+        } catch (e) {
+            ok = false;
+        }
+
+        if (!ok && user.password === password) {
+            ok = true;
+        }
+
+        if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+
+        const token = signToken({ 
+            id: user.id, 
+            username: user.username, 
+            role: user.role 
+        });
+
+        res.json({ 
+            token, 
+            user: { 
+                id: user.id, 
+                username: user.username, 
+                role: user.role, 
+                createdAt: user.createdAt 
+            } 
+        });
+    } catch (err: any) {
+        console.error('Login error:', err);
+        res.status(500).json({ error: 'Login failed' });
+    }
+});
+
 app.post("/auth/verify-secret", authMiddleware, async (req: Request, res: Response) => {
-    const { secretPassword } = req.body;
+    const { secretPassword } = req.body as { secretPassword: string };
     const user = req.user;
     
     if (!secretPassword) {
         return res.status(400).json({ error: 'Secret password is required' });
+    }
+    
+    if (!user) {
+        return res.status(401).json({ error: 'User not authenticated' });
     }
     
     try {
@@ -132,7 +202,7 @@ app.post("/auth/verify-secret", authMiddleware, async (req: Request, res: Respon
 });
 
 // User endpoints
-app.get("/users", authMiddleware, requireRole(['HOST', 'ADMIN']), async (_req: Request & { user?: any }, res: Response) => {
+app.get("/users", authMiddleware, requireRole(['HOST', 'ADMIN']), async (_req: Request, res: Response) => {
     try {
         const users = await prisma.user.findMany({ 
             select: { id: true, username: true, role: true, createdAt: true } 
@@ -143,9 +213,47 @@ app.get("/users", authMiddleware, requireRole(['HOST', 'ADMIN']), async (_req: R
     }
 });
 
+app.post("/users", authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const { username, password, role, secretPassword } = req.body as { username: string; password: string; role: string; secretPassword?: string };
+    
+    if (!username || !password || !role) {
+        return res.status(400).json({ error: "username, password, and role are required" });
+    }
+    
+    if (!['HOST', 'ADMIN', 'ENGINEER'].includes(role)) {
+        return res.status(400).json({ error: "Invalid role. Must be HOST, ADMIN, or ENGINEER" });
+    }
+    
+    try {
+        const hashed = await bcrypt.hash(password, 10);
+        const finalSecretPassword = role === 'HOST' ? (secretPassword || 'DEFAULTSECRET') : 'DEFAULTSECRET';
+        
+        const user = await prisma.user.create({ 
+            data: { username, password: hashed, role, secretPassword: finalSecretPassword } 
+        });
+        
+        const userResponse = { 
+            id: user.id, 
+            username: user.username, 
+            role: user.role, 
+            createdAt: user.createdAt 
+        };
+        
+        emitToAll('user_created', userResponse);
+        res.status(201).json(userResponse);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
 app.put("/users/:id", authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
     const userId = parseInt(req.params.id || '');
-    const { username, password, role, secretPassword } = req.body;
+    const { username, password, role, secretPassword } = req.body as {
+        username?: string;
+        password?: string;
+        role?: string;
+        secretPassword?: string;
+    };
     
     try {
         const currentUser = await prisma.user.findUnique({ where: { id: userId } });
@@ -155,64 +263,20 @@ app.put("/users/:id", authMiddleware, requireRole(['HOST']), async (req: Request
         
         const updateData: any = {};
         
-        // Update username if provided
         if (username && username !== currentUser.username) {
             updateData.username = username;
         }
         
-        // Update password if provided
         if (password) {
             updateData.password = await bcrypt.hash(password, 10);
         }
         
-        // Update role if provided
         if (role && ['HOST', 'ADMIN', 'ENGINEER'].includes(role)) {
-            // Check HOST limit if promoting to HOST
-            if (role === 'HOST') {
-                const hostCount = await prisma.user.count({ where: { role: 'HOST' } });
-                if (currentUser.role !== 'HOST' && hostCount >= 3) {
-                    return res.status(400).json({ error: 'Maximum 3 HOSTs allowed' });
-                }
-                // Require secret password when promoting to HOST
-                if (currentUser.role !== 'HOST' && !secretPassword) {
-                    return res.status(400).json({ error: 'Secret password is required when promoting to HOST' });
-                }
-            }
-            
-            // Check if user is being changed to HOST role and has assigned calls
-            if (role === 'HOST' && currentUser.role !== 'HOST') {
-                const assignedCalls = await prisma.call.count({
-                    where: { 
-                        assignedTo: currentUser.username,
-                        status: { not: 'COMPLETED' }
-                    }
-                });
-                
-                if (assignedCalls > 0) {
-                    // Unassign all active calls from this user
-                    await prisma.call.updateMany({
-                        where: { 
-                            assignedTo: currentUser.username,
-                            status: { not: 'COMPLETED' }
-                        },
-                        data: {
-                            assignedTo: null,
-                            assignedAt: null,
-                            assignedBy: null,
-                            status: 'PENDING'
-                        }
-                    });
-                }
-            }
-            
             updateData.role = role;
             
-            // Update secretPassword based on role change
             if (role === 'HOST' && currentUser.role !== 'HOST') {
-                // Promoting to HOST - use provided secret password
                 updateData.secretPassword = secretPassword;
             } else if (role !== 'HOST' && currentUser.role === 'HOST') {
-                // Demoting from HOST - set to default
                 updateData.secretPassword = 'DEFAULTSECRET';
             }
         }
@@ -223,6 +287,13 @@ app.put("/users/:id", authMiddleware, requireRole(['HOST']), async (req: Request
             select: { id: true, username: true, role: true, createdAt: true }
         });
         
+        // Force logout the updated user via WebSocket
+        const socketId = userSockets.get(userId);
+        if (socketId) {
+            io.to(socketId).emit('force_logout', { message: 'Your account has been updated. Please log in again.' });
+        }
+        
+        emitToAll('user_updated', user);
         res.json(user);
     } catch (err: any) {
         if (err.code === 'P2002') {
@@ -241,92 +312,54 @@ app.delete("/users/:id", authMiddleware, requireRole(['HOST']), async (req: Requ
             return res.status(404).json({ error: 'User not found' });
         }
         
-        // Prevent deleting the last HOST
-        if (currentUser.role === 'HOST') {
-            const hostCount = await prisma.user.count({ where: { role: 'HOST' } });
-            if (hostCount <= 1) {
-                return res.status(400).json({ error: 'Cannot delete the last HOST user' });
-            }
-        }
+        // Unassign all calls assigned to this user
+        const callsToUnassign = await prisma.call.findMany({
+            where: { assignedTo: currentUser.username }
+        });
         
-        // Unassign all active calls from this user before deletion
         await prisma.call.updateMany({
-            where: { 
-                assignedTo: currentUser.username,
-                status: { not: 'COMPLETED' }
-            },
-            data: {
-                assignedTo: null,
+            where: { assignedTo: currentUser.username },
+            data: { 
+                assignedTo: null, 
+                status: 'PENDING',
                 assignedAt: null,
                 assignedBy: null,
-                status: 'PENDING'
+                engineerRemark: null
             }
         });
         
-        const deletedUser = await prisma.user.delete({ where: { id: userId } });
-        
-        // Notify the deleted user via WebSocket
-        const socketId = userSockets.get(userId);
-        if (socketId) {
-            io.to(socketId).emit('user_deleted', { message: 'Your account has been removed by an administrator.' });
+        // Emit individual call updates for each unassigned call
+        for (const call of callsToUnassign) {
+            const updatedCall = {
+                ...call,
+                assignedTo: null,
+                status: 'PENDING',
+                assignedAt: null,
+                assignedBy: null,
+                engineerRemark: null
+            };
+            emitToAll('call_updated', updatedCall);
         }
         
+        // Force logout the user before deletion via WebSocket
+        const socketId = userSockets.get(userId);
+        if (socketId) {
+            io.to(socketId).emit('force_logout', { message: 'Your account has been removed by an administrator.' });
+        }
+        
+        await prisma.user.delete({ where: { id: userId } });
+        emitToAll('user_deleted_broadcast', { id: userId, username: currentUser.username });
         res.json({ success: true });
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
     }
 });
 
-app.post("/users", authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
-    const { username, password, role, secretPassword } = req.body as { username?: string; password?: string; role?: string; secretPassword?: string };
-    
-    if (!username || !password || !role) {
-        return res.status(400).json({ error: "username, password, and role are required" });
-    }
-    
-    if (!['HOST', 'ADMIN', 'ENGINEER'].includes(role)) {
-        return res.status(400).json({ error: "Invalid role. Must be HOST, ADMIN, or ENGINEER" });
-    }
-    
-    // Require secret password for HOST role
-    if (role === 'HOST' && !secretPassword) {
-        return res.status(400).json({ error: "Secret password is required for HOST role" });
-    }
-    
-    try {
-        // Check HOST limit
-        if (role === 'HOST') {
-            const hostCount = await prisma.user.count({ where: { role: 'HOST' } });
-            if (hostCount >= 3) {
-                return res.status(400).json({ error: 'Maximum 3 HOSTs allowed' });
-            }
-        }
-        
-        const hashed = await bcrypt.hash(password, 10);
-        const finalSecretPassword = role === 'HOST' ? (secretPassword || 'DEFAULTSECRET') : 'DEFAULTSECRET';
-        
-        const user = await prisma.user.create({ 
-            data: { username, password: hashed, role, secretPassword: finalSecretPassword } 
-        });
-        
-        res.status(201).json({ 
-            id: user.id, 
-            username: user.username, 
-            role: user.role, 
-            createdAt: user.createdAt 
-        });
-    } catch (err: any) {
-        res.status(500).json({ error: String(err) });
-    }
-});
-
-
-
 // Call endpoints
-app.get('/calls', authMiddleware, async (req: Request & { user?: any }, res: Response) => {
+app.get('/calls', authMiddleware, async (req: Request, res: Response) => {
     try {
-        const userRole = req.user?.role as string;
-        const username = req.user?.username as string;
+        const userRole = req.user?.role;
+        const username = req.user?.username;
         
         let whereClause = {};
         if (userRole === 'ENGINEER') {
@@ -338,7 +371,6 @@ app.get('/calls', authMiddleware, async (req: Request & { user?: any }, res: Res
             };
         }
         
-        // If whereClause is empty, omit `where` so Prisma receives no filter
         const findArgs: any = {};
         if (Object.keys(whereClause).length > 0) findArgs.where = whereClause;
         const calls = await prisma.call.findMany(findArgs);
@@ -349,16 +381,79 @@ app.get('/calls', authMiddleware, async (req: Request & { user?: any }, res: Res
     }
 });
 
-// Extend the Request type to include the user property
-declare global {
-    namespace Express {
-        interface Request {
-            user?: any;
-        }
-    }
-}
+app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
+    const { customerName, phone, email, address, problem, category, assignedTo, engineerRemark, createdBy } = req.body as {
+        customerName: string;
+        phone: string;
+        email?: string;
+        address?: string;
+        problem: string;
+        category: string;
+        assignedTo?: string;
+        engineerRemark?: string;
+        createdBy?: string;
+    };
 
-// Update a call by ID
+    if (!customerName || !phone || !problem || !category) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    try {
+        let customer = null;
+        if (phone) {
+            customer = await prisma.customer.findUnique({ where: { phone } });
+            
+            if (!customer) {
+                customer = await prisma.customer.create({
+                    data: {
+                        name: customerName,
+                        phone,
+                        email: email || null,
+                        address: address || null,
+                        outsideCalls: 0,
+                        carryInServices: 0,
+                        totalInteractions: 0
+                    }
+                });
+            }
+        }
+
+        const [call] = await prisma.$transaction([
+            prisma.call.create({
+                data: {
+                    customerName,
+                    phone,
+                    email: email || null,
+                    address: address || null,
+                    problem,
+                    category,
+                    status: assignedTo ? 'ASSIGNED' : 'PENDING',
+                    assignedTo: assignedTo || null,
+                    assignedAt: assignedTo ? new Date() : null,
+                    assignedBy: assignedTo ? (req.user?.username || 'system') : null,
+                    engineerRemark: engineerRemark || null,
+                    createdBy: req.user?.username || createdBy || 'system',
+                    customerId: customer?.id || null,
+                }
+            }),
+            customer ? prisma.customer.update({
+                where: { id: customer.id },
+                data: {
+                    outsideCalls: { increment: 1 },
+                    totalInteractions: { increment: 1 },
+                    lastCallDate: new Date(),
+                    lastActivityDate: new Date()
+                }
+            }) : prisma.$queryRaw`SELECT 1`
+        ]);
+        
+        emitToAll('call_created', call);
+        res.status(201).json(call);
+    } catch (err: any) {
+        res.status(500).json({ error: 'Failed to create call' });
+    }
+});
+
 app.put('/calls/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
     const callId = parseInt(req.params.id || '');
     if (isNaN(callId)) {
@@ -366,7 +461,6 @@ app.put('/calls/:id', authMiddleware, requireRole(['HOST']), async (req: Request
     }
 
     try {
-        // Check if call is completed
         const existingCall = await prisma.call.findUnique({ where: { id: callId } });
         if (!existingCall) {
             return res.status(404).json({ error: 'Call not found' });
@@ -375,18 +469,17 @@ app.put('/calls/:id', authMiddleware, requireRole(['HOST']), async (req: Request
             return res.status(400).json({ error: 'Cannot edit completed calls' });
         }
 
-        const { 
-            problem, 
-            category, 
-            status, 
-            assignedTo, 
-            customerName, 
-            phone, 
-            email, 
-            address 
-        } = req.body;
+        const { problem, category, status, assignedTo, customerName, phone, email, address } = req.body as {
+            problem: string;
+            category: string;
+            status?: string;
+            assignedTo?: string;
+            customerName: string;
+            phone: string;
+            email?: string;
+            address?: string;
+        };
 
-        // Preserve existing assignment if not provided
         const updateData: any = {
             customerName,
             phone,
@@ -397,7 +490,6 @@ app.put('/calls/:id', authMiddleware, requireRole(['HOST']), async (req: Request
             status: assignedTo !== undefined && assignedTo ? 'ASSIGNED' : (assignedTo === null || assignedTo === '' ? 'PENDING' : status),
         };
         
-        // Only update assignedTo if it's explicitly provided
         if (assignedTo !== undefined) {
             updateData.assignedTo = assignedTo || null;
         }
@@ -407,26 +499,23 @@ app.put('/calls/:id', authMiddleware, requireRole(['HOST']), async (req: Request
             data: updateData
         });
         
+        emitToAll('call_updated', call);
         res.json(call);
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to update call' });
     }
 });
 
-// Assign or reassign call to engineer
 app.post('/calls/:id/assign', authMiddleware, requireRole(['HOST', 'ADMIN']), async (req: Request, res: Response) => {
     const callId = parseInt(req.params.id || '');
-    const { assignee, engineerRemark } = req.body;
+    const { assignee, engineerRemark } = req.body as { assignee: string; engineerRemark?: string };
     
     if (!assignee) {
         return res.status(400).json({ error: 'Assignee is required' });
     }
     
     try {
-        // First check if call exists and is not completed
-        const existingCall = await prisma.call.findUnique({ 
-            where: { id: callId } 
-        });
+        const existingCall = await prisma.call.findUnique({ where: { id: callId } });
         
         if (!existingCall) {
             return res.status(404).json({ error: 'Call not found' });
@@ -435,43 +524,32 @@ app.post('/calls/:id/assign', authMiddleware, requireRole(['HOST', 'ADMIN']), as
         if (existingCall.status === 'COMPLETED') {
             return res.status(400).json({ error: 'Cannot assign a completed call' });
         }
-        
-        // If this is a reassignment, keep the original assignedAt
-       const isReassignment = existingCall.assignedTo && existingCall.assignedTo !== assignee;
 
-const updateData = {
-    assignedTo: assignee,
-    // Always update assignedAt to current time when assigning/reassigning
-    assignedAt: new Date(),
-    assignedBy: req.user?.username || 'system',
-    // If it's a new assignment or being reassigned from null, set to 'ASSIGNED'
-    // Otherwise, keep existing status if it's a reassignment to a different user
-    status: (!existingCall.assignedTo || isReassignment) ? 'ASSIGNED' : existingCall.status,
-    engineerRemark: engineerRemark || null
-};
+        const updateData = {
+            assignedTo: assignee,
+            assignedAt: new Date(),
+            assignedBy: req.user?.username || 'system',
+            status: 'ASSIGNED',
+            engineerRemark: engineerRemark || null
+        };
 
-const call = await prisma.call.update({
-    where: { id: callId },
-    data: updateData,
-    include: {
-        customer: true
-    }
-});
+        const call = await prisma.call.update({
+            where: { id: callId },
+            data: updateData,
+            include: { customer: true }
+        });
         
+        emitToAll('call_assigned', call);
         res.json(call);
     } catch (err: any) {
         console.error('Error in /calls/:id/assign:', err);
-        res.status(500).json({ 
-            error: 'Failed to assign call',
-            details: process.env.NODE_ENV === 'development' ? err.message : undefined
-        });
+        res.status(500).json({ error: 'Failed to assign call' });
     }
 });
 
-// Complete a call
 app.post('/calls/:id/complete', authMiddleware, async (req: Request, res: Response) => {
     const callId = parseInt(req.params.id || '');
-    const { remark, engineerRemark } = req.body;
+    const { remark, engineerRemark } = req.body as { remark?: string; engineerRemark?: string };
     const user = req.user;
     
     try {
@@ -480,8 +558,7 @@ app.post('/calls/:id/complete', authMiddleware, async (req: Request, res: Respon
             return res.status(404).json({ error: 'Call not found' });
         }
         
-        // Check if user can complete this call
-        const canComplete = call.assignedTo === user.username || ['HOST', 'ADMIN'].includes(user.role);
+        const canComplete = call.assignedTo === user?.username || ['HOST', 'ADMIN'].includes(user?.role || '');
         if (!canComplete) {
             return res.status(403).json({ error: 'Cannot complete this call' });
         }
@@ -490,29 +567,25 @@ app.post('/calls/:id/complete', authMiddleware, async (req: Request, res: Respon
             where: { id: callId },
             data: {
                 status: 'COMPLETED',
-                completedBy: user.username,
+                completedBy: user?.username || 'system',
                 completedAt: new Date(),
                 remark: remark || null,
                 engineerRemark: engineerRemark !== undefined ? engineerRemark : call.engineerRemark
             },
-            include: {
-                customer: true
-            }
+            include: { customer: true }
         });
         
+        emitToAll('call_completed', updatedCall);
         res.json(updatedCall);
     } catch (err: any) {
         console.error('Error in /calls/:id/complete:', err);
-        res.status(500).json({ 
-            error: 'Failed to complete call',
-            details: process.env.NODE_ENV === 'development' ? err.message : undefined
-        });
+        res.status(500).json({ error: 'Failed to complete call' });
     }
 });
 
 // Check for duplicate calls
 app.post('/calls/check-duplicate', authMiddleware, async (req: Request, res: Response) => {
-    const { phone, category } = req.body;
+    const { phone, category } = req.body as { phone: string; category: string };
     
     if (!phone || !category) {
         return res.status(400).json({ error: 'Phone and category are required' });
@@ -564,11 +637,13 @@ app.put('/calls/:id/increment', authMiddleware, async (req: Request, res: Respon
             }
         });
         
-        // Create notifications
+        emitToAll('call_updated', updatedCall);
+        
+        // Create notifications only if the call is assigned or has a creator
         const notifications = [];
         
-        // Notify original creator
-        if (call.createdBy && call.createdBy !== user.username) {
+        // Notify original creator if different from current user
+        if (call.createdBy && call.createdBy !== user?.username) {
             notifications.push({
                 userId: call.createdBy,
                 message: `Customer: ${call.customerName} (${call.phone}) called again about: ${call.category}`,
@@ -577,8 +652,8 @@ app.put('/calls/:id/increment', authMiddleware, async (req: Request, res: Respon
             });
         }
         
-        // Notify assigned engineer
-        if (call.assignedTo && call.assignedTo !== user.username) {
+        // Notify assigned engineer if different from current user and call is assigned
+        if (call.assignedTo && call.assignedTo !== user?.username) {
             notifications.push({
                 userId: call.assignedTo,
                 message: `Customer: ${call.customerName} (${call.phone}) called again about: ${call.category}`,
@@ -594,7 +669,7 @@ app.put('/calls/:id/increment', authMiddleware, async (req: Request, res: Respon
         });
         
         admins.forEach(admin => {
-            if (admin.username !== user.username) {
+            if (admin.username !== user?.username) {
                 notifications.push({
                     userId: admin.username,
                     message: `Repeat call: ${call.customerName} (${call.phone}) - ${call.category}`,
@@ -613,215 +688,6 @@ app.put('/calls/:id/increment', authMiddleware, async (req: Request, res: Respon
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
     }
-});
-
-// Create a new call
-app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
-    const { 
-        customerName, 
-        phone, 
-        email, 
-        address, 
-        problem, 
-        category, 
-        assignedTo, 
-        engineerRemark,
-        createdBy
-    } = req.body as any;
-
-    if (!customerName || !phone || !problem || !category) {
-        return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    try {
-        // Find or create customer by phone
-        let customer = null;
-        if (phone) {
-            customer = await prisma.customer.findUnique({ 
-                where: { phone } 
-            });
-            
-            // Create customer if not found
-            if (!customer) {
-                customer = await prisma.customer.create({
-                    data: {
-                        name: customerName,
-                        phone,
-                        email: email || null,
-                        address: address || null,
-                        outsideCalls: 0,
-                        carryInServices: 0,
-                        totalInteractions: 0
-                    }
-                });
-            }
-        }
-
-        // Create call and update customer stats in transaction
-        const [call] = await prisma.$transaction([
-            prisma.call.create({
-                data: {
-                    customerName,
-                    phone,
-                    email: email || null,
-                    address: address || null,
-                    problem,
-                    category,
-                    status: assignedTo ? 'ASSIGNED' : 'PENDING',
-                    assignedTo: assignedTo || null,
-                    assignedAt: assignedTo ? new Date() : null,
-                    assignedBy: assignedTo ? (req.user?.username || 'system') : null,
-                    engineerRemark: engineerRemark || null,
-                    createdBy: req.user?.username || createdBy || 'system',
-                    customerId: customer?.id || null,
-                }
-            }),
-            // Update customer stats
-            customer ? prisma.customer.update({
-                where: { id: customer.id },
-                data: {
-                    outsideCalls: { increment: 1 },
-                    totalInteractions: { increment: 1 },
-                    lastCallDate: new Date(),
-                    lastActivityDate: new Date()
-                }
-            }) : prisma.$queryRaw`SELECT 1` // No-op if no customer
-        ]);
-        
-        res.status(201).json(call);
-    } catch (err: any) {
-        res.status(500).json({ error: 'Failed to create call' });
-    }
-});
-
-// Auth endpoints
-app.post('/auth/login', async (req: Request, res: Response) => {
-    const { username, password } = req.body as { username?: string; password?: string };
-    if (!username || !password) {
-        return res.status(400).json({ error: 'Username and password are required' });
-    }
-
-    try {
-        const user = await prisma.user.findUnique({ where: { username } });
-        if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-
-        // Try multiple comparison strategies
-        let ok = false;
-        let matchedBy = '';
-
-        // 1. Try bcrypt
-        try {
-            ok = await bcrypt.compare(password, user.password);
-            if (ok) matchedBy = 'bcrypt';
-        } catch (e) {
-            ok = false;
-        }
-
-        // 2. Try plaintext
-        if (!ok && user.password === password) {
-            ok = true;
-            matchedBy = 'plaintext';
-        }
-
-        // 3. Try common hash formats
-        const tryHexHash = (alg: 'sha256' | 'sha1' | 'md5') => {
-            try {
-                const h = crypto.createHash(alg).update(password, 'utf8').digest('hex');
-                return h === user.password;
-            } catch (e) {
-                return false;
-            }
-        };
-
-        if (!ok && typeof user.password === 'string') {
-            if (user.password.length === 64 && tryHexHash('sha256')) {
-                ok = true;
-                matchedBy = 'sha256';
-            } else if (user.password.length === 40 && tryHexHash('sha1')) {
-                ok = true;
-                matchedBy = 'sha1';
-            } else if (user.password.length === 32 && tryHexHash('md5')) {
-                ok = true;
-                matchedBy = 'md5';
-            }
-        }
-
-        if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
-
-        // Migrate to bcrypt if needed
-        if (matchedBy && matchedBy !== 'bcrypt') {
-            try {
-                const hashed = await bcrypt.hash(password, 10);
-                await prisma.user.update({ 
-                    where: { id: user.id }, 
-                    data: { password: hashed } 
-                });
-                console.log(`Migrated password for user=${username} (was=${matchedBy}) to bcrypt`);
-            } catch (e) {
-                console.warn('Failed to migrate password to bcrypt for user=', username, String(e));
-            }
-        }
-
-        const token = signToken({ 
-            id: user.id, 
-            username: user.username, 
-            role: user.role 
-        });
-
-        res.json({ 
-            token, 
-            user: { 
-                id: user.id, 
-                username: user.username, 
-                role: user.role, 
-                createdAt: user.createdAt 
-            } 
-        });
-    } catch (err: any) {
-        console.error('Login error:', err);
-        res.status(500).json({ error: 'Login failed' });
-    }
-});
-
-// WebSocket connection handling
-const userSockets = new Map(); // Map userId to socketId
-
-io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id);
-    
-    socket.on('register', (userId) => {
-        userSockets.set(userId, socket.id);
-        console.log(`User ${userId} registered with socket ${socket.id}`);
-    });
-    
-    socket.on('disconnect', () => {
-        // Remove user from map on disconnect
-        for (const [userId, socketId] of userSockets.entries()) {
-            if (socketId === socket.id) {
-                userSockets.delete(userId);
-                break;
-            }
-        }
-        console.log('Client disconnected:', socket.id);
-    });
-});
-
-// Start server
-httpServer.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
-
-// Handle graceful shutdown
-process.on("SIGINT", async () => {
-    console.log("Shutting down...");
-    await prisma.$disconnect();
-    process.exit(0);
-});
-
-process.on("SIGTERM", async () => {
-    console.log("Shutting down...");
-    await prisma.$disconnect();
-    process.exit(0);
 });
 
 // Customers endpoints
@@ -877,14 +743,12 @@ app.get('/customers/analytics', authMiddleware, requireRole(['HOST']), async (_r
             },
             orderBy: { lastActivityDate: 'desc' }
         });
-        
         res.json(customers);
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
     }
 });
 
-// Unified Customer Directory endpoint
 app.get('/customers/directory', authMiddleware, async (_req: Request, res: Response) => {
     try {
         const customers = await prisma.customer.findMany({
@@ -901,75 +765,7 @@ app.get('/customers/directory', authMiddleware, async (_req: Request, res: Respo
             },
             orderBy: { lastActivityDate: 'desc' }
         });
-        
         res.json(customers);
-    } catch (err: any) {
-        res.status(500).json({ error: String(err) });
-    }
-});
-
-// Analytics endpoint
-app.get('/analytics/engineers', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
-    try {
-        const { days } = req.query;
-        let dateFilter = {};
-        
-        if (days && days !== 'all') {
-            const daysAgo = new Date();
-            daysAgo.setDate(daysAgo.getDate() - parseInt(days as string));
-            dateFilter = { assignedAt: { gte: daysAgo } };
-        }
-        
-        const calls = await prisma.call.findMany({
-            where: {
-                assignedTo: { not: null },
-                ...dateFilter
-            }
-        });
-        
-        // Group by engineer and calculate metrics
-        const engineerStats = calls.reduce((acc: any, call) => {
-            const engineer = call.assignedTo!;
-            if (!acc[engineer]) {
-                acc[engineer] = {
-                    name: engineer,
-                    totalAssigned: 0,
-                    completed: 0,
-                    pending: 0,
-                    totalResolutionTime: 0,
-                    completedCalls: []
-                };
-            }
-            
-            acc[engineer].totalAssigned++;
-            
-            if (call.status === 'COMPLETED') {
-                acc[engineer].completed++;
-                if (call.assignedAt && call.completedAt) {
-                    const resolutionTime = new Date(call.completedAt).getTime() - new Date(call.assignedAt).getTime();
-                    acc[engineer].totalResolutionTime += resolutionTime;
-                    acc[engineer].completedCalls.push(resolutionTime);
-                }
-            } else {
-                acc[engineer].pending++;
-            }
-            
-            return acc;
-        }, {});
-        
-        // Calculate final metrics
-        const result = Object.values(engineerStats).map((stats: any) => ({
-            name: stats.name,
-            totalAssigned: stats.totalAssigned,
-            completed: stats.completed,
-            pending: stats.pending,
-            completionRate: stats.totalAssigned > 0 ? Math.round((stats.completed / stats.totalAssigned) * 100) : 0,
-            avgResolutionTime: stats.completedCalls.length > 0 
-                ? Math.round(stats.totalResolutionTime / stats.completedCalls.length / (1000 * 60 * 60) * 10) / 10 
-                : 0
-        }));
-        
-        res.json(result);
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
     }
@@ -977,14 +773,35 @@ app.get('/analytics/engineers', authMiddleware, requireRole(['HOST']), async (re
 
 // Notifications endpoints
 app.get('/notifications', authMiddleware, async (req: Request, res: Response) => {
+    if (!req.user?.username) {
+        return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     try {
         const notifications = await prisma.notification.findMany({
-            where: { userId: req.user?.username },
+            where: { userId: req.user.username },
             orderBy: { createdAt: 'desc' },
             take: 50
         });
-        
         res.json(notifications);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.get('/notifications/unread-count', authMiddleware, async (req: Request, res: Response) => {
+    if (!req.user?.username) {
+        return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    try {
+        const count = await prisma.notification.count({
+            where: { 
+                userId: req.user.username,
+                isRead: false
+            }
+        });
+        res.json({ count });
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
     }
@@ -993,65 +810,51 @@ app.get('/notifications', authMiddleware, async (req: Request, res: Response) =>
 app.put('/notifications/:id/read', authMiddleware, async (req: Request, res: Response) => {
     const notificationId = parseInt(req.params.id || '');
     
+    if (!req.user?.username) {
+        return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     try {
         await prisma.notification.update({
             where: { 
                 id: notificationId,
-                userId: req.user?.username
+                userId: req.user.username
             },
             data: { isRead: true }
         });
-        
         res.json({ success: true });
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
     }
 });
 
-app.get('/notifications/unread-count', authMiddleware, async (req: Request, res: Response) => {
+app.delete('/notifications/:id', authMiddleware, async (req: Request, res: Response) => {
+    const notificationId = parseInt(req.params.id || '');
+    
+    if (!req.user?.username) {
+        return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     try {
-        const count = await prisma.notification.count({
+        await prisma.notification.delete({
             where: { 
-                userId: req.user?.username,
-                isRead: false
+                id: notificationId,
+                userId: req.user.username
             }
         });
-        
-        res.json({ count });
-    } catch (err: any) {
-        res.status(500).json({ error: String(err) });
-    }
-});
-
-app.delete('/notifications/bulk', authMiddleware, async (req: Request, res: Response) => {
-    const { notificationIds } = req.body;
-    
-    if (!notificationIds || !Array.isArray(notificationIds)) {
-        return res.status(400).json({ error: 'notificationIds array is required' });
-    }
-    
-    try {
-        await prisma.notification.deleteMany({
-            where: {
-                id: { in: notificationIds },
-                userId: req.user?.username
-            }
-        });
-        
         res.json({ success: true });
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
     }
 });
 
-// Category endpoints
+// Categories endpoints
 app.get('/categories', authMiddleware, async (_req: Request, res: Response) => {
     try {
         const categories = await prisma.category.findMany({
             where: { isActive: true },
             orderBy: { name: 'asc' }
         });
-        
         res.json(categories);
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
@@ -1059,7 +862,7 @@ app.get('/categories', authMiddleware, async (_req: Request, res: Response) => {
 });
 
 app.post('/categories', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
-    const { name } = req.body;
+    const { name } = req.body as { name: string };
     
     if (!name || !name.trim()) {
         return res.status(400).json({ error: 'Category name is required' });
@@ -1070,6 +873,7 @@ app.post('/categories', authMiddleware, requireRole(['HOST']), async (req: Reque
             data: { name: name.trim() }
         });
         
+        emitToAll('category_created', category);
         res.status(201).json(category);
     } catch (err: any) {
         if (err.code === 'P2002') {
@@ -1081,7 +885,7 @@ app.post('/categories', authMiddleware, requireRole(['HOST']), async (req: Reque
 
 app.put('/categories/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
     const categoryId = parseInt(req.params.id || '');
-    const { name } = req.body;
+    const { name } = req.body as { name: string };
     
     if (!name || !name.trim()) {
         return res.status(400).json({ error: 'Category name is required' });
@@ -1093,6 +897,7 @@ app.put('/categories/:id', authMiddleware, requireRole(['HOST']), async (req: Re
             data: { name: name.trim() }
         });
         
+        emitToAll('category_updated', category);
         res.json(category);
     } catch (err: any) {
         if (err.code === 'P2002') {
@@ -1102,40 +907,23 @@ app.put('/categories/:id', authMiddleware, requireRole(['HOST']), async (req: Re
     }
 });
 
-app.delete('/notifications/:id', authMiddleware, async (req: Request, res: Response) => {
-    const notificationId = parseInt(req.params.id || '');
-    
-    try {
-        await prisma.notification.delete({
-            where: { 
-                id: notificationId,
-                userId: req.user?.username
-            }
-        });
-        
-        res.json({ success: true });
-    } catch (err: any) {
-        res.status(500).json({ error: String(err) });
-    }
-});
-
 app.delete('/categories/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
     const categoryId = parseInt(req.params.id || '');
     
     try {
-        // Soft delete - deactivate instead of deleting
         const category = await prisma.category.update({
             where: { id: categoryId },
             data: { isActive: false }
         });
         
+        emitToAll('category_deleted', { id: categoryId });
         res.json({ success: true, category });
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
     }
 });
 
-// Service Category endpoints
+// Service Categories endpoints
 app.get('/service-categories', authMiddleware, async (_req: Request, res: Response) => {
     try {
         const categories = await prisma.serviceCategory.findMany({
@@ -1149,7 +937,7 @@ app.get('/service-categories', authMiddleware, async (_req: Request, res: Respon
 });
 
 app.post('/service-categories', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
-    const { name } = req.body;
+    const { name } = req.body as { name: string };
     
     if (!name || !name.trim()) {
         return res.status(400).json({ error: 'Service category name is required' });
@@ -1159,6 +947,8 @@ app.post('/service-categories', authMiddleware, requireRole(['HOST']), async (re
         const category = await prisma.serviceCategory.create({
             data: { name: name.trim() }
         });
+        
+        emitToAll('service_category_created', category);
         res.status(201).json(category);
     } catch (err: any) {
         if (err.code === 'P2002') {
@@ -1170,7 +960,7 @@ app.post('/service-categories', authMiddleware, requireRole(['HOST']), async (re
 
 app.put('/service-categories/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
     const categoryId = parseInt(req.params.id || '');
-    const { name } = req.body;
+    const { name } = req.body as { name: string };
     
     if (!name || !name.trim()) {
         return res.status(400).json({ error: 'Service category name is required' });
@@ -1181,6 +971,8 @@ app.put('/service-categories/:id', authMiddleware, requireRole(['HOST']), async 
             where: { id: categoryId },
             data: { name: name.trim() }
         });
+        
+        emitToAll('service_category_updated', category);
         res.json(category);
     } catch (err: any) {
         if (err.code === 'P2002') {
@@ -1198,6 +990,8 @@ app.delete('/service-categories/:id', authMiddleware, requireRole(['HOST']), asy
             where: { id: categoryId },
             data: { isActive: false }
         });
+        
+        emitToAll('service_category_deleted', { id: categoryId });
         res.json({ success: true, category });
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
@@ -1217,14 +1011,20 @@ app.get('/carry-in-services', authMiddleware, async (_req: Request, res: Respons
 });
 
 app.post('/carry-in-services', authMiddleware, async (req: Request, res: Response) => {
-    const { customerName, phone, email, address, category, serviceDescription } = req.body;
+    const { customerName, phone, email, address, category, serviceDescription } = req.body as {
+        customerName: string;
+        phone: string;
+        email?: string;
+        address?: string;
+        category: string;
+        serviceDescription?: string;
+    };
     
     if (!customerName || !phone || !category) {
         return res.status(400).json({ error: 'Customer name, phone, and category are required' });
     }
     
     try {
-        // Find or create customer in unified Customer table
         let customer = await prisma.customer.findUnique({ where: { phone } });
         if (!customer) {
             customer = await prisma.customer.create({
@@ -1240,7 +1040,6 @@ app.post('/carry-in-services', authMiddleware, async (req: Request, res: Respons
             });
         }
         
-        // Create service and update customer stats in transaction
         const [service] = await prisma.$transaction([
             prisma.carryInService.create({
                 data: {
@@ -1254,7 +1053,6 @@ app.post('/carry-in-services', authMiddleware, async (req: Request, res: Respons
                     createdBy: req.user?.username || 'system'
                 }
             }),
-            // Update customer stats
             prisma.customer.update({
                 where: { id: customer.id },
                 data: {
@@ -1266,6 +1064,7 @@ app.post('/carry-in-services', authMiddleware, async (req: Request, res: Respons
             })
         ]);
         
+        emitToAll('service_created', service);
         res.status(201).json(service);
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
@@ -1274,19 +1073,24 @@ app.post('/carry-in-services', authMiddleware, async (req: Request, res: Respons
 
 app.post('/carry-in-services/:id/complete', authMiddleware, async (req: Request, res: Response) => {
     const serviceId = parseInt(req.params.id || '');
-    const { completeRemark } = req.body;
+    const { completeRemark } = req.body as { completeRemark?: string };
+    
+    if (!req.user?.username) {
+        return res.status(401).json({ error: 'User not authenticated' });
+    }
     
     try {
         const service = await prisma.carryInService.update({
             where: { id: serviceId },
             data: {
                 status: 'COMPLETED_NOT_COLLECTED',
-                completedBy: req.user?.username,
+                completedBy: req.user.username,
                 completedAt: new Date(),
                 completeRemark: completeRemark || null
             }
         });
         
+        emitToAll('service_updated', service);
         res.json(service);
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
@@ -1295,21 +1099,64 @@ app.post('/carry-in-services/:id/complete', authMiddleware, async (req: Request,
 
 app.post('/carry-in-services/:id/deliver', authMiddleware, async (req: Request, res: Response) => {
     const serviceId = parseInt(req.params.id || '');
-    const { deliverRemark } = req.body;
+    const { deliverRemark } = req.body as { deliverRemark?: string };
+    
+    if (!req.user?.username) {
+        return res.status(401).json({ error: 'User not authenticated' });
+    }
     
     try {
         const service = await prisma.carryInService.update({
             where: { id: serviceId },
             data: {
                 status: 'COMPLETED_AND_COLLECTED',
-                deliveredBy: req.user?.username,
+                deliveredBy: req.user.username,
                 deliveredAt: new Date(),
                 deliverRemark: deliverRemark || null
             }
         });
         
+        emitToAll('service_updated', service);
         res.json(service);
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
     }
+});
+
+// WebSocket setup
+io.on('connection', (socket) => {
+    console.log('Client connected:', socket.id);
+    
+    socket.on('register', (userId: number) => {
+        userSockets.set(userId, socket.id);
+        console.log(`User ${userId} registered with socket ${socket.id}`);
+    });
+    
+    socket.on('disconnect', () => {
+        for (const [userId, socketId] of userSockets.entries()) {
+            if (socketId === socket.id) {
+                userSockets.delete(userId);
+                break;
+            }
+        }
+        console.log('Client disconnected:', socket.id);
+    });
+});
+
+// Start server
+httpServer.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+});
+
+// Handle graceful shutdown
+process.on("SIGINT", async () => {
+    console.log("Shutting down...");
+    await prisma.$disconnect();
+    process.exit(0);
+});
+
+process.on("SIGTERM", async () => {
+    console.log("Shutting down...");
+    await prisma.$disconnect();
+    process.exit(0);
 });

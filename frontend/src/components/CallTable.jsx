@@ -18,7 +18,7 @@ const CallTable = ({ calls }) => {
   const [selectedCall, setSelectedCall] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   
-  const { updateCall } = useCallStore();
+  const { updateCall, assignCall, completeCall } = useCallStore();
   const { user, users, token } = useAuthStore();
   const { categories, fetchCategories } = useCategoryStore();
 
@@ -83,77 +83,41 @@ const CallTable = ({ calls }) => {
   };
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    if (categories.length === 0) {
+      fetchCategories();
+    }
+  }, [categories.length, fetchCategories]);
 
   const handleAssign = async (callId) => {
     const worker = selectedWorker[callId];
     if (worker && !isAssigning[callId]) {
-      if (!token) {
-        alert('Please login to assign calls');
-        return;
-      }
-      
       setIsAssigning(prev => ({ ...prev, [callId]: true }));
       
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/calls/${callId}/assign`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` 
-          },
-          body: JSON.stringify({ 
-            assignee: worker,
-            engineerRemark: engineerRemark[callId] || null
-          })
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          alert(`Assignment failed: ${errorData.error || 'Unknown error'}`);
-          setIsAssigning(prev => ({ ...prev, [callId]: false }));
-          return;
-        }
-        
-        window.location.reload();
+        await assignCall(callId, worker, engineerRemark[callId]);
+        setShowAssign(prev => ({ ...prev, [callId]: false }));
+        setSelectedWorker(prev => ({ ...prev, [callId]: '' }));
+        setEngineerRemark(prev => ({ ...prev, [callId]: '' }));
       } catch (error) {
-        alert('Assignment failed. Please try again.');
+        // Error handling is done in assignCall
+      } finally {
         setIsAssigning(prev => ({ ...prev, [callId]: false }));
       }
     }
   };
 
   const handleComplete = async (callId) => {
-    if (!token) {
-      alert('Please login to complete calls');
-      return;
-    }
-    
     if (isCompleting[callId]) return;
     
     setIsCompleting(prev => ({ ...prev, [callId]: true }));
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/calls/${callId}/complete`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ remark: remark[callId] || '' })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        alert(`Complete failed: ${errorData.error || 'Unknown error'}`);
-        setIsCompleting(prev => ({ ...prev, [callId]: false }));
-        return;
-      }
-      
-      window.location.reload();
+      await completeCall(callId, remark[callId] || '');
+      setShowComplete(prev => ({ ...prev, [callId]: false }));
+      setRemark(prev => ({ ...prev, [callId]: '' }));
     } catch (error) {
-      alert('Failed to complete call. Please try again.');
+      // Error handling is done in completeCall
+    } finally {
       setIsCompleting(prev => ({ ...prev, [callId]: false }));
     }
   };

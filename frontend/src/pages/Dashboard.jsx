@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import useCallStore from '../store/callStore';
 import useAuthStore from '../store/authStore';
 import useCategoryStore from '../store/categoryStore';
+import useSocket from '../hooks/useSocket';
 import AddCallForm from '../components/AddCallForm';
 import CallCard from '../components/CallCard';
 import CallTable from '../components/CallTable';
@@ -21,16 +22,19 @@ const Dashboard = () => {
   const [categoryFilter, setCategoryFilter] = useState('ALL_CATEGORIES');
   
   const { calls, fetchCalls } = useCallStore();
-  const { fetchUsers } = useAuthStore();
+  const { users, fetchUsers } = useAuthStore();
   const { categories, fetchCategories } = useCategoryStore();
+  
+  // Initialize WebSocket connection
+  useSocket();
 
   useEffect(() => {
-    fetchCalls();
-    fetchCategories();
-    if (user?.role === 'HOST' || user?.role === 'ADMIN') {
+    if (calls.length === 0) fetchCalls();
+    if (categories.length === 0) fetchCategories();
+    if ((user?.role === 'HOST' || user?.role === 'ADMIN') && users.length === 0) {
       fetchUsers();
     }
-  }, []);
+  }, [calls.length, categories.length, users.length, user?.role, fetchCalls, fetchCategories, fetchUsers]);
 
   // Role-based filter options
   const getFilterOptions = () => {
@@ -107,6 +111,50 @@ const Dashboard = () => {
     return new Date(call.createdAt).toDateString() === today;
   });
 
+  // Calculate totals based on user role (same logic as backend)
+  const getTotalCalls = () => {
+    if (user?.role === 'ENGINEER') {
+      return calls.filter(call => 
+        call.createdBy === user?.username || call.assignedTo === user?.username
+      ).length;
+    }
+    return calls.length;
+  };
+
+  const getTodaysCalls = () => {
+    const today = new Date().toDateString();
+    if (user?.role === 'ENGINEER') {
+      return calls.filter(call => {
+        const isMyCall = call.createdBy === user?.username || call.assignedTo === user?.username;
+        const isToday = new Date(call.createdAt).toDateString() === today;
+        return isMyCall && isToday;
+      }).length;
+    }
+    return todaysCalls.length;
+  };
+
+  const getPendingCalls = () => {
+    if (user?.role === 'ENGINEER') {
+      return calls.filter(call => {
+        const isMyCall = call.createdBy === user?.username || call.assignedTo === user?.username;
+        const isPending = call.status === 'PENDING' || call.status === 'ASSIGNED';
+        return isMyCall && isPending;
+      }).length;
+    }
+    return calls.filter(c => c.status === 'PENDING' || c.status === 'ASSIGNED').length;
+  };
+
+  const getCompletedCalls = () => {
+    if (user?.role === 'ENGINEER') {
+      return calls.filter(call => {
+        const isMyCall = call.createdBy === user?.username || call.assignedTo === user?.username;
+        const isCompleted = call.status === 'COMPLETED';
+        return isMyCall && isCompleted;
+      }).length;
+    }
+    return calls.filter(c => c.status === 'COMPLETED').length;
+  };
+
   const handleExport = async (exportType, password) => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/auth/verify-secret`, {
@@ -162,23 +210,19 @@ const Dashboard = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-6">
         <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
           <h3 className="text-sm sm:text-lg font-semibold text-gray-700">Total Calls</h3>
-          <p className="text-xl sm:text-3xl font-bold text-blue-600">{calls.length}</p>
+          <p className="text-xl sm:text-3xl font-bold text-blue-600">{getTotalCalls()}</p>
         </div>
         <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
           <h3 className="text-sm sm:text-lg font-semibold text-gray-700">Today's Calls</h3>
-          <p className="text-xl sm:text-3xl font-bold text-green-600">{todaysCalls.length}</p>
+          <p className="text-xl sm:text-3xl font-bold text-green-600">{getTodaysCalls()}</p>
         </div>
         <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
           <h3 className="text-sm sm:text-lg font-semibold text-gray-700">Pending</h3>
-          <p className="text-xl sm:text-3xl font-bold text-yellow-600">
-            {calls.filter(c => c.status === 'PENDING' || c.status === 'ASSIGNED').length}
-          </p>
+          <p className="text-xl sm:text-3xl font-bold text-yellow-600">{getPendingCalls()}</p>
         </div>
         <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
           <h3 className="text-sm sm:text-lg font-semibold text-gray-700">Completed</h3>
-          <p className="text-xl sm:text-3xl font-bold text-green-600">
-            {calls.filter(c => c.status === 'COMPLETED').length}
-          </p>
+          <p className="text-xl sm:text-3xl font-bold text-green-600">{getCompletedCalls()}</p>
         </div>
       </div>
 

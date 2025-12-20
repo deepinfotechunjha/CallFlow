@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import useCarryInServiceStore from '../store/carryInServiceStore';
 import useServiceCategoryStore from '../store/serviceCategoryStore';
 import useAuthStore from '../store/authStore';
+import useSocket from '../hooks/useSocket';
 import useClickOutside from '../hooks/useClickOutside';
 
 const CarryInService = () => {
@@ -30,6 +31,9 @@ const CarryInService = () => {
   const { services, fetchServices, addService, completeService, deliverService, findCustomerByPhone } = useCarryInServiceStore();
   const { serviceCategories, fetchServiceCategories } = useServiceCategoryStore();
   const { user } = useAuthStore();
+  
+  // Initialize WebSocket connection
+  useSocket();
 
   const modalRef = useClickOutside(() => {
     if (showAddForm) {
@@ -51,9 +55,9 @@ const CarryInService = () => {
   const detailModalRef = useClickOutside(() => setSelectedService(null));
 
   useEffect(() => {
-    fetchServices();
-    fetchServiceCategories();
-  }, []);
+    if (services.length === 0) fetchServices();
+    if (serviceCategories.length === 0) fetchServiceCategories();
+  }, [services.length, serviceCategories.length, fetchServices, fetchServiceCategories]);
 
   const handlePhoneChange = async (phone) => {
     setFormData(prev => ({ ...prev, phone }));

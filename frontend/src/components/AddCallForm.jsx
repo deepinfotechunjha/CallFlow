@@ -37,8 +37,10 @@ const AddCallForm = ({ onClose }) => {
   });
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    if (categories.length === 0) {
+      fetchCategories();
+    }
+  }, [categories.length, fetchCategories]);
 
   const handlePhoneChange = async (phone) => {
     setFormData(prev => ({ ...prev, phone }));

@@ -6,6 +6,19 @@ const useCarryInServiceStore = create((set, get) => ({
   services: [],
   loading: false,
 
+  // WebSocket event handlers
+  handleServiceCreated: (service) => {
+    set(state => ({
+      services: [service, ...state.services.filter(s => s.id !== service.id)]
+    }));
+  },
+  
+  handleServiceUpdated: (service) => {
+    set(state => ({
+      services: state.services.map(s => s.id === service.id ? service : s)
+    }));
+  },
+
   fetchServices: async () => {
     set({ loading: true });
     try {
@@ -20,7 +33,7 @@ const useCarryInServiceStore = create((set, get) => ({
   addService: async (serviceData) => {
     try {
       const response = await apiClient.post('/carry-in-services', serviceData);
-      set(state => ({ services: [response.data, ...state.services] }));
+      // Don't update state here - WebSocket will handle it
       toast.success('Service added successfully');
       return response.data;
     } catch (error) {
@@ -32,11 +45,7 @@ const useCarryInServiceStore = create((set, get) => ({
   completeService: async (serviceId, completeRemark) => {
     try {
       const response = await apiClient.post(`/carry-in-services/${serviceId}/complete`, { completeRemark });
-      set(state => ({
-        services: state.services.map(service =>
-          service.id === serviceId ? response.data : service
-        )
-      }));
+      // Don't update state here - WebSocket will handle it
       toast.success('Service marked as completed');
       return response.data;
     } catch (error) {
@@ -48,11 +57,7 @@ const useCarryInServiceStore = create((set, get) => ({
   deliverService: async (serviceId, deliverRemark) => {
     try {
       const response = await apiClient.post(`/carry-in-services/${serviceId}/deliver`, { deliverRemark });
-      set(state => ({
-        services: state.services.map(service =>
-          service.id === serviceId ? response.data : service
-        )
-      }));
+      // Don't update state here - WebSocket will handle it
       toast.success('Service delivered to customer');
       return response.data;
     } catch (error) {

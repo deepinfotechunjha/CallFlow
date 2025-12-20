@@ -9,14 +9,35 @@ const useCallStore = create(
       calls: [],
       customers: [],
       
+      // WebSocket event handlers
+      handleCallCreated: (call) => {
+        set(state => ({
+          calls: [call, ...state.calls.filter(c => c.id !== call.id)]
+        }));
+      },
+      
+      handleCallUpdated: (call) => {
+        set(state => ({
+          calls: state.calls.map(c => c.id === call.id ? call : c)
+        }));
+      },
+      
+      handleCallAssigned: (call) => {
+        set(state => ({
+          calls: state.calls.map(c => c.id === call.id ? call : c)
+        }));
+      },
+      
+      handleCallCompleted: (call) => {
+        set(state => ({
+          calls: state.calls.map(c => c.id === call.id ? call : c)
+        }));
+      },
+      
       addCall: async (callData) => {
         try {
           const response = await apiClient.post('/calls', callData);
-          
-          set(state => ({
-            calls: [response.data, ...state.calls]
-          }));
-          
+          // Don't update state here - WebSocket will handle it
           toast.success('Call added successfully');
           return response.data;
         } catch (error) {
@@ -37,11 +58,7 @@ const useCallStore = create(
       updateCall: async (callId, updates) => {
         try {
           const response = await apiClient.put(`/calls/${callId}`, updates);
-          set(state => ({
-            calls: state.calls.map(call => 
-              call.id === callId ? response.data : call
-            )
-          }));
+          // Don't update state here - WebSocket will handle it
           toast.success('Call updated successfully');
           return response.data;
         } catch (error) {
@@ -63,13 +80,11 @@ const useCallStore = create(
         if (!phone) return null;
         try {
           const response = await apiClient.get(`/customers/phone/${phone}`);
-          return response.data; // Return customer if found
+          return response.data;
         } catch (error) {
-          // If 404, customer doesn't exist, return null
           if (error.response?.status === 404) {
             return null;
           }
-          // For other errors, also return null to avoid false positives
           console.error('Error finding customer:', error);
           return null;
         }
@@ -81,11 +96,7 @@ const useCallStore = create(
             assignee,
             engineerRemark
           });
-          set(state => ({
-            calls: state.calls.map(call => 
-              call.id === callId ? response.data : call
-            )
-          }));
+          // Don't update state here - WebSocket will handle it
           toast.success('Call assigned successfully');
           return response.data;
         } catch (error) {
@@ -99,11 +110,7 @@ const useCallStore = create(
           const response = await apiClient.post(`/calls/${callId}/complete`, {
             remark
           });
-          set(state => ({
-            calls: state.calls.map(call => 
-              call.id === callId ? response.data : call
-            )
-          }));
+          // Don't update state here - WebSocket will handle it
           toast.success('Call completed successfully');
           return response.data;
         } catch (error) {
@@ -111,13 +118,10 @@ const useCallStore = create(
           throw error;
         }
       }
-
-
-
-
     }),
     {
       name: 'call-storage',
+      partialize: (state) => ({ calls: state.calls, customers: state.customers })
     }
   )
 );

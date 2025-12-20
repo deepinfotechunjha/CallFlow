@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import useAuthStore from '../store/authStore';
 import useCallStore from '../store/callStore';
+import useSocket from '../hooks/useSocket';
 import useClickOutside from '../hooks/useClickOutside';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ExportModal from '../components/ExportModal';
@@ -46,25 +47,38 @@ const UserManagement = () => {
   
   const { users, fetchUsers, createUser, updateUser, deleteUser, user, token } = useAuthStore();
   const { calls } = useCallStore();
+  
+  // Initialize WebSocket connection
+  useSocket();
 
   const secretModalRef = useClickOutside(() => {
     if (showSecretModal) window.history.back();
   });
-  const addModalRef = useClickOutside(() => setShowAddForm(false));
-  const editModalRef = useClickOutside(() => setShowEditForm(false));
+  const addModalRef = useClickOutside(() => {
+    setShowAddForm(false);
+    setIsCreating(false);
+  });
+  const editModalRef = useClickOutside(() => {
+    setShowEditForm(false);
+    setIsEditing(false);
+  });
   const actionSecretModalRef = useClickOutside(() => {
     setShowActionSecretModal(false);
     setActionSecretPassword('');
     setPendingAction(null);
+    setIsCreating(false);
+    setIsEditing(false);
+    setIsDeleting({});
+    setIsConfirming(false);
   });
   const hostLimitModalRef = useClickOutside(() => setShowHostLimitAlert(false));
   const successModalRef = useClickOutside(() => setShowSuccessAlert(false));
 
   useEffect(() => {
-    if (hasAccess) {
+    if (hasAccess && users.length === 0) {
       fetchUsers();
     }
-  }, [hasAccess]);
+  }, [hasAccess, users.length, fetchUsers]);
 
   useEffect(() => {
     // Check if current user still exists in the users list
@@ -164,6 +178,7 @@ const UserManagement = () => {
     if (!actionSecretPassword.trim()) {
       setAlertMessage('Please enter the secret password');
       setShowAlert(true);
+      setIsConfirming(false);
       return;
     }
     
@@ -489,7 +504,10 @@ const UserManagement = () => {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg sm:text-xl font-bold">Add New Engineer</h2>
               <button
-                onClick={() => setShowAddForm(false)}
+                onClick={() => {
+                  setShowAddForm(false);
+                  setIsCreating(false);
+                }}
                 className="text-gray-500 hover:text-gray-700"
               >
                 ✕
@@ -561,7 +579,10 @@ const UserManagement = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowAddForm(false)}
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setIsCreating(false);
+                  }}
                   className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 text-sm"
                 >
                   Cancel
@@ -579,7 +600,10 @@ const UserManagement = () => {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg sm:text-xl font-bold">Edit Engineer</h2>
               <button
-                onClick={() => setShowEditForm(false)}
+                onClick={() => {
+                  setShowEditForm(false);
+                  setIsEditing(false);
+                }}
                 className="text-gray-500 hover:text-gray-700"
               >
                 ✕
@@ -651,7 +675,10 @@ const UserManagement = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowEditForm(false)}
+                  onClick={() => {
+                    setShowEditForm(false);
+                    setIsEditing(false);
+                  }}
                   className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 text-sm"
                 >
                   Cancel
@@ -719,7 +746,10 @@ const UserManagement = () => {
         title={confirmConfig.title}
         message={confirmConfig.message}
         onConfirm={confirmConfig.onConfirm}
-        onCancel={() => setShowConfirm(false)}
+        onCancel={() => {
+          setShowConfirm(false);
+          setIsDeleting({});
+        }}
       />
 
       <ConfirmDialog

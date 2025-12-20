@@ -8,10 +8,33 @@ const useCategoryStore = create((set, get) => ({
   categories: [],
   lastFetched: null,
   
+  // WebSocket event handlers
+  handleCategoryCreated: (category) => {
+    set(state => ({
+      categories: [...state.categories.filter(c => c.id !== category.id), category]
+        .sort((a, b) => a.name.localeCompare(b.name)),
+      lastFetched: Date.now()
+    }));
+  },
+  
+  handleCategoryUpdated: (category) => {
+    set(state => ({
+      categories: state.categories.map(c => c.id === category.id ? category : c)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+      lastFetched: Date.now()
+    }));
+  },
+  
+  handleCategoryDeleted: (deletedCategory) => {
+    set(state => ({
+      categories: state.categories.filter(c => c.id !== deletedCategory.id),
+      lastFetched: Date.now()
+    }));
+  },
+  
   fetchCategories: async (forceRefresh = false) => {
     const { lastFetched, categories } = get();
     
-    // Check if cache is still valid
     if (!forceRefresh && lastFetched && categories.length > 0) {
       const cacheAge = Date.now() - lastFetched;
       if (cacheAge < CACHE_DURATION) {
@@ -28,7 +51,6 @@ const useCategoryStore = create((set, get) => ({
       return response.data;
     } catch (error) {
       console.error('Failed to fetch categories:', error);
-      // Return cached categories if fetch fails
       return categories;
     }
   },
@@ -36,12 +58,7 @@ const useCategoryStore = create((set, get) => ({
   addCategory: async (name) => {
     try {
       const response = await apiClient.post('/categories', { name });
-      set(state => ({
-        categories: [...state.categories, response.data].sort((a, b) => 
-          a.name.localeCompare(b.name)
-        ),
-        lastFetched: Date.now()
-      }));
+      // Don't update state here - WebSocket will handle it
       toast.success('Category added successfully');
       return response.data;
     } catch (error) {
@@ -54,12 +71,7 @@ const useCategoryStore = create((set, get) => ({
   updateCategory: async (id, name) => {
     try {
       const response = await apiClient.put(`/categories/${id}`, { name });
-      set(state => ({
-        categories: state.categories.map(cat => 
-          cat.id === id ? response.data : cat
-        ).sort((a, b) => a.name.localeCompare(b.name)),
-        lastFetched: Date.now()
-      }));
+      // Don't update state here - WebSocket will handle it
       toast.success('Category updated successfully');
       return response.data;
     } catch (error) {
@@ -72,10 +84,7 @@ const useCategoryStore = create((set, get) => ({
   deleteCategory: async (id) => {
     try {
       await apiClient.delete(`/categories/${id}`);
-      set(state => ({
-        categories: state.categories.filter(cat => cat.id !== id),
-        lastFetched: Date.now()
-      }));
+      // Don't update state here - WebSocket will handle it
       toast.success('Category deleted successfully');
     } catch (error) {
       toast.error('Failed to delete category');

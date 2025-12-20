@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import useAuthStore from '../store/authStore';
 import useCategoryStore from '../store/categoryStore';
 import useServiceCategoryStore from '../store/serviceCategoryStore';
+import useSocket from '../hooks/useSocket';
 import useClickOutside from '../hooks/useClickOutside';
 
 const CategorySettings = () => {
@@ -15,6 +16,9 @@ const CategorySettings = () => {
   const { user } = useAuthStore();
   const { categories, fetchCategories, addCategory, updateCategory, deleteCategory } = useCategoryStore();
   const { serviceCategories, fetchServiceCategories, addServiceCategory, updateServiceCategory, deleteServiceCategory } = useServiceCategoryStore();
+  
+  // Initialize WebSocket connection
+  useSocket();
 
   const addModalRef = useClickOutside(() => {
     if (showAddModal) {
@@ -32,10 +36,10 @@ const CategorySettings = () => {
 
   useEffect(() => {
     if (user?.role === 'HOST') {
-      fetchCategories(true);
-      fetchServiceCategories(true);
+      if (categories.length === 0) fetchCategories();
+      if (serviceCategories.length === 0) fetchServiceCategories();
     }
-  }, [user]);
+  }, [user?.role, categories.length, serviceCategories.length, fetchCategories, fetchServiceCategories]);
 
   const handleAddCategory = async (e) => {
     e.preventDefault();
