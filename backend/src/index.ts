@@ -81,17 +81,29 @@ const emitToAll = (event: string, data: any) => {
 function authMiddleware(req: Request, res: Response, next: NextFunction) {
     try {
         const auth = req.headers['authorization'] as string | undefined;
-        if (!auth) return res.status(401).json({ error: 'Missing Authorization header' });
+        if (!auth) {
+            console.log('Missing Authorization header');
+            return res.status(401).json({ error: 'Missing Authorization header' });
+        }
         const parts = auth.split(' ');
-        if (parts.length !== 2 || parts[0] !== 'Bearer') return res.status(401).json({ error: 'Invalid Authorization format' });
+        if (parts.length !== 2 || parts[0] !== 'Bearer') {
+            console.log('Invalid Authorization format:', auth);
+            return res.status(401).json({ error: 'Invalid Authorization format' });
+        }
         const token = parts[1];
-        if (!token) return res.status(401).json({ error: 'Missing token' });
+        if (!token) {
+            console.log('Missing token');
+            return res.status(401).json({ error: 'Missing token' });
+        }
         const payload = verifyToken(token as string);
-        if (!payload) return res.status(401).json({ error: 'Invalid token' });
+        if (!payload) {
+            console.log('Invalid token:', token.substring(0, 20) + '...');
+            return res.status(401).json({ error: 'Invalid token' });
+        }
         req.user = payload;
         next();
     } catch (err: any) {
-        console.error('Auth middleware error:', err);
+        console.log('Authentication error:', err.message);
         res.status(401).json({ error: 'Authentication failed' });
     }
 }
@@ -106,7 +118,6 @@ function requireRole(roles: string[]) {
             }
             next();
         } catch (err: any) {
-            console.error('Role check error:', err);
             res.status(403).json({ error: 'Authorization failed' });
         }
     };
@@ -164,7 +175,6 @@ app.post('/auth/login', async (req: Request, res: Response) => {
             } 
         });
     } catch (err: any) {
-        console.error('Login error:', err);
         res.status(500).json({ error: 'Login failed' });
     }
 });
@@ -376,7 +386,6 @@ app.get('/calls', authMiddleware, async (req: Request, res: Response) => {
         const calls = await prisma.call.findMany(findArgs);
         res.json(calls);
     } catch (err: any) {
-        console.error('GET /calls error:', err);
         res.status(500).json({ error: 'Failed to fetch calls', details: String(err) });
     }
 });
@@ -542,7 +551,6 @@ app.post('/calls/:id/assign', authMiddleware, requireRole(['HOST', 'ADMIN']), as
         emitToAll('call_assigned', call);
         res.json(call);
     } catch (err: any) {
-        console.error('Error in /calls/:id/assign:', err);
         res.status(500).json({ error: 'Failed to assign call' });
     }
 });
@@ -578,7 +586,6 @@ app.post('/calls/:id/complete', authMiddleware, async (req: Request, res: Respon
         emitToAll('call_completed', updatedCall);
         res.json(updatedCall);
     } catch (err: any) {
-        console.error('Error in /calls/:id/complete:', err);
         res.status(500).json({ error: 'Failed to complete call' });
     }
 });
@@ -681,7 +688,11 @@ app.put('/calls/:id/increment', authMiddleware, async (req: Request, res: Respon
         
         // Create all notifications
         if (notifications.length > 0) {
-            await prisma.notification.createMany({ data: notifications });
+            const createdNotifications = await prisma.notification.createMany({ data: notifications });
+            // Emit notification events to specific users
+            notifications.forEach(notification => {
+                emitToAll('notification_created', notification);
+            });
         }
         
         res.json(updatedCall);
@@ -766,6 +777,80 @@ app.get('/customers/directory', authMiddleware, async (_req: Request, res: Respo
             orderBy: { lastActivityDate: 'desc' }
         });
         res.json(customers);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// Analytics endpoints
+app.get('/analytics/engineers', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const days = req.query.days as string;
+    
+    try {
+        let dateFilter = {};
+        if (days && days !== 'all') {
+            const daysAgo = new Date();
+            daysAgo.setDate(daysAgo.getDate() - parseInt(days));
+            dateFilter = { createdAt: { gte: daysAgo } };
+        }
+        
+        const users = await prisma.user.findMany({
+            where: { role: { in: ['ENGINEER', 'ADMIN'] } },
+            select: { username: true }
+        });
+        
+        const analytics = await Promise.all(users.map(async (user) => {
+            const totalAssigned = await prisma.call.count({
+                where: { 
+                    assignedTo: user.username,
+                    ...dateFilter
+                }
+            });
+            
+            const completed = await prisma.call.count({
+                where: { 
+                    assignedTo: user.username,
+                    status: 'COMPLETED',
+                    ...dateFilter
+                }
+            });
+            
+            const pending = totalAssigned - completed;
+            const completionRate = totalAssigned > 0 ? Math.round((completed / totalAssigned) * 100) : 0;
+            
+            const completedCalls = await prisma.call.findMany({
+                where: {
+                    assignedTo: user.username,
+                    status: 'COMPLETED',
+                    assignedAt: { not: null },
+                    completedAt: { not: null },
+                    ...dateFilter
+                },
+                select: { assignedAt: true, completedAt: true }
+            });
+            
+            let avgResolutionTime = 0;
+            if (completedCalls.length > 0) {
+                const totalTime = completedCalls.reduce((sum, call) => {
+                    if (call.assignedAt && call.completedAt) {
+                        return sum + (new Date(call.completedAt).getTime() - new Date(call.assignedAt).getTime());
+                    }
+                    return sum;
+                }, 0);
+                avgResolutionTime = totalTime / completedCalls.length / (1000 * 60 * 60); // Convert to hours
+            }
+            
+            return {
+                name: user.username,
+                totalAssigned,
+                completed,
+                pending,
+                completionRate,
+                avgResolutionTime
+            };
+        }));
+        
+        res.json(analytics);
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
     }
@@ -869,6 +954,26 @@ app.post('/categories', authMiddleware, requireRole(['HOST']), async (req: Reque
     }
     
     try {
+        // Check if a category with this name already exists (including inactive ones)
+        const existingCategory = await prisma.category.findUnique({
+            where: { name: name.trim() }
+        });
+        
+        if (existingCategory) {
+            if (existingCategory.isActive) {
+                return res.status(400).json({ error: 'Category already exists' });
+            } else {
+                // Reactivate the existing category
+                const category = await prisma.category.update({
+                    where: { id: existingCategory.id },
+                    data: { isActive: true }
+                });
+                emitToAll('category_created', category);
+                return res.status(201).json(category);
+            }
+        }
+        
+        // Create new category if none exists
         const category = await prisma.category.create({
             data: { name: name.trim() }
         });
@@ -876,9 +981,6 @@ app.post('/categories', authMiddleware, requireRole(['HOST']), async (req: Reque
         emitToAll('category_created', category);
         res.status(201).json(category);
     } catch (err: any) {
-        if (err.code === 'P2002') {
-            return res.status(400).json({ error: 'Category already exists' });
-        }
         res.status(500).json({ error: String(err) });
     }
 });
@@ -1125,11 +1227,8 @@ app.post('/carry-in-services/:id/deliver', authMiddleware, async (req: Request, 
 
 // WebSocket setup
 io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id);
-    
     socket.on('register', (userId: number) => {
         userSockets.set(userId, socket.id);
-        console.log(`User ${userId} registered with socket ${socket.id}`);
     });
     
     socket.on('disconnect', () => {
@@ -1139,24 +1238,21 @@ io.on('connection', (socket) => {
                 break;
             }
         }
-        console.log('Client disconnected:', socket.id);
     });
 });
 
 // Start server
 httpServer.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
 
 // Handle graceful shutdown
 process.on("SIGINT", async () => {
-    console.log("Shutting down...");
     await prisma.$disconnect();
     process.exit(0);
 });
 
 process.on("SIGTERM", async () => {
-    console.log("Shutting down...");
     await prisma.$disconnect();
     process.exit(0);
 });

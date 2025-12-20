@@ -26,7 +26,6 @@ const EngineerAnalytics = () => {
       setAnalytics(response.data);
     } catch (error) {
       toast.error('Failed to fetch analytics');
-      console.error('Analytics fetch error:', error);
     } finally {
       setLoading(false);
     }

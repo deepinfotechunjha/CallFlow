@@ -97,14 +97,29 @@ const NotificationBell = () => {
   useEffect(() => {
     if (user) {
       fetchUnreadCount();
-      // Poll for new notifications every 30 seconds
+      
+      // Listen for real-time notification updates
+      const handleNotificationUpdate = () => {
+        fetchUnreadCount();
+        if (showDropdown) {
+          fetchNotifications();
+        }
+      };
+      
+      window.addEventListener('notification_update', handleNotificationUpdate);
+      
+      // Poll for new notifications every 30 seconds as backup
       const interval = setInterval(() => {
         fetchUnreadCount();
         if (showDropdown) {
           fetchNotifications(); // Refresh notifications to remove old ones
         }
       }, 30000);
-      return () => clearInterval(interval);
+      
+      return () => {
+        window.removeEventListener('notification_update', handleNotificationUpdate);
+        clearInterval(interval);
+      };
     }
   }, [user, showDropdown]);
 

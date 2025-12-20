@@ -6,6 +6,7 @@ import useClickOutside from '../hooks/useClickOutside';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ExportModal from '../components/ExportModal';
 import { exportUsersToExcel } from '../utils/excelExport';
+import apiClient from '../api/apiClient';
 import toast from 'react-hot-toast';
 
 const UserManagement = () => {
@@ -45,7 +46,7 @@ const UserManagement = () => {
     secretPassword: ''
   });
   
-  const { users, fetchUsers, createUser, updateUser, deleteUser, user, token } = useAuthStore();
+  const { users, fetchUsers, createUser, updateUser, deleteUser, user } = useAuthStore();
   const { calls } = useCallStore();
   
   // Initialize WebSocket connection
@@ -186,18 +187,13 @@ const UserManagement = () => {
     setIsConfirming(true);
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/auth/verify-secret`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ secretPassword: actionSecretPassword })
+      const response = await apiClient.post('/auth/verify-secret', {
+        secretPassword: actionSecretPassword
       });
       
-      const data = await response.json();
+      const data = response.data;
       
-      if (response.ok && data.success && data.hasAccess) {
+      if (data.success && data.hasAccess) {
         // Check if deleting current user
         if (pendingAction.type === 'delete' && pendingAction.userId === user.id) {
           setAlertMessage('You cannot delete your own account');
@@ -240,7 +236,6 @@ const UserManagement = () => {
             setShowSuccessAlert(true);
           }
         } catch (error) {
-          console.error('Error executing action:', error);
           const errorMessage = error?.response?.data?.error || error?.message || 'Failed to execute action. Please try again.';
           setAlertMessage(errorMessage);
           setShowAlert(true);
@@ -277,18 +272,13 @@ const UserManagement = () => {
     }
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/auth/verify-secret`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ secretPassword })
+      const response = await apiClient.post('/auth/verify-secret', {
+        secretPassword
       });
       
-      const data = await response.json();
+      const data = response.data;
       
-      if (response.ok && data.success && data.hasAccess) {
+      if (data.success && data.hasAccess) {
         setHasAccess(true);
         setShowSecretModal(false);
       } else {
@@ -307,18 +297,13 @@ const UserManagement = () => {
 
   const handleExport = async (exportType, password) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/auth/verify-secret`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ secretPassword: password })
+      const response = await apiClient.post('/auth/verify-secret', {
+        secretPassword: password
       });
       
-      const data = await response.json();
+      const data = response.data;
       
-      if (response.ok && data.success && data.hasAccess) {
+      if (data.success && data.hasAccess) {
         exportUsersToExcel(users, calls);
         toast.success(`Successfully exported ${users.length} users to Excel`);
         setShowExportModal(false);

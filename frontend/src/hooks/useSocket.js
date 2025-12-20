@@ -20,7 +20,6 @@ const useSocket = () => {
       });
 
       socket.on('connect', () => {
-        console.log('WebSocket connected');
         socket.emit('register', user.id);
       });
 
@@ -101,8 +100,14 @@ const useSocket = () => {
         useServiceCategoryStore.getState().handleServiceCategoryDeleted(deletedCategory);
       });
 
+      // Notification events
+      socket.on('notification_created', (notification) => {
+        // Trigger notification bell to refresh
+        window.dispatchEvent(new CustomEvent('notification_update'));
+      });
+
       socket.on('disconnect', () => {
-        console.log('WebSocket disconnected');
+        // WebSocket disconnected
       });
     }
 
