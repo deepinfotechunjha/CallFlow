@@ -79,13 +79,14 @@ const useCallStore = create(
       findCustomerByPhone: async (phone) => {
         if (!phone) return null;
         try {
-          const response = await apiClient.get(`/customers/phone/${phone}`);
+          const response = await apiClient.get(`/customers/phone/${phone}`, {
+            headers: { 'X-Silent-404': 'true' }
+          });
           return response.data;
         } catch (error) {
           if (error.response?.status === 404) {
             return null;
           }
-          console.error('Error finding customer:', error);
           return null;
         }
       },

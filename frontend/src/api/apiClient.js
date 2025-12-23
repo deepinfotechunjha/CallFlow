@@ -24,6 +24,15 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Silently handle 404 errors for requests marked as silent
+    if (error.response?.status === 404 && error.config?.headers?.['X-Silent-404']) {
+      // Create a custom error that won't be logged by the browser
+      const silentError = new Error('Customer not found');
+      silentError.response = error.response;
+      silentError.config = error.config;
+      return Promise.reject(silentError);
+    }
+    
     if (error.response?.status === 401 && error.response?.data?.error === 'Invalid token') {
       // Token is invalid, user might have been deleted
       const { logout } = useAuthStore.getState();

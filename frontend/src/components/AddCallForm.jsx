@@ -50,15 +50,29 @@ const AddCallForm = ({ onClose }) => {
       if (existingCustomer) {
         setFormData(prev => ({
           ...prev,
-          customerName: existingCustomer.name || prev.customerName,
+          customerName: existingCustomer.name || '',
           email: existingCustomer.email || '',
           address: existingCustomer.address || ''
         }));
         setCustomerFound(true);
       } else {
+        // Clear fields when no customer is found
+        setFormData(prev => ({
+          ...prev,
+          customerName: '',
+          email: '',
+          address: ''
+        }));
         setCustomerFound(false);
       }
     } else {
+      // Clear fields when phone is too short
+      setFormData(prev => ({
+        ...prev,
+        customerName: '',
+        email: '',
+        address: ''
+      }));
       setCustomerFound(false);
     }
   };
