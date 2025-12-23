@@ -132,66 +132,96 @@ const CustomerDirectory = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-700">Customer Directory</h1>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-6">
-        <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
-          <h3 className="text-sm sm:text-lg font-semibold text-gray-700">Total Customers</h3>
-          <p className="text-xl sm:text-3xl font-bold text-blue-600">{customers.length}</p>
-        </div>
-        <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
-          <h3 className="text-sm sm:text-lg font-semibold text-gray-700">Total Outside Calls</h3>
-          <p className="text-xl sm:text-3xl font-bold text-green-600">
-            {customers.reduce((sum, c) => sum + (c.outsideCalls || 0), 0)}
-          </p>
-        </div>
-        <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
-          <h3 className="text-sm sm:text-lg font-semibold text-gray-700">Total Carry-In Services</h3>
-          <p className="text-xl sm:text-3xl font-bold text-purple-600">
-            {customers.reduce((sum, c) => sum + (c.carryInServices || 0), 0)}
-          </p>
-        </div>
-        <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
-          <h3 className="text-sm sm:text-lg font-semibold text-gray-700">Total Interactions</h3>
-          <p className="text-xl sm:text-3xl font-bold text-orange-600">
-            {customers.reduce((sum, c) => sum + (c.totalInteractions || 0), 0)}
-          </p>
+    <div className="max-w-7xl mx-auto p-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">Customer Directory</h1>
+          <p className="text-gray-600">Manage and view all customer information</p>
         </div>
       </div>
 
-      <div className="mb-6 bg-white p-4 rounded-lg shadow">
-        <div className="mb-4 pb-4 border-b">
-          <div className="flex flex-wrap items-end gap-2">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 sm:p-6 rounded-xl shadow-sm border border-blue-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm sm:text-base font-medium text-blue-700 mb-1">Total Customers</h3>
+              <p className="text-2xl sm:text-3xl font-bold text-blue-800">{customers.length}</p>
+            </div>
+            <div className="text-blue-500 text-2xl">👥</div>
+          </div>
+        </div>
+        <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 sm:p-6 rounded-xl shadow-sm border border-green-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm sm:text-base font-medium text-green-700 mb-1">Outside Calls</h3>
+              <p className="text-2xl sm:text-3xl font-bold text-green-800">
+                {customers.reduce((sum, c) => sum + (c.outsideCalls || 0), 0)}
+              </p>
+            </div>
+            <div className="text-green-500 text-2xl">📞</div>
+          </div>
+        </div>
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 sm:p-6 rounded-xl shadow-sm border border-purple-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm sm:text-base font-medium text-purple-700 mb-1">Carry-In Services</h3>
+              <p className="text-2xl sm:text-3xl font-bold text-purple-800">
+                {customers.reduce((sum, c) => sum + (c.carryInServices || 0), 0)}
+              </p>
+            </div>
+            <div className="text-purple-500 text-2xl">🔧</div>
+          </div>
+        </div>
+        <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 sm:p-6 rounded-xl shadow-sm border border-orange-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm sm:text-base font-medium text-orange-700 mb-1">Total Interactions</h3>
+              <p className="text-2xl sm:text-3xl font-bold text-orange-800">
+                {customers.reduce((sum, c) => sum + (c.totalInteractions || 0), 0)}
+              </p>
+            </div>
+            <div className="text-orange-500 text-2xl">📊</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters Section */}
+      <div className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          <span>🔍</span> Search & Filters
+        </h2>
+        
+        {/* Date Range Filter */}
+        <div className="mb-6 pb-6 border-b border-gray-100">
+          <div className="flex flex-wrap items-end gap-3">
             <div className="flex-1 min-w-[140px]">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Date Type</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Date Type</label>
               <select
                 value={dateRangeFilter.type || filterDateType}
                 onChange={(e) => setDateRangeFilter(prev => ({ ...prev, type: e.target.value }))}
-                className="w-full p-2 border rounded text-xs focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
               >
                 <option value="lastActivityDate">Last Activity</option>
                 <option value="createdAt">Created Date</option>
               </select>
             </div>
             <div className="flex-1 min-w-[120px]">
-              <label className="block text-xs font-medium text-gray-600 mb-1">From</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">From</label>
               <input
                 type="date"
                 value={dateRangeFilter.start}
                 onChange={(e) => setDateRangeFilter(prev => ({ ...prev, start: e.target.value }))}
-                className="w-full p-2 border rounded text-xs focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div className="flex-1 min-w-[120px]">
-              <label className="block text-xs font-medium text-gray-600 mb-1">To</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">To</label>
               <input
                 type="date"
                 value={dateRangeFilter.end}
                 onChange={(e) => setDateRangeFilter(prev => ({ ...prev, end: e.target.value }))}
-                className="w-full p-2 border rounded text-xs focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <button
@@ -200,7 +230,7 @@ const CustomerDirectory = () => {
                 setAppliedDateRange(filterWithType);
               }}
               disabled={!dateRangeFilter.start || !dateRangeFilter.end}
-              className="px-4 py-2 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
               Apply
             </button>
@@ -210,7 +240,7 @@ const CustomerDirectory = () => {
                   setDateRangeFilter({ type: '', start: '', end: '' });
                   setAppliedDateRange({ type: '', start: '', end: '' });
                 }}
-                className="px-4 py-2 bg-red-600 text-white rounded text-xs font-medium hover:bg-red-700"
+                className="px-6 py-3 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
               >
                 Clear
               </button>
@@ -218,20 +248,21 @@ const CustomerDirectory = () => {
           </div>
         </div>
 
-        <div className="mb-4">
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative max-w-md">
+            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">🔍</span>
             <input
               type="text"
               placeholder="Search by name, phone, or email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-10 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg"
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xl transition-colors"
               >
                 ×
               </button>
@@ -239,11 +270,12 @@ const CustomerDirectory = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 mb-2">
+        {/* Filter Controls */}
+        <div className="flex flex-wrap items-center gap-3">
           <select
             value={activityFilter}
             onChange={(e) => setActivityFilter(e.target.value)}
-            className="px-3 py-2 border rounded-lg text-xs focus:ring-2 focus:ring-blue-500 bg-white"
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
           >
             <option value="ALL_ACTIVITY">All Time</option>
             <option value="1_DAY">Last 1 Day</option>
@@ -259,7 +291,7 @@ const CustomerDirectory = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border rounded-lg text-xs focus:ring-2 focus:ring-blue-500 bg-white"
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
           >
             <option value="ALL_STATUS">All Status</option>
             <option value="ACTIVE">Active</option>
@@ -273,19 +305,20 @@ const CustomerDirectory = () => {
                 setActivityFilter('ALL_ACTIVITY');
                 setStatusFilter('ALL_STATUS');
               }}
-              className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-300"
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
             >
-              Clear
+              Clear All
             </button>
           )}
           
-          <div className="ml-auto text-xs text-gray-600">
-            {filteredCustomers.length} of {customers.length} customers
+          <div className="ml-auto text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
+            <span className="font-medium">{filteredCustomers.length}</span> of <span className="font-medium">{customers.length}</span> customers
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
+      {/* Desktop Table View */}
+      <div className="hidden lg:block bg-white rounded-lg shadow overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -393,6 +426,89 @@ const CustomerDirectory = () => {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile/Tablet Card View */}
+      <div className="lg:hidden space-y-4">
+        {filteredCustomers.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm p-8 text-center text-gray-500 border border-gray-200">
+            <div className="text-4xl mb-4">👥</div>
+            <p className="text-lg font-medium">No customers found</p>
+            <p className="text-sm">Try adjusting your search or filters</p>
+          </div>
+        ) : (
+          filteredCustomers.map((customer, index) => (
+            <div key={customer.id} className="bg-white rounded-xl shadow-sm p-5 border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">#{index + 1}</span>
+                    <h3 className="text-lg font-semibold text-gray-900">{customer.name}</h3>
+                  </div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-gray-400">📞</span>
+                    <p className="text-sm text-gray-700 font-medium">{customer.phone}</p>
+                  </div>
+                  {customer.email && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400">✉️</span>
+                      <p className="text-sm text-gray-600">{customer.email}</p>
+                    </div>
+                  )}
+                </div>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                  getCustomerStatus(customer) === 'Active' 
+                    ? 'bg-green-100 text-green-800 border border-green-200' 
+                    : 'bg-red-100 text-red-800 border border-red-200'
+                }`}>
+                  {getCustomerStatus(customer) === 'Active' ? '✓' : '✗'} {getCustomerStatus(customer)}
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="text-center bg-green-50 p-3 rounded-lg border border-green-100">
+                  <div className="text-xs text-green-700 mb-1 font-medium">Outside Calls</div>
+                  <div className="text-lg font-bold text-green-800">{customer.outsideCalls || 0}</div>
+                </div>
+                <div className="text-center bg-purple-50 p-3 rounded-lg border border-purple-100">
+                  <div className="text-xs text-purple-700 mb-1 font-medium">Carry-In</div>
+                  <div className="text-lg font-bold text-purple-800">{customer.carryInServices || 0}</div>
+                </div>
+                <div className="text-center bg-blue-50 p-3 rounded-lg border border-blue-100">
+                  <div className="text-xs text-blue-700 mb-1 font-medium">Total</div>
+                  <div className="text-lg font-bold text-blue-800">{customer.totalInteractions || 0}</div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 pt-4 border-t border-gray-100">
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-400">📅</span>
+                  <div>
+                    <span className="font-medium text-gray-700">Created:</span>
+                    <div className="text-xs">
+                      {customer.createdAt 
+                        ? new Date(customer.createdAt).toLocaleDateString()
+                        : 'N/A'
+                      }
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-400">⏰</span>
+                  <div>
+                    <span className="font-medium text-gray-700">Last Activity:</span>
+                    <div className="text-xs">
+                      {customer.lastActivityDate 
+                        ? new Date(customer.lastActivityDate).toLocaleDateString()
+                        : 'Never'
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

@@ -80,22 +80,28 @@ const EngineerAnalytics = () => {
 
   if (user?.role !== 'HOST') {
     return (
-      <div className="p-6">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          Access denied. Only HOST users can view analytics.
+      <div className="max-w-7xl mx-auto p-4">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🚫</span>
+            <span>Access denied. Only HOST users can view analytics.</span>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-3 sm:p-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-        <h1 className="text-xl sm:text-2xl font-bold">Engineer Analytics</h1>
+    <div className="max-w-7xl mx-auto p-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">Engineer Analytics 📊</h1>
+          <p className="text-gray-600">Performance metrics and insights for all engineers</p>
+        </div>
         <select
           value={timeFilter}
           onChange={(e) => setTimeFilter(e.target.value)}
-          className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm w-full sm:w-auto"
+          className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors text-sm w-full sm:w-auto"
         >
           {timeFilters.map(filter => (
             <option key={filter.value} value={filter.value}>
@@ -105,105 +111,203 @@ const EngineerAnalytics = () => {
         </select>
       </div>
 
-      {loading ? (
-        <div className="text-center py-8 text-sm">Loading analytics...</div>
-      ) : (
-        <div className="bg-white rounded-lg shadow overflow-x-auto">
-          <table className="min-w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th 
-                  className="px-2 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('name')}
-                >
-                  Engineer {getSortIcon('name')}
-                </th>
-                <th 
-                  className="hidden sm:table-cell px-2 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('totalAssigned')}
-                >
-                  Total {getSortIcon('totalAssigned')}
-                </th>
-                <th 
-                  className="px-2 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('completed')}
-                >
-                  Done {getSortIcon('completed')}
-                </th>
-                <th 
-                  className="hidden md:table-cell px-2 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('pending')}
-                >
-                  Pending {getSortIcon('pending')}
-                </th>
-                <th 
-                  className="px-2 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('completionRate')}
-                >
-                  Rate {getSortIcon('completionRate')}
-                </th>
-                <th 
-                  className="hidden lg:table-cell px-2 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('avgResolutionTime')}
-                >
-                  Avg Time {getSortIcon('avgResolutionTime')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {sortedAnalytics.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
-                    No data available for selected time period
-                  </td>
-                </tr>
-              ) : (
-                sortedAnalytics.map((engineer, index) => (
-                  <tr key={engineer.name} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="px-2 sm:px-4 md:px-6 py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900">
-                      {engineer.name}
-                    </td>
-                    <td className="hidden sm:table-cell px-2 sm:px-4 md:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
-                      {engineer.totalAssigned}
-                    </td>
-                    <td className="px-2 sm:px-4 md:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-green-600">
-                      {engineer.completed}
-                    </td>
-                    <td className="hidden md:table-cell px-2 sm:px-4 md:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-yellow-600">
-                      {engineer.pending}
-                    </td>
-                    <td className="px-2 sm:px-4 md:px-6 py-4 whitespace-nowrap text-xs sm:text-sm">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        engineer.completionRate >= 80 ? 'bg-green-100 text-green-800' :
-                        engineer.completionRate >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {engineer.completionRate}%
-                      </span>
-                    </td>
-                    <td className="hidden lg:table-cell px-2 sm:px-4 md:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
-                      {formatTime(engineer.avgResolutionTime)}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {/* Summary Cards */}
+      {analytics.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 sm:p-6 rounded-xl shadow-sm border border-blue-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm sm:text-base font-medium text-blue-700 mb-1">Total Engineers</h3>
+                <p className="text-2xl sm:text-3xl font-bold text-blue-800">{analytics.length}</p>
+              </div>
+              <div className="text-blue-500 text-2xl">👥</div>
+            </div>
+          </div>
+          <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 sm:p-6 rounded-xl shadow-sm border border-green-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm sm:text-base font-medium text-green-700 mb-1">Avg Completion</h3>
+                <p className="text-2xl sm:text-3xl font-bold text-green-800">
+                  {Math.round(analytics.reduce((sum, eng) => sum + eng.completionRate, 0) / analytics.length)}%
+                </p>
+              </div>
+              <div className="text-green-500 text-2xl">✅</div>
+            </div>
+          </div>
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 sm:p-6 rounded-xl shadow-sm border border-purple-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm sm:text-base font-medium text-purple-700 mb-1">Total Completed</h3>
+                <p className="text-2xl sm:text-3xl font-bold text-purple-800">
+                  {analytics.reduce((sum, eng) => sum + eng.completed, 0)}
+                </p>
+              </div>
+              <div className="text-purple-500 text-2xl">🎯</div>
+            </div>
+          </div>
+          <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 sm:p-6 rounded-xl shadow-sm border border-orange-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm sm:text-base font-medium text-orange-700 mb-1">Total Pending</h3>
+                <p className="text-2xl sm:text-3xl font-bold text-orange-800">
+                  {analytics.reduce((sum, eng) => sum + eng.pending, 0)}
+                </p>
+              </div>
+              <div className="text-orange-500 text-2xl">⏳</div>
+            </div>
+          </div>
         </div>
       )}
 
-      {analytics.length > 0 && (
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
-            <h3 className="font-medium text-blue-900 text-sm sm:text-base">Total Engineers</h3>
-            <p className="text-xl sm:text-2xl font-bold text-blue-600">{analytics.length}</p>
+      {loading ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+          <div className="text-center text-gray-500">
+            <div className="text-4xl mb-4">📊</div>
+            <p className="text-lg font-medium">Loading analytics...</p>
           </div>
-          <div className="bg-green-50 p-3 sm:p-4 rounded-lg">
-            <h3 className="font-medium text-green-900 text-sm sm:text-base">Avg Completion Rate</h3>
-            <p className="text-xl sm:text-2xl font-bold text-green-600">
-              {Math.round(analytics.reduce((sum, eng) => sum + eng.completionRate, 0) / analytics.length)}%
-            </p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <span>📈</span> Engineer Performance
+            </h2>
           </div>
+
+          {sortedAnalytics.length === 0 ? (
+            <div className="px-6 py-8 text-center text-gray-500">
+              <div className="text-4xl mb-4">📊</div>
+              <p className="text-lg font-medium">No data available</p>
+              <p className="text-sm">No analytics found for the selected time period</p>
+            </div>
+          ) : (
+            <>
+              {/* Mobile/Tablet Card View */}
+              <div className="lg:hidden">
+                <div className="divide-y divide-gray-200">
+                  {sortedAnalytics.map((engineer, index) => (
+                    <div key={engineer.name} className="p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-lg">👨‍💻</span>
+                            <div className="text-sm font-semibold text-gray-900">{engineer.name}</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              engineer.completionRate >= 80 ? 'bg-green-100 text-green-800' :
+                              engineer.completionRate >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              {engineer.completionRate}% Rate
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                        <div>
+                          <div className="text-xs font-medium text-gray-500 mb-1">Total Assigned</div>
+                          <div className="text-sm font-semibold text-gray-900">{engineer.totalAssigned}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs font-medium text-gray-500 mb-1">Completed</div>
+                          <div className="text-sm font-semibold text-green-600">{engineer.completed}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs font-medium text-gray-500 mb-1">Pending</div>
+                          <div className="text-sm font-semibold text-yellow-600">{engineer.pending}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs font-medium text-gray-500 mb-1">Avg Time</div>
+                          <div className="text-sm font-semibold text-gray-600">{formatTime(engineer.avgResolutionTime)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden lg:block overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={() => handleSort('name')}
+                      >
+                        Engineer {getSortIcon('name')}
+                      </th>
+                      <th 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={() => handleSort('totalAssigned')}
+                      >
+                        Total Assigned {getSortIcon('totalAssigned')}
+                      </th>
+                      <th 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={() => handleSort('completed')}
+                      >
+                        Completed {getSortIcon('completed')}
+                      </th>
+                      <th 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={() => handleSort('pending')}
+                      >
+                        Pending {getSortIcon('pending')}
+                      </th>
+                      <th 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={() => handleSort('completionRate')}
+                      >
+                        Completion Rate {getSortIcon('completionRate')}
+                      </th>
+                      <th 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={() => handleSort('avgResolutionTime')}
+                      >
+                        Avg Resolution Time {getSortIcon('avgResolutionTime')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {sortedAnalytics.map((engineer, index) => (
+                      <tr key={engineer.name} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">👨‍💻</span>
+                            <div className="text-sm font-medium text-gray-900">{engineer.name}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {engineer.totalAssigned}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                          {engineer.completed}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-yellow-600">
+                          {engineer.pending}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            engineer.completionRate >= 80 ? 'bg-green-100 text-green-800' :
+                            engineer.completionRate >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {engineer.completionRate}%
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatTime(engineer.avgResolutionTime)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

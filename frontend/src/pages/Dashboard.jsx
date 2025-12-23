@@ -182,60 +182,85 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
+    <div className="max-w-7xl mx-auto p-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-3">
         <div>
-          <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-700">Welcome Back! {user?.username}</h3>
-      
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">Welcome Back! 👋</h1>
+          <p className="text-gray-600">Hello <span className="font-semibold text-blue-600">{user?.username}</span>, here's your call management overview</p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex gap-3 w-full sm:w-auto">
           {user?.role === 'HOST' && (
             <button
               onClick={() => setShowExportModal(true)}
-              className="bg-green-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-green-700 font-medium text-sm sm:text-base whitespace-nowrap flex items-center gap-2"
+              className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-green-700 hover:to-green-800 font-medium text-sm sm:text-base whitespace-nowrap flex items-center gap-2 shadow-sm transition-all"
             >
               📊 Export
             </button>
           )}
           <button
             onClick={() => setShowAddForm(true)}
-            className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm sm:text-base whitespace-nowrap"
+            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium text-sm sm:text-base whitespace-nowrap shadow-sm transition-all"
           >
             + Add New Call
           </button>
         </div>
       </div>
 
-      
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-6">
-        <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
-          <h3 className="text-sm sm:text-lg font-semibold text-gray-700">Total Calls</h3>
-          <p className="text-xl sm:text-3xl font-bold text-blue-600">{getTotalCalls()}</p>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 sm:p-6 rounded-xl shadow-sm border border-blue-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm sm:text-base font-medium text-blue-700 mb-1">Total Calls</h3>
+              <p className="text-2xl sm:text-3xl font-bold text-blue-800">{getTotalCalls()}</p>
+            </div>
+            <div className="text-blue-500 text-2xl">📞</div>
+          </div>
         </div>
-        <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
-          <h3 className="text-sm sm:text-lg font-semibold text-gray-700">Today's Calls</h3>
-          <p className="text-xl sm:text-3xl font-bold text-green-600">{getTodaysCalls()}</p>
+        <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 sm:p-6 rounded-xl shadow-sm border border-green-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm sm:text-base font-medium text-green-700 mb-1">Today's Calls</h3>
+              <p className="text-2xl sm:text-3xl font-bold text-green-800">{getTodaysCalls()}</p>
+            </div>
+            <div className="text-green-500 text-2xl">📅</div>
+          </div>
         </div>
-        <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
-          <h3 className="text-sm sm:text-lg font-semibold text-gray-700">Pending</h3>
-          <p className="text-xl sm:text-3xl font-bold text-yellow-600">{getPendingCalls()}</p>
+        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 sm:p-6 rounded-xl shadow-sm border border-yellow-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm sm:text-base font-medium text-yellow-700 mb-1">Pending</h3>
+              <p className="text-2xl sm:text-3xl font-bold text-yellow-800">{getPendingCalls()}</p>
+            </div>
+            <div className="text-yellow-500 text-2xl">⏳</div>
+          </div>
         </div>
-        <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
-          <h3 className="text-sm sm:text-lg font-semibold text-gray-700">Completed</h3>
-          <p className="text-xl sm:text-3xl font-bold text-green-600">{getCompletedCalls()}</p>
+        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-4 sm:p-6 rounded-xl shadow-sm border border-emerald-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm sm:text-base font-medium text-emerald-700 mb-1">Completed</h3>
+              <p className="text-2xl sm:text-3xl font-bold text-emerald-800">{getCompletedCalls()}</p>
+            </div>
+            <div className="text-emerald-500 text-2xl">✅</div>
+          </div>
         </div>
       </div>
 
-      <div className="mb-6 bg-white p-4 rounded-lg shadow">
-        {/* Date Filter - First */}
-        <div className="mb-4 pb-4 border-b">
-          <div className="flex flex-wrap items-end gap-2">
+      {/* Filters Section */}
+      <div className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          <span>🔍</span> Search & Filters
+        </h2>
+        
+        {/* Date Filter */}
+        <div className="mb-6 pb-6 border-b border-gray-100">
+          <div className="flex flex-wrap items-end gap-3">
             <div className="flex-1 min-w-[140px]">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Date Type</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Date Type</label>
               <select
                 value={dateFilter.type}
                 onChange={(e) => setDateFilter(prev => ({ ...prev, type: e.target.value }))}
-                className="w-full p-2 border rounded text-xs focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
               >
                 <option value="">Select</option>
                 <option value="createdAt">Created</option>
@@ -245,27 +270,27 @@ const Dashboard = () => {
               </select>
             </div>
             <div className="flex-1 min-w-[120px]">
-              <label className="block text-xs font-medium text-gray-600 mb-1">From</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">From</label>
               <input
                 type="date"
                 value={dateFilter.start}
                 onChange={(e) => setDateFilter(prev => ({ ...prev, start: e.target.value }))}
-                className="w-full p-2 border rounded text-xs focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div className="flex-1 min-w-[120px]">
-              <label className="block text-xs font-medium text-gray-600 mb-1">To</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">To</label>
               <input
                 type="date"
                 value={dateFilter.end}
                 onChange={(e) => setDateFilter(prev => ({ ...prev, end: e.target.value }))}
-                className="w-full p-2 border rounded text-xs focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <button
               onClick={() => setAppliedDateFilter(dateFilter)}
               disabled={!dateFilter.type || !dateFilter.start || !dateFilter.end}
-              className="px-4 py-2 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
               Apply
             </button>
@@ -275,7 +300,7 @@ const Dashboard = () => {
                   setDateFilter({ type: '', start: '', end: '' });
                   setAppliedDateFilter({ type: '', start: '', end: '' });
                 }}
-                className="px-4 py-2 bg-red-600 text-white rounded text-xs font-medium hover:bg-red-700"
+                className="px-6 py-3 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
               >
                 Clear
               </button>
@@ -283,21 +308,21 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Search Bar and Filters - Same Row */}
-        <div className="flex flex-wrap items-center gap-2 mb-4">
+        {/* Search and Filter Controls */}
+        <div className="flex flex-wrap items-center gap-3 mb-6">
           <div className="relative flex-1 min-w-[200px]">
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
+            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">🔍</span>
             <input
               type="text"
               placeholder="Search by customer, phone, or category..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-10 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg"
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xl transition-colors"
               >
                 ×
               </button>
@@ -307,7 +332,7 @@ const Dashboard = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white min-w-[120px]"
+            className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors min-w-[120px]"
           >
             <option value="ALL_STATUS">All Status</option>
             <option value="PENDING">Pending</option>
@@ -318,7 +343,7 @@ const Dashboard = () => {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white min-w-[140px]"
+            className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors min-w-[140px]"
           >
             <option value="ALL_CATEGORIES">All Categories</option>
             {uniqueCategories.map((cat, index) => (
@@ -333,24 +358,24 @@ const Dashboard = () => {
                 setStatusFilter('ALL_STATUS');
                 setCategoryFilter('ALL_CATEGORIES');
               }}
-              className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300"
+              className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
             >
-              Clear
+              Clear All
             </button>
           )}
         </div>
 
-        {/* Tabs - Last */}
-        <div className="border-t pt-4 -mx-4 px-4">
-          <div className="flex overflow-x-auto scrollbar-hide">
+        {/* Tabs */}
+        <div className="border-t border-gray-100 pt-4">
+          <div className="flex overflow-x-auto scrollbar-hide gap-1">
             {getFilterOptions().map(f => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                className={`px-4 py-2 text-sm font-medium whitespace-nowrap rounded-lg transition-all ${
                   filter === f
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'
+                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                 }`}
               >
                 {f.replace(/_/g, ' ')}

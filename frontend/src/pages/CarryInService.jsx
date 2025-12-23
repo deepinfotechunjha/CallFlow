@@ -210,54 +210,81 @@ const CarryInService = () => {
   const counts = getFilterCounts();
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-700">Carry-In Service</h1>
+    <div className="max-w-7xl mx-auto p-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">Carry-In Service 🔧</h1>
+          <p className="text-gray-600">Manage device repairs and service requests</p>
+        </div>
         <button
           onClick={() => setShowAddForm(true)}
-          className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm sm:text-base w-full sm:w-auto"
+          className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium text-sm sm:text-base w-full sm:w-auto shadow-sm transition-all"
         >
           + Add Service
         </button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-6">
-        <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
-          <h3 className="text-sm sm:text-lg font-semibold text-gray-700">All Services</h3>
-          <p className="text-xl sm:text-3xl font-bold text-blue-600">{counts.ALL}</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 sm:p-6 rounded-xl shadow-sm border border-blue-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm sm:text-base font-medium text-blue-700 mb-1">All Services</h3>
+              <p className="text-2xl sm:text-3xl font-bold text-blue-800">{counts.ALL}</p>
+            </div>
+            <div className="text-blue-500 text-2xl">📊</div>
+          </div>
         </div>
-        <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
-          <h3 className="text-sm sm:text-lg font-semibold text-gray-700">Pending</h3>
-          <p className="text-xl sm:text-3xl font-bold text-yellow-600">{counts.PENDING}</p>
+        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 sm:p-6 rounded-xl shadow-sm border border-yellow-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm sm:text-base font-medium text-yellow-700 mb-1">Pending</h3>
+              <p className="text-2xl sm:text-3xl font-bold text-yellow-800">{counts.PENDING}</p>
+            </div>
+            <div className="text-yellow-500 text-2xl">⏳</div>
+          </div>
         </div>
-        <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
-          <h3 className="text-sm sm:text-lg font-semibold text-gray-700">Completed</h3>
-          <p className="text-xl sm:text-3xl font-bold text-blue-600">{counts.COMPLETED_NOT_COLLECTED}</p>
+        <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-4 sm:p-6 rounded-xl shadow-sm border border-indigo-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm sm:text-base font-medium text-indigo-700 mb-1">Completed</h3>
+              <p className="text-2xl sm:text-3xl font-bold text-indigo-800">{counts.COMPLETED_NOT_COLLECTED}</p>
+            </div>
+            <div className="text-indigo-500 text-2xl">🔧</div>
+          </div>
         </div>
-        <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
-          <h3 className="text-sm sm:text-lg font-semibold text-gray-700">Delivered</h3>
-          <p className="text-xl sm:text-3xl font-bold text-green-600">{counts.COMPLETED_AND_COLLECTED}</p>
+        <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 sm:p-6 rounded-xl shadow-sm border border-green-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm sm:text-base font-medium text-green-700 mb-1">Delivered</h3>
+              <p className="text-2xl sm:text-3xl font-bold text-green-800">{counts.COMPLETED_AND_COLLECTED}</p>
+            </div>
+            <div className="text-green-500 text-2xl">✅</div>
+          </div>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="mb-6 bg-white p-4 rounded-lg shadow">
-        {/* Search Bar and Category Filter - Side by Side */}
-        <div className="flex flex-wrap items-center gap-2 mb-4">
+      <div className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          <span>🔍</span> Search & Filters
+        </h2>
+        
+        {/* Search Bar and Category Filter */}
+        <div className="flex flex-wrap items-center gap-3 mb-6">
           <div className="flex-1 min-w-[200px] relative">
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
+            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">🔍</span>
             <input
               type="text"
               placeholder="Search by customer, phone, category, or description..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-10 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg"
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xl transition-colors"
               >
                 ×
               </button>
@@ -267,7 +294,7 @@ const CarryInService = () => {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+            className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
           >
             <option value="ALL_CATEGORIES">All Categories</option>
             {serviceCategories.map(cat => (
@@ -281,24 +308,24 @@ const CarryInService = () => {
                 setSearchQuery('');
                 setCategoryFilter('ALL_CATEGORIES');
               }}
-              className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300"
+              className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
             >
-              Clear
+              Clear All
             </button>
           )}
         </div>
 
         {/* Status Filter Tabs */}
-        <div className="border-t pt-4 -mx-4 px-4">
+        <div className="border-t border-gray-100 pt-4">
           <div className="flex flex-wrap gap-2">
           {['ALL', 'PENDING', 'COMPLETED_NOT_COLLECTED', 'COMPLETED_AND_COLLECTED'].map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 filter === f
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
               }`}
             >
               {f === 'ALL' ? 'All' : 
@@ -311,77 +338,88 @@ const CarryInService = () => {
         </div>
       </div>
 
-      {/* Services Table */}
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Sr.No
-              </th>
-              <th onClick={() => handleSort('customer')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                Customer {getSortIcon('customer')}
-              </th>
-              <th onClick={() => handleSort('phone')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                Phone {getSortIcon('phone')}
-              </th>
-              <th onClick={() => handleSort('category')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                Category {getSortIcon('category')}
-              </th>
-              <th onClick={() => handleSort('description')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                Description {getSortIcon('description')}
-              </th>
-              <th onClick={() => handleSort('status')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                Status {getSortIcon('status')}
-              </th>
-              <th onClick={() => handleSort('users')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                Users {getSortIcon('users')}
-              </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredServices.length === 0 ? (
-              <tr>
-                <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
-                  No services found
-                </td>
-              </tr>
-            ) : (
-              filteredServices.map((service, index) => (
-                <tr key={service.id} onClick={() => setSelectedService(service)} className="cursor-pointer hover:bg-gray-50">
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {index + 1}
-                  </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{service.customerName}</div>
-                      {service.email && <div className="text-sm text-gray-500">{service.email}</div>}
+      {/* Services - Responsive Layout */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            <span>📊</span> Service Records
+          </h2>
+        </div>
+
+        {filteredServices.length === 0 ? (
+          <div className="px-6 py-8 text-center text-gray-500">
+            <div className="text-4xl mb-4">🔧</div>
+            <p className="text-lg font-medium">No services found</p>
+            <p className="text-sm">Try adjusting your search or filters</p>
+          </div>
+        ) : (
+          <>
+            {/* Mobile/Tablet Card View */}
+            <div className="lg:hidden">
+              <div className="divide-y divide-gray-200">
+                {filteredServices.map((service, index) => (
+                  <div key={service.id} className="p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-medium text-gray-500">#{index + 1}</span>
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(service.status)}`}>
+                            {getStatusLabel(service.status)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg">👤</span>
+                          <div>
+                            <div className="text-sm font-semibold text-gray-900">{service.customerName}</div>
+                            <div className="flex items-center gap-1 text-sm text-gray-600">
+                              <span className="text-gray-400">📞</span>
+                              {service.phone}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setSelectedService(service)}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      >
+                        View Details
+                      </button>
                     </div>
-                  </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{service.phone}</td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{service.category}</td>
-                  <td className="px-3 sm:px-6 py-4 text-sm text-gray-500">{service.serviceDescription || '-'}</td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(service.status)}`}>
-                      {getStatusLabel(service.status)}
-                    </span>
-                  </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs text-gray-500">
-                    <div className="space-y-1">
-                      <div>Created: {service.createdBy || 'N/A'}</div>
-                      {service.completedBy && <div>Completed: {service.completedBy}</div>}
-                      {service.deliveredBy && <div>Delivered: {service.deliveredBy}</div>}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 mb-1">Category</div>
+                        <div className="text-sm text-gray-900">{service.category}</div>
+                      </div>
+                      {service.email && (
+                        <div>
+                          <div className="text-xs font-medium text-gray-500 mb-1">Email</div>
+                          <div className="text-sm text-gray-600 break-all">{service.email}</div>
+                        </div>
+                      )}
                     </div>
-                  </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex gap-2">
+
+                    {service.serviceDescription && (
+                      <div className="mb-3">
+                        <div className="text-xs font-medium text-gray-500 mb-1">Description</div>
+                        <div className="text-sm text-gray-600 line-clamp-2">{service.serviceDescription}</div>
+                      </div>
+                    )}
+
+                    <div className="mb-3">
+                      <div className="text-xs font-medium text-gray-500 mb-1">Users</div>
+                      <div className="text-xs text-gray-600 space-y-1">
+                        <div>Created: {service.createdBy || 'N/A'}</div>
+                        {service.completedBy && <div>Completed: {service.completedBy}</div>}
+                        {service.deliveredBy && <div>Delivered: {service.deliveredBy}</div>}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
                       {service.status === 'PENDING' && (
                         <button
                           onClick={() => setShowCompleteConfirm(service.id)}
-                          className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700"
+                          className="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors flex-1 sm:flex-none"
                         >
                           Complete
                         </button>
@@ -389,18 +427,114 @@ const CarryInService = () => {
                       {service.status === 'COMPLETED_NOT_COLLECTED' && (
                         <button
                           onClick={() => setShowDeliverConfirm(service.id)}
-                          className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700"
+                          className="bg-green-600 text-white px-3 py-2 rounded-lg text-xs font-medium hover:bg-green-700 transition-colors flex-1 sm:flex-none"
                         >
                           Deliver
                         </button>
                       )}
                     </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Sr.No
+                    </th>
+                    <th onClick={() => handleSort('customer')} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                      Customer {getSortIcon('customer')}
+                    </th>
+                    <th onClick={() => handleSort('phone')} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                      Phone {getSortIcon('phone')}
+                    </th>
+                    <th onClick={() => handleSort('category')} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                      Category {getSortIcon('category')}
+                    </th>
+                    <th onClick={() => handleSort('description')} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                      Description {getSortIcon('description')}
+                    </th>
+                    <th onClick={() => handleSort('status')} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                      Status {getSortIcon('status')}
+                    </th>
+                    <th onClick={() => handleSort('users')} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                      Users {getSortIcon('users')}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredServices.map((service, index) => (
+                    <tr key={service.id} onClick={() => setSelectedService(service)} className="cursor-pointer hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {index + 1}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">👤</span>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{service.customerName}</div>
+                            {service.email && <div className="text-sm text-gray-500 truncate max-w-[150px]">{service.email}</div>}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-400">📞</span>
+                          {service.phone}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{service.category}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500 max-w-[200px]">
+                        <div className="truncate" title={service.serviceDescription}>
+                          {service.serviceDescription || '-'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(service.status)}`}>
+                          {getStatusLabel(service.status)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
+                        <div className="space-y-1 max-w-[120px]">
+                          <div className="truncate" title={`Created: ${service.createdBy || 'N/A'}`}>Created: {service.createdBy || 'N/A'}</div>
+                          {service.completedBy && <div className="truncate" title={`Completed: ${service.completedBy}`}>Completed: {service.completedBy}</div>}
+                          {service.deliveredBy && <div className="truncate" title={`Delivered: ${service.deliveredBy}`}>Delivered: {service.deliveredBy}</div>}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex gap-2">
+                          {service.status === 'PENDING' && (
+                            <button
+                              onClick={() => setShowCompleteConfirm(service.id)}
+                              className="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-blue-700 transition-colors"
+                            >
+                              Complete
+                            </button>
+                          )}
+                          {service.status === 'COMPLETED_NOT_COLLECTED' && (
+                            <button
+                              onClick={() => setShowDeliverConfirm(service.id)}
+                              className="bg-green-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-green-700 transition-colors"
+                            >
+                              Deliver
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Add Service Modal */}
@@ -587,9 +721,9 @@ const CarryInService = () => {
       {/* Service Detail Modal */}
       {selectedService && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div ref={detailModalRef} className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div ref={detailModalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Service Details</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900">Service Details</h2>
               <button
                 onClick={() => setSelectedService(null)}
                 className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
@@ -598,70 +732,70 @@ const CarryInService = () => {
               </button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Customer Name</label>
-                  <div className="mt-1 p-2 bg-gray-50 rounded border">{selectedService.customerName}</div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
+                  <div className="p-3 bg-gray-50 rounded-lg border text-sm sm:text-base">{selectedService.customerName}</div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Phone</label>
-                  <div className="mt-1 p-2 bg-blue-50 rounded border">{selectedService.phone}</div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <div className="p-3 bg-blue-50 rounded-lg border text-sm sm:text-base">{selectedService.phone}</div>
                 </div>
                 
                 {selectedService.email && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Email</label>
-                    <div className="mt-1 p-2 bg-green-50 rounded border break-all">{selectedService.email}</div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <div className="p-3 bg-green-50 rounded-lg border break-all text-sm sm:text-base">{selectedService.email}</div>
                   </div>
                 )}
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Category</label>
-                  <div className="mt-1 p-2 bg-indigo-50 rounded border">{selectedService.category}</div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <div className="p-3 bg-indigo-50 rounded-lg border text-sm sm:text-base">{selectedService.category}</div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Status</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                   <div className="mt-1">
-                    <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(selectedService.status)}`}>
+                    <span className={`inline-flex px-3 py-2 text-sm font-semibold rounded-full ${getStatusColor(selectedService.status)}`}>
                       {getStatusLabel(selectedService.status)}
                     </span>
                   </div>
                 </div>
               </div>
               
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {selectedService.address && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Address</label>
-                    <div className="mt-1 p-2 bg-gray-50 rounded border">{selectedService.address}</div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                    <div className="p-3 bg-gray-50 rounded-lg border text-sm sm:text-base">{selectedService.address}</div>
                   </div>
                 )}
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Created By</label>
-                  <div className="mt-1 p-2 bg-gray-100 rounded border">{selectedService.createdBy}</div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Created By</label>
+                  <div className="p-3 bg-gray-100 rounded-lg border text-sm sm:text-base">{selectedService.createdBy}</div>
                 </div>
                 
                 {selectedService.completedBy && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Completed By</label>
-                    <div className="mt-1 p-2 bg-blue-100 rounded border">{selectedService.completedBy}</div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Completed By</label>
+                    <div className="p-3 bg-blue-100 rounded-lg border text-sm sm:text-base">{selectedService.completedBy}</div>
                   </div>
                 )}
                 
                 {selectedService.deliveredBy && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Delivered By</label>
-                    <div className="mt-1 p-2 bg-green-100 rounded border">{selectedService.deliveredBy}</div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Delivered By</label>
+                    <div className="p-3 bg-green-100 rounded-lg border text-sm sm:text-base">{selectedService.deliveredBy}</div>
                   </div>
                 )}
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Created At</label>
-                  <div className="mt-1 p-2 bg-gray-100 rounded border">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Created At</label>
+                  <div className="p-3 bg-gray-100 rounded-lg border text-sm sm:text-base">
                     {new Date(selectedService.createdAt).toLocaleString()}
                   </div>
                 </div>
@@ -669,24 +803,24 @@ const CarryInService = () => {
             </div>
             
             {selectedService.serviceDescription && (
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700">Service Description</label>
-                <div className="mt-1 p-3 bg-yellow-50 rounded border border-yellow-200">{selectedService.serviceDescription}</div>
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Service Description</label>
+                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200 text-sm sm:text-base">{selectedService.serviceDescription}</div>
               </div>
             )}
             
             {(selectedService.completeRemark || selectedService.deliverRemark) && (
-              <div className="mt-4 space-y-3">
+              <div className="mt-6 space-y-4">
                 {selectedService.completeRemark && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Complete Remark</label>
-                    <div className="mt-1 p-2 bg-blue-50 rounded border">{selectedService.completeRemark}</div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Complete Remark</label>
+                    <div className="p-3 bg-blue-50 rounded-lg border text-sm sm:text-base">{selectedService.completeRemark}</div>
                   </div>
                 )}
                 {selectedService.deliverRemark && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Deliver Remark</label>
-                    <div className="mt-1 p-2 bg-green-50 rounded border">{selectedService.deliverRemark}</div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Deliver Remark</label>
+                    <div className="p-3 bg-green-50 rounded-lg border text-sm sm:text-base">{selectedService.deliverRemark}</div>
                   </div>
                 )}
               </div>

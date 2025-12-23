@@ -397,21 +397,24 @@ const UserManagement = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Engineer Management</h1>
-        <div className="flex gap-2 w-full sm:w-auto">
+    <div className="max-w-6xl mx-auto p-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">Engineer Management 👥</h1>
+          <p className="text-gray-600">Manage team members and their roles</p>
+        </div>
+        <div className="flex gap-3 w-full sm:w-auto">
           {user?.role === 'HOST' && (
             <button
               onClick={() => setShowExportModal(true)}
-              className="bg-green-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-green-700 font-medium text-sm sm:text-base flex items-center gap-2"
+              className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-green-700 hover:to-green-800 font-medium text-sm sm:text-base flex items-center gap-2 shadow-sm transition-all"
             >
               📊 Export
             </button>
           )}
           <button
             onClick={() => setShowAddForm(true)}
-            className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm sm:text-base"
+            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium text-sm sm:text-base shadow-sm transition-all"
           >
             + Add Engineer
           </button>
@@ -419,67 +422,77 @@ const UserManagement = () => {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Username
-              </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Role
-              </th>
-              <th className="hidden md:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Created At
-              </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {users.map((u) => (
-              <tr key={u.id}>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900">
-                  {u.username}
-                </td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    u.role === 'HOST' ? 'bg-purple-100 text-purple-800' :
-                    u.role === 'ADMIN' ? 'bg-blue-100 text-blue-800' :
-                    'bg-green-100 text-green-800'
-                  }`}>
-                    {u.role}
-                  </span>
-                </td>
-                <td className="hidden md:table-cell px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
-                  {new Date(u.createdAt).toLocaleDateString()}
-                </td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEdit(u)}
-                      className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(u)}
-                      disabled={isDeleting[u.id]}
-                      className={`px-2 py-1 rounded text-xs ${
-                        isDeleting[u.id]
-                          ? 'bg-red-400 text-white cursor-not-allowed'
-                          : 'bg-red-500 text-white hover:bg-red-600'
-                      }`}
-                    >
-                      {isDeleting[u.id] ? 'Pending...' : 'Remove'}
-                    </button>
-                  </div>
-                </td>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            <span>👥</span> Team Members
+          </h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Username
+                </th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Role
+                </th>
+                <th className="hidden md:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Created At
+                </th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {users.map((u) => (
+                <tr key={u.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">👤</span>
+                      {u.username}
+                    </div>
+                  </td>
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                    <span className={`px-3 py-1 text-xs font-medium rounded-full border ${
+                      u.role === 'HOST' ? 'bg-purple-100 text-purple-800 border-purple-200' :
+                      u.role === 'ADMIN' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                      'bg-green-100 text-green-800 border-green-200'
+                    }`}>
+                      {u.role}
+                    </span>
+                  </td>
+                  <td className="hidden md:table-cell px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                    {new Date(u.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEdit(u)}
+                        className="bg-blue-500 text-white px-3 py-1 rounded-lg text-xs hover:bg-blue-600 transition-colors"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(u)}
+                        disabled={isDeleting[u.id]}
+                        className={`px-3 py-1 rounded-lg text-xs transition-colors ${
+                          isDeleting[u.id]
+                            ? 'bg-red-400 text-white cursor-not-allowed'
+                            : 'bg-red-500 text-white hover:bg-red-600'
+                        }`}
+                      >
+                        {isDeleting[u.id] ? 'Pending...' : 'Remove'}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Add User Modal */}
