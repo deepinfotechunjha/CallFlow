@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/apiClient';
 import useAuthStore from '../store/authStore';
+import CustomerDetailsModal from '../components/CustomerDetailsModal';
 
 const CustomerDirectory = () => {
   const [customers, setCustomers] = useState([]);
@@ -11,6 +12,8 @@ const CustomerDirectory = () => {
   const [statusFilter, setStatusFilter] = useState('ALL_STATUS');
   const [dateRangeFilter, setDateRangeFilter] = useState({ type: '', start: '', end: '' });
   const [appliedDateRange, setAppliedDateRange] = useState({ type: '', start: '', end: '' });
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const filterDateType = 'lastActivityDate';
   const { user } = useAuthStore();
 
@@ -36,6 +39,16 @@ const CustomerDirectory = () => {
       else if (sortConfig.direction === 'desc') direction = null;
     }
     setSortConfig({ key, direction });
+  };
+
+  const handleCustomerClick = (customer) => {
+    setSelectedCustomer(customer);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedCustomer(null);
   };
 
   const getSortIcon = (key) => {
@@ -74,7 +87,8 @@ const CustomerDirectory = () => {
       const matchesSearch = 
         customer.name.toLowerCase().includes(query) ||
         customer.phone.toLowerCase().includes(query) ||
-        (customer.email && customer.email.toLowerCase().includes(query));
+        (customer.email && customer.email.toLowerCase().includes(query)) ||
+        (customer.address && customer.address.toLowerCase().includes(query));
       if (!matchesSearch) return false;
     }
 
@@ -254,7 +268,7 @@ const CustomerDirectory = () => {
             <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">🔍</span>
             <input
               type="text"
-              placeholder="Search by name, phone, or email..."
+              placeholder="Search by name, phone, email, or address..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
@@ -318,190 +332,251 @@ const CustomerDirectory = () => {
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden lg:block bg-white rounded-lg shadow overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Sr.No
-              </th>
-              <th onClick={() => handleSort('name')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                Customer {getSortIcon('name')}
-              </th>
-              <th onClick={() => handleSort('phone')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                Phone {getSortIcon('phone')}
-              </th>
-              <th onClick={() => handleSort('outsideCalls')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                Outside Calls {getSortIcon('outsideCalls')}
-              </th>
-              <th onClick={() => handleSort('carryInServices')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                Carry-In Services {getSortIcon('carryInServices')}
-              </th>
-              <th onClick={() => handleSort('totalInteractions')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                Total {getSortIcon('totalInteractions')}
-              </th>
-              <th onClick={() => handleSort('status')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                Status {getSortIcon('status')}
-              </th>
-              <th onClick={() => handleSort('createdAt')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                Created At {getSortIcon('createdAt')}
-              </th>
-              <th onClick={() => handleSort('lastActivityDate')} className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                Last Activity {getSortIcon('lastActivityDate')}
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredCustomers.length === 0 ? (
+      <div className="hidden xl:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
               <tr>
-                <td colSpan="9" className="px-6 py-4 text-center text-gray-500">
-                  No customers found
-                </td>
+                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  #
+                </th>
+                <th onClick={() => handleSort('name')} className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors">
+                  <div className="flex items-center gap-1">
+                    Customer {getSortIcon('name')}
+                  </div>
+                </th>
+                <th onClick={() => handleSort('phone')} className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors">
+                  <div className="flex items-center gap-1">
+                    Contact {getSortIcon('phone')}
+                  </div>
+                </th>
+                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Address
+                </th>
+                <th onClick={() => handleSort('outsideCalls')} className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors">
+                  <div className="flex items-center justify-center gap-1">
+                    Calls {getSortIcon('outsideCalls')}
+                  </div>
+                </th>
+                <th onClick={() => handleSort('carryInServices')} className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors">
+                  <div className="flex items-center justify-center gap-1">
+                    Services {getSortIcon('carryInServices')}
+                  </div>
+                </th>
+                <th onClick={() => handleSort('totalInteractions')} className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors">
+                  <div className="flex items-center justify-center gap-1">
+                    Total {getSortIcon('totalInteractions')}
+                  </div>
+                </th>
+                <th onClick={() => handleSort('status')} className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors">
+                  <div className="flex items-center justify-center gap-1">
+                    Status {getSortIcon('status')}
+                  </div>
+                </th>
+                <th onClick={() => handleSort('lastActivityDate')} className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors">
+                  <div className="flex items-center justify-center gap-1">
+                    Last Activity {getSortIcon('lastActivityDate')}
+                  </div>
+                </th>
               </tr>
-            ) : (
-              filteredCustomers.map((customer, index) => (
-                <tr key={customer.id} className="hover:bg-gray-50">
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {index + 1}
-                  </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{customer.name}</div>
-                      {customer.email && (
-                        <div className="text-sm text-gray-500">{customer.email}</div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {customer.phone}
-                  </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      {customer.outsideCalls || 0}
-                    </span>
-                  </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                      {customer.carryInServices || 0}
-                    </span>
-                  </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {customer.totalInteractions || 0}
-                    </span>
-                  </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      getCustomerStatus(customer) === 'Active' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {getCustomerStatus(customer)}
-                    </span>
-                  </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {customer.createdAt 
-                      ? (
-                        <div>
-                          <div>{new Date(customer.createdAt).toLocaleDateString()}</div>
-                          <div className="text-xs text-gray-400">{new Date(customer.createdAt).toLocaleTimeString()}</div>
-                        </div>
-                      )
-                      : 'N/A'
-                    }
-                  </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {customer.lastActivityDate 
-                      ? (
-                        <div>
-                          <div>{new Date(customer.lastActivityDate).toLocaleDateString()}</div>
-                          <div className="text-xs text-gray-400">{new Date(customer.lastActivityDate).toLocaleTimeString()}</div>
-                        </div>
-                      )
-                      : 'Never'
-                    }
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100">
+              {filteredCustomers.length === 0 ? (
+                <tr>
+                  <td colSpan="9" className="px-6 py-12 text-center">
+                    <div className="text-gray-400 text-4xl mb-4">👥</div>
+                    <p className="text-lg font-medium text-gray-500 mb-2">No customers found</p>
+                    <p className="text-sm text-gray-400">Try adjusting your search or filters</p>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                filteredCustomers.map((customer, index) => (
+                  <tr key={customer.id} className="hover:bg-blue-50 transition-colors cursor-pointer" onClick={() => handleCustomerClick(customer)}>
+                    <td className="px-4 py-4 text-sm font-medium text-gray-500">
+                      {index + 1}
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-semibold text-sm">
+                            {customer.name.charAt(0).toUpperCase()}
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-semibold text-gray-900">{customer.name}</div>
+                          {customer.email && (
+                            <div className="text-sm text-gray-500 flex items-center gap-1">
+                              <span>✉️</span> {customer.email}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                        <span className="text-green-500">📞</span>
+                        {customer.phone}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="text-sm text-gray-600 max-w-xs">
+                        {customer.address ? (
+                          <div className="flex items-start gap-2">
+                            <span className="text-gray-400 mt-0.5">📍</span>
+                            <span className="line-clamp-2">{customer.address}</span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 italic">No address</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 text-center">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 border border-green-200">
+                        {customer.outsideCalls || 0}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-center">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 border border-purple-200">
+                        {customer.carryInServices || 0}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-center">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                        {customer.totalInteractions || 0}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-center">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${
+                        getCustomerStatus(customer) === 'Active' 
+                          ? 'bg-green-100 text-green-800 border-green-200' 
+                          : 'bg-red-100 text-red-800 border-red-200'
+                      }`}>
+                        <span className="mr-1">{getCustomerStatus(customer) === 'Active' ? '🟢' : '🔴'}</span>
+                        {getCustomerStatus(customer)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-center text-sm text-gray-500">
+                      {customer.lastActivityDate ? (
+                        <div>
+                          <div className="font-medium">{new Date(customer.lastActivityDate).toLocaleDateString()}</div>
+                          <div className="text-xs text-gray-400">{new Date(customer.lastActivityDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 italic">Never</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Mobile/Tablet Card View */}
-      <div className="lg:hidden space-y-4">
+      <div className="xl:hidden space-y-4">
         {filteredCustomers.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm p-8 text-center text-gray-500 border border-gray-200">
-            <div className="text-4xl mb-4">👥</div>
-            <p className="text-lg font-medium">No customers found</p>
-            <p className="text-sm">Try adjusting your search or filters</p>
+          <div className="bg-white rounded-xl shadow-sm p-8 text-center border border-gray-200">
+            <div className="text-6xl mb-4">👥</div>
+            <p className="text-xl font-semibold text-gray-700 mb-2">No customers found</p>
+            <p className="text-gray-500">Try adjusting your search or filters</p>
           </div>
         ) : (
           filteredCustomers.map((customer, index) => (
-            <div key={customer.id} className="bg-white rounded-xl shadow-sm p-5 border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">#{index + 1}</span>
-                    <h3 className="text-lg font-semibold text-gray-900">{customer.name}</h3>
+            <div key={customer.id} className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-blue-300 transition-all duration-200 cursor-pointer" onClick={() => handleCustomerClick(customer)}>
+              {/* Header */}
+              <div className="p-5 border-b border-gray-100">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-lg">
+                      {customer.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded-full">#{index + 1}</span>
+                        <h3 className="text-lg font-bold text-gray-900">{customer.name}</h3>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <span className="text-green-500">📞</span>
+                        <span className="font-medium">{customer.phone}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-gray-400">📞</span>
-                    <p className="text-sm text-gray-700 font-medium">{customer.phone}</p>
-                  </div>
+                  <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold border ${
+                    getCustomerStatus(customer) === 'Active' 
+                      ? 'bg-green-100 text-green-800 border-green-200' 
+                      : 'bg-red-100 text-red-800 border-red-200'
+                  }`}>
+                    <span className="mr-1.5">{getCustomerStatus(customer) === 'Active' ? '🟢' : '🔴'}</span>
+                    {getCustomerStatus(customer)}
+                  </span>
+                </div>
+                
+                {/* Contact Info */}
+                <div className="space-y-2">
                   {customer.email && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-400">✉️</span>
-                      <p className="text-sm text-gray-600">{customer.email}</p>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <span className="text-blue-500">✉️</span>
+                      <span>{customer.email}</span>
+                    </div>
+                  )}
+                  {customer.address && (
+                    <div className="flex items-start gap-2 text-sm text-gray-600">
+                      <span className="text-red-500 mt-0.5">📍</span>
+                      <span className="flex-1">{customer.address}</span>
                     </div>
                   )}
                 </div>
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                  getCustomerStatus(customer) === 'Active' 
-                    ? 'bg-green-100 text-green-800 border border-green-200' 
-                    : 'bg-red-100 text-red-800 border border-red-200'
-                }`}>
-                  {getCustomerStatus(customer) === 'Active' ? '✓' : '✗'} {getCustomerStatus(customer)}
-                </span>
               </div>
               
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="text-center bg-green-50 p-3 rounded-lg border border-green-100">
-                  <div className="text-xs text-green-700 mb-1 font-medium">Outside Calls</div>
-                  <div className="text-lg font-bold text-green-800">{customer.outsideCalls || 0}</div>
-                </div>
-                <div className="text-center bg-purple-50 p-3 rounded-lg border border-purple-100">
-                  <div className="text-xs text-purple-700 mb-1 font-medium">Carry-In</div>
-                  <div className="text-lg font-bold text-purple-800">{customer.carryInServices || 0}</div>
-                </div>
-                <div className="text-center bg-blue-50 p-3 rounded-lg border border-blue-100">
-                  <div className="text-xs text-blue-700 mb-1 font-medium">Total</div>
-                  <div className="text-lg font-bold text-blue-800">{customer.totalInteractions || 0}</div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 pt-4 border-t border-gray-100">
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-400">📅</span>
-                  <div>
-                    <span className="font-medium text-gray-700">Created:</span>
-                    <div className="text-xs">
-                      {customer.createdAt 
-                        ? new Date(customer.createdAt).toLocaleDateString()
-                        : 'N/A'
-                      }
-                    </div>
+              {/* Stats */}
+              <div className="p-5">
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="text-center bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
+                    <div className="text-green-600 text-xl mb-1">📞</div>
+                    <div className="text-xs text-green-700 mb-1 font-semibold uppercase tracking-wide">Calls</div>
+                    <div className="text-xl font-bold text-green-800">{customer.outsideCalls || 0}</div>
+                  </div>
+                  <div className="text-center bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200">
+                    <div className="text-purple-600 text-xl mb-1">🔧</div>
+                    <div className="text-xs text-purple-700 mb-1 font-semibold uppercase tracking-wide">Services</div>
+                    <div className="text-xl font-bold text-purple-800">{customer.carryInServices || 0}</div>
+                  </div>
+                  <div className="text-center bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
+                    <div className="text-blue-600 text-xl mb-1">📊</div>
+                    <div className="text-xs text-blue-700 mb-1 font-semibold uppercase tracking-wide">Total</div>
+                    <div className="text-xl font-bold text-blue-800">{customer.totalInteractions || 0}</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-400">⏰</span>
-                  <div>
-                    <span className="font-medium text-gray-700">Last Activity:</span>
-                    <div className="text-xs">
-                      {customer.lastActivityDate 
-                        ? new Date(customer.lastActivityDate).toLocaleDateString()
-                        : 'Never'
-                      }
+                
+                {/* Dates */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                      <span className="text-gray-500 text-sm">📅</span>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Created</div>
+                      <div className="text-sm font-medium text-gray-700">
+                        {customer.createdAt 
+                          ? new Date(customer.createdAt).toLocaleDateString()
+                          : 'N/A'
+                        }
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                      <span className="text-gray-500 text-sm">⏰</span>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Last Activity</div>
+                      <div className="text-sm font-medium text-gray-700">
+                        {customer.lastActivityDate 
+                          ? new Date(customer.lastActivityDate).toLocaleDateString()
+                          : 'Never'
+                        }
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -510,6 +585,13 @@ const CustomerDirectory = () => {
           ))
         )}
       </div>
+
+      {/* Customer Details Modal */}
+      <CustomerDetailsModal 
+        customer={selectedCustomer}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 };

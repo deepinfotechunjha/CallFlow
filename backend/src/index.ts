@@ -768,6 +768,7 @@ app.get('/customers/directory', authMiddleware, async (_req: Request, res: Respo
                 name: true,
                 phone: true,
                 email: true,
+                address: true,
                 outsideCalls: true,
                 carryInServices: true,
                 totalInteractions: true,
