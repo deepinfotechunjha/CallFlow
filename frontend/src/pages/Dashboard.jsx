@@ -123,15 +123,23 @@ const Dashboard = () => {
   };
 
   const getTodaysCalls = () => {
-    const today = new Date().toDateString();
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    
     if (user?.role === 'ENGINEER') {
       return calls.filter(call => {
         const isMyCall = call.createdBy === user?.username || call.assignedTo === user?.username;
-        const isToday = new Date(call.createdAt).toDateString() === today;
+        const callDate = new Date(call.createdAt);
+        const isToday = callDate >= startOfDay && callDate < endOfDay;
         return isMyCall && isToday;
       }).length;
     }
-    return todaysCalls.length;
+    
+    return calls.filter(call => {
+      const callDate = new Date(call.createdAt);
+      return callDate >= startOfDay && callDate < endOfDay;
+    }).length;
   };
 
   const getPendingCalls = () => {

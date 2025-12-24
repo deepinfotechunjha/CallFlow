@@ -13,23 +13,15 @@ const useCallStore = create((set, get) => ({
     }));
   },
   
-  handleCallUpdated: (call) => {
+  handleCallUpdate: (call) => {
     set(state => ({
       calls: state.calls.map(c => c.id === call.id ? call : c)
     }));
   },
   
-  handleCallAssigned: (call) => {
-    set(state => ({
-      calls: state.calls.map(c => c.id === call.id ? call : c)
-    }));
-  },
-  
-  handleCallCompleted: (call) => {
-    set(state => ({
-      calls: state.calls.map(c => c.id === call.id ? call : c)
-    }));
-  },
+  handleCallUpdated: (call) => get().handleCallUpdate(call),
+  handleCallAssigned: (call) => get().handleCallUpdate(call),
+  handleCallCompleted: (call) => get().handleCallUpdate(call),
   
   addCall: async (callData) => {
     try {
@@ -48,6 +40,7 @@ const useCallStore = create((set, get) => ({
       set({ calls: response.data });
     } catch (error) {
       console.error('Failed to fetch calls:', error);
+      toast.error('Failed to fetch calls');
     }
   },
 
@@ -68,6 +61,7 @@ const useCallStore = create((set, get) => ({
       set({ customers: response.data });
     } catch (error) {
       console.error('Failed to fetch customers:', error);
+      toast.error('Failed to fetch customers');
     }
   },
 
