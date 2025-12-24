@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import useClickOutside from '../hooks/useClickOutside';
 
-const ExportModal = ({ onClose, onExport, totalCount, filteredCount, title = "Export Data" }) => {
+const ExportModal = ({ isOpen, onClose, onExport, totalCount, filteredCount, title = "Export Data" }) => {
   const [step, setStep] = useState(1);
   const [exportType, setExportType] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
   const modalRef = useClickOutside(() => onClose());
+
+  if (!isOpen) return null;
 
   const handleContinue = () => {
     if (!exportType) {

@@ -63,3 +63,25 @@ export const exportUsersToExcel = (users, calls) => {
   const fileName = `Users_Export_${new Date().toISOString().split('T')[0]}.xlsx`;
   XLSX.writeFile(workbook, fileName);
 };
+
+export const exportToExcel = (data, filename, password = null) => {
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
+
+  const maxWidth = 30;
+  const colWidths = Object.keys(data[0] || {}).map(key => ({
+    wch: Math.min(Math.max(key.length, 10), maxWidth)
+  }));
+  worksheet['!cols'] = colWidths;
+
+  const finalFilename = `${filename}.xlsx`;
+  
+  if (password) {
+    // Note: XLSX library doesn't support password protection in browser
+    // This is a placeholder for password functionality
+    console.warn('Password protection not supported in browser environment');
+  }
+  
+  XLSX.writeFile(workbook, finalFilename);
+};

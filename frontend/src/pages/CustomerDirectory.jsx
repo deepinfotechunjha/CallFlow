@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import apiClient from '../api/apiClient';
 import useAuthStore from '../store/authStore';
 import CustomerDetailsModal from '../components/CustomerDetailsModal';
+import ExportModal from '../components/ExportModal';
 
 const CustomerDirectory = () => {
   const [customers, setCustomers] = useState([]);
@@ -14,6 +15,7 @@ const CustomerDirectory = () => {
   const [appliedDateRange, setAppliedDateRange] = useState({ type: '', start: '', end: '' });
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const filterDateType = 'lastActivityDate';
   const { user } = useAuthStore();
 
@@ -49,6 +51,54 @@ const CustomerDirectory = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedCustomer(null);
+  };
+
+  const handleExport = async (exportType, password, activityDays) => {
+    try {
+      let dataToExport;
+      let filename;
+      
+      if (exportType === 'filtered') {
+        dataToExport = filteredCustomers;
+        filename = `Customer_Directory_Filtered_${new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-')}`;
+      } else {
+        const response = await apiClient.get('/customers');
+        dataToExport = response.data;
+        filename = `Customer_Directory_All_${new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-')}`;
+      }
+
+      const getCustomerStatusForExport = (customer, days) => {
+        if (!customer.lastActivityDate) return 'Inactive';
+        const activityDate = new Date(customer.lastActivityDate);
+        const daysSinceActivity = (new Date() - activityDate) / (1000 * 60 * 60 * 24);
+        return daysSinceActivity <= days ? 'Active' : 'Inactive';
+      };
+
+      const excelData = dataToExport.map((customer, index) => ({
+        'Sr. No': index + 1,
+        'ID': customer.id,
+        'Name': customer.name,
+        'Phone': customer.phone,
+        'Email': customer.email || 'Not provided',
+        'Address': customer.address || 'Not provided',
+        'Created At': customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : 'N/A',
+        'Outside Calls': customer.outsideCalls || 0,
+        'Carry In Services': customer.carryInServices || 0,
+        'Total Interactions': customer.totalInteractions || 0,
+        'Last Call Date': customer.lastCallDate ? new Date(customer.lastCallDate).toLocaleDateString() : 'Never',
+        'Last Service Date': customer.lastServiceDate ? new Date(customer.lastServiceDate).toLocaleDateString() : 'Never',
+        'Last Activity Date': customer.lastActivityDate ? new Date(customer.lastActivityDate).toLocaleDateString() : 'Never',
+        'Status': getCustomerStatusForExport(customer, activityDays)
+      }));
+
+      const { exportToExcel } = await import('../utils/excelExport');
+      await exportToExcel(excelData, filename, password);
+      
+      setIsExportModalOpen(false);
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Export failed. Please try again.');
+    }
   };
 
   const getSortIcon = (key) => {
@@ -152,6 +202,13 @@ const CustomerDirectory = () => {
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">Customer Directory</h1>
           <p className="text-gray-600">Manage and view all customer information</p>
         </div>
+        <button
+          onClick={() => setIsExportModalOpen(true)}
+          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+        >
+          <span>📊</span>
+          <span className="hidden sm:inline">Export to Excel</span>
+        </button>
       </div>
 
       {/* Stats Cards */}
@@ -591,6 +648,16 @@ const CustomerDirectory = () => {
         customer={selectedCustomer}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+      />
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onExport={handleExport}
+        title="Export Customer Directory"
+        filteredCount={filteredCustomers.length}
+        totalCount={customers.length}
       />
     </div>
   );
