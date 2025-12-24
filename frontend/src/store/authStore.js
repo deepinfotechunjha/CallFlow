@@ -5,10 +5,27 @@ import toast from 'react-hot-toast';
 
 const useAuthStore = create(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
       users: [],
+      isInitialized: false,
+      
+      // Initialize user data from token
+      initializeAuth: async () => {
+        const { token, user } = get();
+        if (token && !user) {
+          try {
+            const response = await apiClient.get('/auth/me');
+            set({ user: response.data, isInitialized: true });
+          } catch (error) {
+            // Token is invalid, clear it
+            set({ token: null, user: null, isInitialized: true });
+          }
+        } else {
+          set({ isInitialized: true });
+        }
+      },
       
       // WebSocket event handlers
       handleUserCreated: (user) => {
@@ -33,7 +50,7 @@ const useAuthStore = create(
         try {
           const response = await apiClient.post('/auth/login', { username, password });
           const { token, user } = response.data;
-          set({ user, token });
+          set({ user, token, isInitialized: true });
           toast.success(`Welcome back, ${user.username}!`);
           return true;
         } catch (err) {
@@ -43,12 +60,12 @@ const useAuthStore = create(
       },
       
       logout: () => {
-        set({ user: null, token: null });
+        set({ user: null, token: null, users: [], isInitialized: true });
         toast.success('Logged out successfully');
       },
       
       fetchUsers: async () => {
-        const state = useAuthStore.getState();
+        const state = get();
         if (!state.user || !['HOST', 'ADMIN'].includes(state.user.role)) {
           return;
         }
@@ -66,7 +83,6 @@ const useAuthStore = create(
       createUser: async (userData) => {
         try {
           const response = await apiClient.post('/users', userData);
-          // Don't update state here - WebSocket will handle it
           toast.success('User created successfully');
           return response.data;
         } catch (err) {
@@ -82,7 +98,6 @@ const useAuthStore = create(
             payload.secretPassword = secretPassword;
           }
           const response = await apiClient.put(`/users/${userId}`, payload);
-          // Don't update state here - WebSocket will handle it
           toast.success('User role updated successfully');
         } catch (err) {
           toast.error('Failed to update role');
@@ -93,7 +108,6 @@ const useAuthStore = create(
       updateUser: async (userId, userData) => {
         try {
           const response = await apiClient.put(`/users/${userId}`, userData);
-          // Don't update state here - WebSocket will handle it
           toast.success('User updated successfully');
           return response.data;
         } catch (err) {
@@ -105,7 +119,6 @@ const useAuthStore = create(
       deleteUser: async (userId) => {
         try {
           await apiClient.delete(`/users/${userId}`);
-          // Don't update state here - WebSocket will handle it
           toast.success('User deleted successfully');
         } catch (err) {
           toast.error('Failed to delete user');
@@ -115,7 +128,7 @@ const useAuthStore = create(
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ user: state.user, token: state.token, users: state.users })
+      partialize: (state) => ({ token: state.token })
     }
   )
 );

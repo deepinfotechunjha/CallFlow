@@ -29,12 +29,13 @@ const Dashboard = () => {
   useSocket();
 
   useEffect(() => {
-    if (calls.length === 0) fetchCalls();
-    if (categories.length === 0) fetchCategories();
-    if ((user?.role === 'HOST' || user?.role === 'ADMIN') && users.length === 0) {
+    // Always fetch fresh data from database
+    fetchCalls();
+    fetchCategories();
+    if ((user?.role === 'HOST' || user?.role === 'ADMIN')) {
       fetchUsers();
     }
-  }, [calls.length, categories.length, users.length, user?.role, fetchCalls, fetchCategories, fetchUsers]);
+  }, [user?.role, fetchCalls, fetchCategories, fetchUsers]);
 
   // Role-based filter options
   const getFilterOptions = () => {

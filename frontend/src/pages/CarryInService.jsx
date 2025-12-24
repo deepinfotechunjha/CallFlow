@@ -55,6 +55,7 @@ const CarryInService = () => {
   const detailModalRef = useClickOutside(() => setSelectedService(null));
 
   useEffect(() => {
+    // Only fetch if data is not already loaded
     if (services.length === 0) fetchServices();
     if (serviceCategories.length === 0) fetchServiceCategories();
   }, [services.length, serviceCategories.length, fetchServices, fetchServiceCategories]);

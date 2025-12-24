@@ -1,5 +1,6 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { useEffect } from 'react';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import UserManagement from './pages/UserManagement';
@@ -15,11 +16,28 @@ import useSocket from './hooks/useSocket';
 
 function App() {
   const { pathname } = useLocation();
-  const { user } = useAuthStore();
+  const { user, isInitialized, initializeAuth } = useAuthStore();
   const showNavbar = user && pathname !== '/login';
+  
+  // Initialize auth on app startup
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
   
   // Initialize WebSocket connection for real-time notifications
   useSocket();
+
+  // Show loading while initializing
+  if (!isInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen font-sans">

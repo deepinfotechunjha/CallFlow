@@ -22,14 +22,7 @@ const NotificationBell = () => {
   const fetchNotifications = async () => {
     try {
       const response = await apiClient.get('/notifications');
-      // Filter out notifications older than 24 hours
-      const now = new Date();
-      const filtered = response.data.filter(notification => {
-        const notificationDate = new Date(notification.createdAt);
-        const hoursDiff = (now - notificationDate) / (1000 * 60 * 60);
-        return hoursDiff <= 24;
-      });
-      setNotifications(filtered);
+      setNotifications(response.data);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
     }
@@ -49,12 +42,17 @@ const NotificationBell = () => {
 
   const deleteNotifications = async (notificationIds) => {
     try {
-      await apiClient.delete('/notifications/bulk', {
-        data: { notificationIds }
-      });
+      if (notificationIds.length === 1) {
+        // Single delete
+        await apiClient.delete(`/notifications/${notificationIds[0]}`);
+      } else {
+        // Bulk delete
+        await apiClient.delete('/notifications/bulk', {
+          data: { notificationIds }
+        });
+      }
       setNotifications(prev => {
         const filtered = prev.filter(n => !notificationIds.includes(n.id));
-        // Reset selection states after deletion
         setSelectedNotifications(new Set());
         setSelectAll(false);
         return filtered;

@@ -76,10 +76,10 @@ const UserManagement = () => {
   const successModalRef = useClickOutside(() => setShowSuccessAlert(false));
 
   useEffect(() => {
-    if (hasAccess && users.length === 0) {
+    if (hasAccess) {
       fetchUsers();
     }
-  }, [hasAccess, users.length, fetchUsers]);
+  }, [hasAccess, fetchUsers]);
 
   useEffect(() => {
     // Check if current user still exists in the users list

@@ -33,7 +33,6 @@ const useCarryInServiceStore = create((set, get) => ({
   addService: async (serviceData) => {
     try {
       const response = await apiClient.post('/carry-in-services', serviceData);
-      // Don't update state here - WebSocket will handle it
       toast.success('Service added successfully');
       return response.data;
     } catch (error) {
@@ -45,7 +44,6 @@ const useCarryInServiceStore = create((set, get) => ({
   completeService: async (serviceId, completeRemark) => {
     try {
       const response = await apiClient.post(`/carry-in-services/${serviceId}/complete`, { completeRemark });
-      // Don't update state here - WebSocket will handle it
       toast.success('Service marked as completed');
       return response.data;
     } catch (error) {
@@ -57,7 +55,6 @@ const useCarryInServiceStore = create((set, get) => ({
   deliverService: async (serviceId, deliverRemark) => {
     try {
       const response = await apiClient.post(`/carry-in-services/${serviceId}/deliver`, { deliverRemark });
-      // Don't update state here - WebSocket will handle it
       toast.success('Service delivered to customer');
       return response.data;
     } catch (error) {

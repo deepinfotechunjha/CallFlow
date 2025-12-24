@@ -69,6 +69,26 @@ function verifyToken(token: string) {
     }
 }
 
+// Helper function to clean up old notifications
+const cleanupOldNotifications = async () => {
+    try {
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const result = await prisma.notification.deleteMany({
+            where: {
+                createdAt: { lt: twentyFourHoursAgo }
+            }
+        });
+        if (result.count > 0) {
+            console.log(`Cleaned up ${result.count} old notifications`);
+        }
+    } catch (error) {
+        console.error('Failed to cleanup old notifications:', error);
+    }
+};
+
+// Run cleanup every hour
+setInterval(cleanupOldNotifications, 60 * 60 * 1000);
+
 // WebSocket connection handling
 const userSockets = new Map<number, string>();
 
@@ -176,6 +196,23 @@ app.post('/auth/login', async (req: Request, res: Response) => {
         });
     } catch (err: any) {
         res.status(500).json({ error: 'Login failed' });
+    }
+});
+
+app.get('/auth/me', authMiddleware, async (req: Request, res: Response) => {
+    try {
+        const user = await prisma.user.findUnique({ 
+            where: { id: req.user?.id },
+            select: { id: true, username: true, role: true, createdAt: true }
+        });
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        res.json(user);
+    } catch (err: any) {
+        res.status(500).json({ error: 'Failed to fetch user data' });
     }
 });
 
@@ -864,6 +901,14 @@ app.get('/notifications', authMiddleware, async (req: Request, res: Response) =>
     }
     
     try {
+        // Auto-delete notifications older than 24 hours
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        await prisma.notification.deleteMany({
+            where: {
+                createdAt: { lt: twentyFourHoursAgo }
+            }
+        });
+        
         const notifications = await prisma.notification.findMany({
             where: { userId: req.user.username },
             orderBy: { createdAt: 'desc' },
@@ -881,6 +926,14 @@ app.get('/notifications/unread-count', authMiddleware, async (req: Request, res:
     }
     
     try {
+        // Auto-delete notifications older than 24 hours
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        await prisma.notification.deleteMany({
+            where: {
+                createdAt: { lt: twentyFourHoursAgo }
+            }
+        });
+        
         const count = await prisma.notification.count({
             where: { 
                 userId: req.user.username,
@@ -925,6 +978,31 @@ app.delete('/notifications/:id', authMiddleware, async (req: Request, res: Respo
         await prisma.notification.delete({
             where: { 
                 id: notificationId,
+                userId: req.user.username
+            }
+        });
+        res.json({ success: true });
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// Bulk delete notifications
+app.delete('/notifications/bulk', authMiddleware, async (req: Request, res: Response) => {
+    const { notificationIds } = req.body as { notificationIds: number[] };
+    
+    if (!req.user?.username) {
+        return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    if (!notificationIds || !Array.isArray(notificationIds)) {
+        return res.status(400).json({ error: 'Invalid notification IDs' });
+    }
+    
+    try {
+        await prisma.notification.deleteMany({
+            where: { 
+                id: { in: notificationIds },
                 userId: req.user.username
             }
         });
