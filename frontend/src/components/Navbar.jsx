@@ -35,17 +35,17 @@ const Navbar = () => {
               <img src="/deep.png" alt="Deep Infotech" className="h-8 sm:h-10 lg:h-12 w-auto max-w-none" />
             </Link>
             
-            <div className="hidden lg:flex space-x-4">
+            <div className="hidden lg:flex space-x-1 xl:space-x-4">
               <Link
                 to="/"
-                className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                className="text-gray-700 hover:text-blue-600 px-2 xl:px-3 py-2 rounded-md text-xs xl:text-sm font-medium"
               >
                 Dashboard
               </Link>
               
               <Link
                 to="/carry-in-service"
-                className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap"
+                className="text-gray-700 hover:text-blue-600 px-2 xl:px-3 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap"
               >
                 CarryInService
               </Link>
@@ -54,34 +54,34 @@ const Navbar = () => {
                 <>
                   <Link
                     to="/users"
-                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap"
+                    className="text-gray-700 hover:text-blue-600 px-2 xl:px-3 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap"
                   >
-                    Engineer Management
+                    Role Management
                   </Link>
                   <Link
                     to="/customers"
-                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap"
+                    className="text-gray-700 hover:text-blue-600 px-2 xl:px-3 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap"
                   >
-                    Customer Directory
+                    Customers
                   </Link>
                   <Link
                     to="/analytics"
-                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap"
+                    className="text-gray-700 hover:text-blue-600 px-2 xl:px-3 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap"
                   >
                     Engineer Analytics
                   </Link>
                   <Link
                     to="/settings/categories"
-                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap"
+                    className="text-gray-700 hover:text-blue-600 px-2 xl:px-3 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap"
                   >
-                    Category Settings
+                    Categories
                   </Link>
                 </>
               )}
             </div>
           </div>
 
-          <div className="flex items-center space-x-1 sm:space-x-4">
+          <div className="flex items-center space-x-0.5 sm:space-x-2">
             <NotificationBell />
             
             <span className="text-xs sm:text-sm text-gray-700">
@@ -90,14 +90,14 @@ const Navbar = () => {
             
             <Link
               to="/profile"
-              className="hidden sm:block text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-sm font-medium"
+              className="hidden sm:block text-gray-700 hover:text-blue-600 px-1 sm:px-2 py-2 rounded-md text-xs sm:text-sm font-medium"
             >
               Profile
             </Link>
             
             <button
               onClick={handleLogout}
-              className="bg-red-600 text-white px-2 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium hover:bg-red-700"
+              className="bg-red-600 text-white px-1.5 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium hover:bg-red-700"
             >
               Logout
             </button>
@@ -139,14 +139,14 @@ const Navbar = () => {
                     onClick={() => setShowMobileMenu(false)}
                     className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
                   >
-                    Engineer Management
+                    Role Management
                   </Link>
                   <Link
                     to="/customers"
                     onClick={() => setShowMobileMenu(false)}
                     className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
                   >
-                    Customer Directory
+                    Customers
                   </Link>
                   <Link
                     to="/analytics"
@@ -160,7 +160,7 @@ const Navbar = () => {
                     onClick={() => setShowMobileMenu(false)}
                     className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
                   >
-                    Category Settings
+                    Categories
                   </Link>
                 </>
               )}
