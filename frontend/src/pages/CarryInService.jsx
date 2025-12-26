@@ -407,11 +407,11 @@ const CarryInService = () => {
                     )}
 
                     <div className="mb-3">
-                      <div className="text-xs font-medium text-gray-500 mb-1">Users</div>
+                      <div className="text-xs font-medium text-gray-500 mb-1">Timeline</div>
                       <div className="text-xs text-gray-600 space-y-1">
-                        <div>Created: {service.createdBy || 'N/A'}</div>
-                        {service.completedBy && <div>Completed: {service.completedBy}</div>}
-                        {service.deliveredBy && <div>Delivered: {service.deliveredBy}</div>}
+                        <div>Created: {service.createdBy || 'N/A'} on {new Date(service.createdAt).toLocaleString()}</div>
+                        {service.completedBy && <div>Completed: {service.completedBy} {service.completedAt && `on ${new Date(service.completedAt).toLocaleString()}`}</div>}
+                        {service.deliveredBy && <div>Delivered: {service.deliveredBy} {service.deliveredAt && `on ${new Date(service.deliveredAt).toLocaleString()}`}</div>}
                       </div>
                     </div>
 
@@ -503,9 +503,9 @@ const CarryInService = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
                         <div className="space-y-1 max-w-[120px]">
-                          <div className="truncate" title={`Created: ${service.createdBy || 'N/A'}`}>Created: {service.createdBy || 'N/A'}</div>
-                          {service.completedBy && <div className="truncate" title={`Completed: ${service.completedBy}`}>Completed: {service.completedBy}</div>}
-                          {service.deliveredBy && <div className="truncate" title={`Delivered: ${service.deliveredBy}`}>Delivered: {service.deliveredBy}</div>}
+                          <div className="truncate" title={`Created: ${service.createdBy || 'N/A'} on ${new Date(service.createdAt).toLocaleString()}`}>Created: {service.createdBy || 'N/A'}</div>
+                          {service.completedBy && <div className="truncate" title={`Completed: ${service.completedBy} ${service.completedAt ? `on ${new Date(service.completedAt).toLocaleString()}` : ''}`}>Completed: {service.completedBy}</div>}
+                          {service.deliveredBy && <div className="truncate" title={`Delivered: ${service.deliveredBy} ${service.deliveredAt ? `on ${new Date(service.deliveredAt).toLocaleString()}` : ''}`}>Delivered: {service.deliveredBy}</div>}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium" onClick={(e) => e.stopPropagation()}>
@@ -799,6 +799,24 @@ const CarryInService = () => {
                     {new Date(selectedService.createdAt).toLocaleString()}
                   </div>
                 </div>
+                
+                {selectedService.completedAt && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Completed At</label>
+                    <div className="p-3 bg-blue-100 rounded-lg border text-sm sm:text-base">
+                      {new Date(selectedService.completedAt).toLocaleString()}
+                    </div>
+                  </div>
+                )}
+                
+                {selectedService.deliveredAt && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Delivered At</label>
+                    <div className="p-3 bg-green-100 rounded-lg border text-sm sm:text-base">
+                      {new Date(selectedService.deliveredAt).toLocaleString()}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             

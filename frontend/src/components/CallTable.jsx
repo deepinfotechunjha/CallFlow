@@ -667,6 +667,24 @@ const CallTable = ({ calls }) => {
                     {new Date(selectedCall.createdAt).toLocaleDateString()} {new Date(selectedCall.createdAt).toLocaleTimeString()}
                   </div>
                 </div>
+                
+                {selectedCall.assignedAt && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Assigned At</label>
+                    <div className="mt-1 p-2 bg-green-100 rounded border">
+                      {new Date(selectedCall.assignedAt).toLocaleDateString()} {new Date(selectedCall.assignedAt).toLocaleTimeString()}
+                    </div>
+                  </div>
+                )}
+                
+                {selectedCall.completedAt && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Completed At</label>
+                    <div className="mt-1 p-2 bg-blue-100 rounded border">
+                      {new Date(selectedCall.completedAt).toLocaleDateString()} {new Date(selectedCall.completedAt).toLocaleTimeString()}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             

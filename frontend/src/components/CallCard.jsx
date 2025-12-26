@@ -218,7 +218,7 @@ const CallCard = ({ call }) => {
         )}
         {call.completedBy && (
           <>
-            <p className="break-words">Completed by: {call.completedBy} on {new Date(call.completedAt).toLocaleString()}</p>
+            <p className="break-words">Completed by: {call.completedBy} {call.completedAt && `on ${new Date(call.completedAt).toLocaleString()}`}</p>
             {call.remark && <p className="mt-1 break-words"><strong>Remark:</strong> {call.remark}</p>}
           </>
         )}
