@@ -20,7 +20,7 @@ const Navbar = () => {
           <div className="flex items-center space-x-2 sm:space-x-8">
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="md:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100"
+              className="lg:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {showMobileMenu ? (
@@ -31,11 +31,11 @@ const Navbar = () => {
               </svg>
             </button>
             
-            <Link to="/" className="text-lg sm:text-2xl font-bold text-blue-600 whitespace-nowrap">
-              Deep Infotech
+            <Link to="/" className="flex items-center">
+              <img src="/deep.png" alt="Deep Infotech" className="h-8 sm:h-10 lg:h-12 w-auto max-w-none" />
             </Link>
             
-            <div className="hidden md:flex space-x-4">
+            <div className="hidden lg:flex space-x-4">
               <Link
                 to="/"
                 className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
@@ -106,7 +106,7 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {showMobileMenu && (
-          <div className="md:hidden border-t border-gray-200 py-2">
+          <div className="lg:hidden border-t border-gray-200 py-2">
             <div className="flex flex-col space-y-1">
               <Link
                 to="/"

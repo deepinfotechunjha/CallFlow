@@ -190,21 +190,21 @@ const CallTable = ({ calls }) => {
 
   return (
     <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-xl overflow-hidden border border-gray-200">
-      <div className="w-full overflow-x-auto">
-        <table className="w-full table-fixed divide-y divide-gray-300">
+      <div className="overflow-x-auto">
+        <table className="min-w-full table-auto">
           <thead className="bg-gradient-to-r from-blue-600 to-purple-600">
             <tr>
-              <th className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500" style={{width: '4%'}}>#</th>
-              <th onClick={() => handleSort('customer')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '20%'}}>Customer & Address {getSortIcon('customer')}</th>
-              <th onClick={() => handleSort('phone')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '14%'}}>Phone & Email {getSortIcon('phone')}</th>
-              <th onClick={() => handleSort('category')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '8%'}}>Category {getSortIcon('category')}</th>
-              <th onClick={() => handleSort('problem')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '18%'}}>Problem {getSortIcon('problem')}</th>
-              <th onClick={() => handleSort('status')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '7%'}}>Status {getSortIcon('status')}</th>
-              <th onClick={() => handleSort('assignment')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '8%'}}>Assignment {getSortIcon('assignment')}</th>
-              <th onClick={() => handleSort('date')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700" style={{width: '10%'}}>Date & Time {getSortIcon('date')}</th>
-              <th onClick={() => handleSort('engineerRemark')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden lg:table-cell cursor-pointer hover:bg-blue-700" style={{width: '7%'}}>Engineer Remark {getSortIcon('engineerRemark')}</th>
-              <th onClick={() => handleSort('completionRemark')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden lg:table-cell cursor-pointer hover:bg-blue-700" style={{width: '7%'}}>Completion Remark {getSortIcon('completionRemark')}</th>
-              <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider" style={{width: '8%'}}>Actions</th>
+              <th className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 w-12">#</th>
+              <th onClick={() => handleSort('customer')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-48">Customer & Address {getSortIcon('customer')}</th>
+              <th onClick={() => handleSort('phone')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-36">Phone & Email {getSortIcon('phone')}</th>
+              <th onClick={() => handleSort('category')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-24">Category {getSortIcon('category')}</th>
+              <th onClick={() => handleSort('problem')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-48">Problem {getSortIcon('problem')}</th>
+              <th onClick={() => handleSort('status')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-20">Status {getSortIcon('status')}</th>
+              <th onClick={() => handleSort('assignment')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-24">Assignment {getSortIcon('assignment')}</th>
+              <th onClick={() => handleSort('date')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-28">Date & Time {getSortIcon('date')}</th>
+              <th onClick={() => handleSort('engineerRemark')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden xl:table-cell cursor-pointer hover:bg-blue-700 min-w-24">Engineer Remark {getSortIcon('engineerRemark')}</th>
+              <th onClick={() => handleSort('completionRemark')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden xl:table-cell cursor-pointer hover:bg-blue-700 min-w-24">Completion Remark {getSortIcon('completionRemark')}</th>
+              <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider min-w-24">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
