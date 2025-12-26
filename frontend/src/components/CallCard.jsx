@@ -43,7 +43,7 @@ const CallCard = ({ call }) => {
   };
   
   const canAssign = ['HOST', 'ADMIN'].includes(user?.role) && call.status !== 'COMPLETED';
-  const canEdit = user?.role === 'HOST' && call.status !== 'COMPLETED';
+  const canEdit = ['HOST', 'ADMIN'].includes(user?.role) && call.status !== 'COMPLETED';
   const canComplete = call.assignedTo === user?.username || ['HOST', 'ADMIN'].includes(user?.role);
 
   useEffect(() => {
@@ -230,11 +230,11 @@ const CallCard = ({ call }) => {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex gap-2 mt-2 flex-wrap">
         {canEdit && (
           <button
             onClick={handleEditOpen}
-            className="px-2 sm:px-3 py-1 bg-orange-600 text-white text-xs sm:text-sm rounded hover:bg-orange-700"
+            className="px-3 py-1 bg-orange-600 text-white text-sm rounded hover:bg-orange-700 min-w-[60px]"
           >
             Edit
           </button>
@@ -243,7 +243,7 @@ const CallCard = ({ call }) => {
         {canAssign && call.status !== 'COMPLETED' && (
           <button
             onClick={() => setShowAssign(true)}
-            className="px-2 sm:px-3 py-1 bg-blue-600 text-white text-xs sm:text-sm rounded hover:bg-blue-700"
+            className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 min-w-[80px]"
           >
             {call.assignedTo ? 'Reassign' : 'Assign'}
           </button>
@@ -252,7 +252,7 @@ const CallCard = ({ call }) => {
         {canComplete && call.status !== 'COMPLETED' && (
           <button
             onClick={handleCompleteClick}
-            className="px-2 sm:px-3 py-1 bg-green-600 text-white text-xs sm:text-sm rounded hover:bg-green-700"
+            className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 min-w-[100px]"
           >
             Mark Complete
           </button>

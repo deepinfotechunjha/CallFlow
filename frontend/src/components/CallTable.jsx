@@ -210,7 +210,7 @@ const CallTable = ({ calls }) => {
           <tbody className="bg-white divide-y divide-gray-200">
             {sortedCalls.map((call, index) => {
               const canAssign = ['HOST', 'ADMIN'].includes(user?.role) && call.status !== 'COMPLETED';
-              const canEdit = user?.role === 'HOST' && call.status !== 'COMPLETED';
+              const canEdit = ['HOST', 'ADMIN'].includes(user?.role) && call.status !== 'COMPLETED';
               const canComplete = call.assignedTo === user?.username || ['HOST', 'ADMIN'].includes(user?.role);
 
               return (

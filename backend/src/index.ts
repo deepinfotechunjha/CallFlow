@@ -500,7 +500,7 @@ app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
     }
 });
 
-app.put('/calls/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+app.put('/calls/:id', authMiddleware, requireRole(['HOST', 'ADMIN']), async (req: Request, res: Response) => {
     const callId = parseInt(req.params.id || '');
     if (isNaN(callId)) {
         return res.status(400).json({ error: 'Invalid call ID' });
