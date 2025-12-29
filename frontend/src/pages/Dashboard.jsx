@@ -179,6 +179,12 @@ const Dashboard = () => {
       
       if (response.ok && data.success && data.hasAccess) {
         const dataToExport = exportType === 'filtered' ? filteredCalls : calls;
+        
+        if (dataToExport.length === 0) {
+          toast.error('No data to export');
+          return;
+        }
+        
         exportCallsToExcel(dataToExport);
         toast.success(`Successfully exported ${dataToExport.length} calls to Excel`);
         setShowExportModal(false);
@@ -186,7 +192,8 @@ const Dashboard = () => {
         toast.error('Invalid secret password');
       }
     } catch (error) {
-      toast.error('Failed to verify password');
+      console.error('Export error:', error);
+      toast.error('Failed to export data. Please try again.');
     }
   };
 
@@ -423,6 +430,7 @@ const Dashboard = () => {
       {showAddForm && <AddCallForm onClose={() => setShowAddForm(false)} />}
       {showExportModal && (
         <ExportModal
+          isOpen={showExportModal}
           onClose={() => setShowExportModal(false)}
           onExport={handleExport}
           totalCount={calls.length}

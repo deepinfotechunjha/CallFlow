@@ -792,6 +792,7 @@ const UserManagement = () => {
 
       {showExportModal && (
         <ExportModal
+          isOpen={showExportModal}
           onClose={() => setShowExportModal(false)}
           onExport={handleExport}
           totalCount={users.length}

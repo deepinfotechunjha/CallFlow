@@ -76,7 +76,6 @@ const CustomerDirectory = () => {
 
       const excelData = dataToExport.map((customer, index) => ({
         'Sr. No': index + 1,
-        'ID': customer.id,
         'Name': customer.name,
         'Phone': customer.phone,
         'Email': customer.email || 'Not provided',
