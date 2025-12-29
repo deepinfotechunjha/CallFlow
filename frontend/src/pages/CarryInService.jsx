@@ -10,6 +10,9 @@ const CarryInService = () => {
   const [filter, setFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL_CATEGORIES');
+  const [statusFilter, setStatusFilter] = useState('ALL_STATUS');
+  const [dateFilter, setDateFilter] = useState({ type: '', start: '', end: '' });
+  const [appliedDateFilter, setAppliedDateFilter] = useState({ type: '', start: '', end: '' });
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   const [formData, setFormData] = useState({
     customerName: '',
@@ -58,6 +61,15 @@ const CarryInService = () => {
     if (services.length === 0) fetchServices();
     if (serviceCategories.length === 0) fetchServiceCategories();
   }, [services.length, serviceCategories.length, fetchServices, fetchServiceCategories]);
+
+  const applyDateFilter = () => {
+    setAppliedDateFilter(dateFilter);
+  };
+
+  const clearDateFilter = () => {
+    setDateFilter({ type: '', start: '', end: '' });
+    setAppliedDateFilter({ type: '', start: '', end: '' });
+  };
 
   const handlePhoneChange = async (phone) => {
     setFormData(prev => ({ ...prev, phone }));
@@ -139,12 +151,6 @@ const CarryInService = () => {
   };
 
   let filteredServices = services.filter(service => {
-    // Status filter
-    if (filter === 'ALL') ;
-    else if (filter === 'PENDING' && service.status !== 'PENDING') return false;
-    else if (filter === 'COMPLETED_NOT_COLLECTED' && service.status !== 'COMPLETED_NOT_COLLECTED') return false;
-    else if (filter === 'COMPLETED_AND_COLLECTED' && service.status !== 'COMPLETED_AND_COLLECTED') return false;
-    
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -156,8 +162,26 @@ const CarryInService = () => {
       if (!matchesSearch) return false;
     }
     
-    // Category filter
+    // Status dropdown filter
+    if (statusFilter !== 'ALL_STATUS') {
+      if (statusFilter === 'PENDING' && service.status !== 'PENDING') return false;
+      if (statusFilter === 'COMPLETED_NOT_COLLECTED' && service.status !== 'COMPLETED_NOT_COLLECTED') return false;
+      if (statusFilter === 'COMPLETED_AND_COLLECTED' && service.status !== 'COMPLETED_AND_COLLECTED') return false;
+    }
+    
+    // Category dropdown filter
     if (categoryFilter !== 'ALL_CATEGORIES' && service.category !== categoryFilter) return false;
+    
+    // Date range filter
+    if (appliedDateFilter.type && appliedDateFilter.start && appliedDateFilter.end) {
+      const serviceDate = service[appliedDateFilter.type];
+      if (!serviceDate) return false;
+      const date = new Date(serviceDate);
+      const start = new Date(appliedDateFilter.start);
+      const end = new Date(appliedDateFilter.end);
+      end.setHours(23, 59, 59, 999);
+      if (date < start || date > end) return false;
+    }
     
     return true;
   });
@@ -270,8 +294,76 @@ const CarryInService = () => {
           <span>🔍</span> Search & Filters
         </h2>
         
-        {/* Search Bar and Category Filter */}
-        <div className="flex flex-wrap items-center gap-3 mb-6">
+        {/* Date Filter */}
+        <div className="mb-6 pb-6 border-b border-gray-100">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex-1 min-w-[140px]">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Date Type</label>
+              <select
+                value={dateFilter.type}
+                onChange={(e) => setDateFilter(prev => ({ ...prev, type: e.target.value }))}
+                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+              >
+                <option value="">Select</option>
+                <option value="createdAt">Created Date</option>
+                <option value="completedAt">Completed Date</option>
+                <option value="deliveredAt">Delivered Date</option>
+              </select>
+            </div>
+            
+            <div className="flex-1 min-w-[140px]">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+              <input
+                type="date"
+                value={dateFilter.start}
+                onChange={(e) => setDateFilter(prev => ({ ...prev, start: e.target.value }))}
+                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={!dateFilter.type}
+              />
+            </div>
+            
+            <div className="flex-1 min-w-[140px]">
+              <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+              <input
+                type="date"
+                value={dateFilter.end}
+                onChange={(e) => setDateFilter(prev => ({ ...prev, end: e.target.value }))}
+                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={!dateFilter.type}
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={applyDateFilter}
+                disabled={!dateFilter.type || !dateFilter.start || !dateFilter.end}
+                className="px-4 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              >
+                Apply
+              </button>
+              
+              {appliedDateFilter.type && (
+                <button
+                  onClick={clearDateFilter}
+                  className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+          
+          {appliedDateFilter.type && (
+            <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-800">
+                <span className="font-medium">Active Filter:</span> {appliedDateFilter.type === 'createdAt' ? 'Created' : appliedDateFilter.type === 'completedAt' ? 'Completed' : 'Delivered'} between {new Date(appliedDateFilter.start).toLocaleDateString()} and {new Date(appliedDateFilter.end).toLocaleDateString()}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Search Bar and Filters */}
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex-1 min-w-[200px] relative">
             <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">🔍</span>
             <input
@@ -292,6 +384,17 @@ const CarryInService = () => {
           </div>
           
           <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
+          >
+            <option value="ALL_STATUS">All Status</option>
+            <option value="PENDING">Pending</option>
+            <option value="COMPLETED_NOT_COLLECTED">Completed</option>
+            <option value="COMPLETED_AND_COLLECTED">Delivered</option>
+          </select>
+          
+          <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
             className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
@@ -302,39 +405,19 @@ const CarryInService = () => {
             ))}
           </select>
           
-          {(searchQuery || categoryFilter !== 'ALL_CATEGORIES') && (
+          {(searchQuery || categoryFilter !== 'ALL_CATEGORIES' || statusFilter !== 'ALL_STATUS' || appliedDateFilter.type) && (
             <button
               onClick={() => {
                 setSearchQuery('');
                 setCategoryFilter('ALL_CATEGORIES');
+                setStatusFilter('ALL_STATUS');
+                clearDateFilter();
               }}
               className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
             >
               Clear All
             </button>
           )}
-        </div>
-
-        {/* Status Filter Tabs */}
-        <div className="border-t border-gray-100 pt-4">
-          <div className="flex flex-wrap gap-2">
-          {['ALL', 'PENDING', 'COMPLETED_NOT_COLLECTED', 'COMPLETED_AND_COLLECTED'].map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                filter === f
-                  ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-              }`}
-            >
-              {f === 'ALL' ? 'All' : 
-               f === 'PENDING' ? 'Pending' :
-               f === 'COMPLETED_NOT_COLLECTED' ? 'Completed' :
-               'Delivered'}
-            </button>
-          ))}
-          </div>
         </div>
       </div>
 
@@ -443,28 +526,28 @@ const CarryInService = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
                       Sr.No
                     </th>
-                    <th onClick={() => handleSort('customer')} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                    <th onClick={() => handleSort('customer')} className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-40">
                       Customer {getSortIcon('customer')}
                     </th>
-                    <th onClick={() => handleSort('phone')} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                    <th onClick={() => handleSort('phone')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-28">
                       Phone {getSortIcon('phone')}
                     </th>
-                    <th onClick={() => handleSort('category')} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                    <th onClick={() => handleSort('category')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-24">
                       Category {getSortIcon('category')}
                     </th>
-                    <th onClick={() => handleSort('description')} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                    <th onClick={() => handleSort('description')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-36">
                       Description {getSortIcon('description')}
                     </th>
-                    <th onClick={() => handleSort('status')} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                    <th onClick={() => handleSort('status')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-32">
                       Status {getSortIcon('status')}
                     </th>
-                    <th onClick={() => handleSort('users')} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                    <th onClick={() => handleSort('users')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-24">
                       Users {getSortIcon('users')}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-20">
                       Actions
                     </th>
                   </tr>
@@ -472,48 +555,52 @@ const CarryInService = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredServices.map((service, index) => (
                     <tr key={service.id} onClick={() => setSelectedService(service)} className="cursor-pointer hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-500">
                         {index + 1}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-2 py-3">
                         <div className="flex items-center gap-2">
                           <span className="text-lg">👤</span>
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{service.customerName}</div>
-                            {service.email && <div className="text-sm text-gray-500 truncate max-w-[150px]">{service.email}</div>}
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-gray-900 truncate">{service.customerName}</div>
+                            {service.email && <div className="text-xs text-gray-500 truncate">{service.email}</div>}
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">
                         <div className="flex items-center gap-1">
                           <span className="text-gray-400">📞</span>
-                          {service.phone}
+                          <span className="truncate">{service.phone}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{service.category}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500 max-w-[200px]">
+                      <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">
+                        <div className="truncate" title={service.category}>{service.category}</div>
+                      </td>
+                      <td className="px-2 py-3 text-sm text-gray-500">
                         <div className="truncate" title={service.serviceDescription}>
                           {service.serviceDescription || '-'}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(service.status)}`}>
-                          {getStatusLabel(service.status)}
+                      <td className="px-2 py-3 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(service.status)}`}>
+                          {service.status === 'PENDING' ? 'Pending' :
+                           service.status === 'COMPLETED_NOT_COLLECTED' ? 'Completed' :
+                           'Delivered'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
-                        <div className="space-y-1 max-w-[120px]">
-                          <div className="truncate" title={`Created: ${service.createdBy || 'N/A'} on ${new Date(service.createdAt).toLocaleString()}`}>Created: {service.createdBy || 'N/A'}</div>
-                          {service.completedBy && <div className="truncate" title={`Completed: ${service.completedBy} ${service.completedAt ? `on ${new Date(service.completedAt).toLocaleString()}` : ''}`}>Completed: {service.completedBy}</div>}
-                          {service.deliveredBy && <div className="truncate" title={`Delivered: ${service.deliveredBy} ${service.deliveredAt ? `on ${new Date(service.deliveredAt).toLocaleString()}` : ''}`}>Delivered: {service.deliveredBy}</div>}
+                      <td className="px-2 py-3 text-xs text-gray-500">
+                        <div className="space-y-1">
+                          <div className="truncate" title={`Created: ${service.createdBy || 'N/A'}`}>C: {service.createdBy || 'N/A'}</div>
+                          {service.completedBy && <div className="truncate" title={`Completed: ${service.completedBy}`}>✓: {service.completedBy}</div>}
+                          {service.deliveredBy && <div className="truncate" title={`Delivered: ${service.deliveredBy}`}>D: {service.deliveredBy}</div>}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex gap-2">
+                      <td className="px-2 py-3 whitespace-nowrap text-sm font-medium" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex gap-1">
                           {service.status === 'PENDING' && (
                             <button
                               onClick={() => setShowCompleteConfirm(service.id)}
-                              className="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-blue-700 transition-colors"
+                              className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 transition-colors"
                             >
                               Complete
                             </button>
@@ -521,7 +608,7 @@ const CarryInService = () => {
                           {service.status === 'COMPLETED_NOT_COLLECTED' && (
                             <button
                               onClick={() => setShowDeliverConfirm(service.id)}
-                              className="bg-green-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-green-700 transition-colors"
+                              className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 transition-colors"
                             >
                               Deliver
                             </button>
@@ -529,7 +616,7 @@ const CarryInService = () => {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ))}}
                 </tbody>
               </table>
             </div>

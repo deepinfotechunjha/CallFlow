@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import NotificationBell from './NotificationBell';
 
 const Navbar = () => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+
+  const isActive = (path) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
+  };
 
   const handleLogout = () => {
     logout();
@@ -38,43 +44,85 @@ const Navbar = () => {
             <div className="hidden lg:flex space-x-1 xl:space-x-4">
               <Link
                 to="/"
-                className="text-gray-700 hover:text-blue-600 px-2 xl:px-3 py-2 rounded-md text-xs xl:text-sm font-medium"
+                className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium transition-all duration-300 ${
+                  isActive('/') 
+                    ? 'text-blue-600 font-semibold' 
+                    : 'text-gray-700 hover:text-blue-600'
+                }`}
               >
                 Dashboard
+                {isActive('/') && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
+                )}
               </Link>
               
               <Link
                 to="/carry-in-service"
-                className="text-gray-700 hover:text-blue-600 px-2 xl:px-3 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap"
+                className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                  isActive('/carry-in-service') 
+                    ? 'text-blue-600 font-semibold' 
+                    : 'text-gray-700 hover:text-blue-600'
+                }`}
               >
                 CarryInService
+                {isActive('/carry-in-service') && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
+                )}
               </Link>
               
               {user?.role === 'HOST' && (
                 <>
                   <Link
                     to="/users"
-                    className="text-gray-700 hover:text-blue-600 px-2 xl:px-3 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap"
+                    className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                      isActive('/users') 
+                        ? 'text-blue-600 font-semibold' 
+                        : 'text-gray-700 hover:text-blue-600'
+                    }`}
                   >
                     Role Management
+                    {isActive('/users') && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
+                    )}
                   </Link>
                   <Link
                     to="/customers"
-                    className="text-gray-700 hover:text-blue-600 px-2 xl:px-3 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap"
+                    className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                      isActive('/customers') 
+                        ? 'text-blue-600 font-semibold' 
+                        : 'text-gray-700 hover:text-blue-600'
+                    }`}
                   >
                     Customers
+                    {isActive('/customers') && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
+                    )}
                   </Link>
                   <Link
                     to="/analytics"
-                    className="text-gray-700 hover:text-blue-600 px-2 xl:px-3 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap"
+                    className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                      isActive('/analytics') 
+                        ? 'text-blue-600 font-semibold' 
+                        : 'text-gray-700 hover:text-blue-600'
+                    }`}
                   >
                     Engineer Analytics
+                    {isActive('/analytics') && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
+                    )}
                   </Link>
                   <Link
                     to="/settings/categories"
-                    className="text-gray-700 hover:text-blue-600 px-2 xl:px-3 py-2 rounded-md text-xs xl:text-sm font-medium whitespace-nowrap"
+                    className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                      isActive('/settings') 
+                        ? 'text-blue-600 font-semibold' 
+                        : 'text-gray-700 hover:text-blue-600'
+                    }`}
                   >
                     Categories
+                    {isActive('/settings') && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
+                    )}
                   </Link>
                 </>
               )}
@@ -90,9 +138,16 @@ const Navbar = () => {
             
             <Link
               to="/profile"
-              className="hidden sm:block text-gray-700 hover:text-blue-600 px-1 sm:px-2 py-2 rounded-md text-xs sm:text-sm font-medium"
+              className={`relative hidden sm:block px-1 sm:px-2 py-2 text-xs sm:text-sm font-medium transition-all duration-300 ${
+                isActive('/profile') 
+                  ? 'text-blue-600 font-semibold' 
+                  : 'text-gray-700 hover:text-blue-600'
+              }`}
             >
               Profile
+              {isActive('/profile') && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
+              )}
             </Link>
             
             <button
