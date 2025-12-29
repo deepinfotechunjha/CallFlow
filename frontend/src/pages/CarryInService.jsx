@@ -538,11 +538,14 @@ const CarryInService = () => {
                     <th onClick={() => handleSort('category')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-24">
                       Category {getSortIcon('category')}
                     </th>
-                    <th onClick={() => handleSort('description')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-36">
+                    <th onClick={() => handleSort('description')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-32">
                       Description {getSortIcon('description')}
                     </th>
                     <th onClick={() => handleSort('status')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-32">
                       Status {getSortIcon('status')}
+                    </th>
+                    <th onClick={() => handleSort('date')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-20">
+                      Date & Time {getSortIcon('date')}
                     </th>
                     <th onClick={() => handleSort('users')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-24">
                       Users {getSortIcon('users')}
@@ -577,7 +580,7 @@ const CarryInService = () => {
                         <div className="truncate" title={service.category}>{service.category}</div>
                       </td>
                       <td className="px-2 py-3 text-sm text-gray-500">
-                        <div className="truncate" title={service.serviceDescription}>
+                        <div className="text-xs text-gray-900 bg-yellow-50 p-1 rounded leading-tight" style={{maxHeight: '60px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical'}} title={service.serviceDescription}>
                           {service.serviceDescription || '-'}
                         </div>
                       </td>
@@ -587,6 +590,12 @@ const CarryInService = () => {
                            service.status === 'COMPLETED_NOT_COLLECTED' ? 'Completed' :
                            'Delivered'}
                         </span>
+                      </td>
+                      <td className="px-1 py-3 border-r border-gray-200">
+                        <div className="bg-gray-100 p-1 rounded space-y-1">
+                          <div className="text-xs font-medium text-gray-900">{new Date(service.createdAt).toLocaleDateString()}</div>
+                          <div className="text-xs text-gray-600">{new Date(service.createdAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', hour12: true})}</div>
+                        </div>
                       </td>
                       <td className="px-2 py-3 text-xs text-gray-500">
                         <div className="space-y-1">

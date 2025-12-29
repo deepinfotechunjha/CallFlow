@@ -198,10 +198,10 @@ const CallTable = ({ calls }) => {
               <th onClick={() => handleSort('customer')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-48">Customer & Address {getSortIcon('customer')}</th>
               <th onClick={() => handleSort('phone')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-36">Phone & Email {getSortIcon('phone')}</th>
               <th onClick={() => handleSort('category')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-24">Category {getSortIcon('category')}</th>
-              <th onClick={() => handleSort('problem')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-48">Problem {getSortIcon('problem')}</th>
+              <th onClick={() => handleSort('problem')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-44">Problem {getSortIcon('problem')}</th>
               <th onClick={() => handleSort('status')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-20">Status {getSortIcon('status')}</th>
               <th onClick={() => handleSort('assignment')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-24">Assignment {getSortIcon('assignment')}</th>
-              <th onClick={() => handleSort('date')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-28">Date & Time {getSortIcon('date')}</th>
+              <th onClick={() => handleSort('date')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-20">Date & Time {getSortIcon('date')}</th>
               <th onClick={() => handleSort('engineerRemark')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden xl:table-cell cursor-pointer hover:bg-blue-700 min-w-24">Engineer Remark {getSortIcon('engineerRemark')}</th>
               <th onClick={() => handleSort('completionRemark')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden xl:table-cell cursor-pointer hover:bg-blue-700 min-w-24">Completion Remark {getSortIcon('completionRemark')}</th>
               <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider min-w-24">Actions</th>
@@ -291,7 +291,7 @@ const CallTable = ({ calls }) => {
                     <td className="px-1 py-3 border-r border-gray-200">
                       <div className="bg-gray-100 p-1 rounded space-y-1">
                         <div className="text-xs font-medium text-gray-900">{new Date(call.createdAt).toLocaleDateString()}</div>
-                        <div className="text-xs text-gray-600">{new Date(call.createdAt).toLocaleTimeString()}</div>
+                        <div className="text-xs text-gray-600">{new Date(call.createdAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', hour12: true})}</div>
                       </div>
                     </td>
                     <td className="px-1 py-3 border-r border-gray-200 hidden xl:table-cell">
