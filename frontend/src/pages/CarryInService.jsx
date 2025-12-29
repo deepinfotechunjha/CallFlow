@@ -616,7 +616,7 @@ const CarryInService = () => {
                         </div>
                       </td>
                     </tr>
-                  ))}}
+                  ))}
                 </tbody>
               </table>
             </div>
