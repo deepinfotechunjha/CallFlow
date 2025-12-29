@@ -190,6 +190,8 @@ app.post('/auth/login', async (req: Request, res: Response) => {
             user: { 
                 id: user.id, 
                 username: user.username, 
+                email: user.email,
+                phone: user.phone,
                 role: user.role, 
                 createdAt: user.createdAt 
             } 
@@ -203,7 +205,7 @@ app.get('/auth/me', authMiddleware, async (req: Request, res: Response) => {
     try {
         const user = await prisma.user.findUnique({ 
             where: { id: req.user?.id },
-            select: { id: true, username: true, role: true, createdAt: true }
+            select: { id: true, username: true, email: true, phone: true, role: true, createdAt: true }
         });
         
         if (!user) {
@@ -252,7 +254,7 @@ app.post("/auth/verify-secret", authMiddleware, async (req: Request, res: Respon
 app.get("/users", authMiddleware, requireRole(['HOST', 'ADMIN']), async (_req: Request, res: Response) => {
     try {
         const users = await prisma.user.findMany({ 
-            select: { id: true, username: true, role: true, createdAt: true } 
+            select: { id: true, username: true, email: true, phone: true, role: true, createdAt: true } 
         });
         res.json(users);
     } catch (err: any) {
@@ -261,10 +263,10 @@ app.get("/users", authMiddleware, requireRole(['HOST', 'ADMIN']), async (_req: R
 });
 
 app.post("/users", authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
-    const { username, password, role, secretPassword } = req.body as { username: string; password: string; role: string; secretPassword?: string };
+    const { username, password, email, phone, role, secretPassword } = req.body as { username: string; password: string; email: string; phone: string; role: string; secretPassword?: string };
     
-    if (!username || !password || !role) {
-        return res.status(400).json({ error: "username, password, and role are required" });
+    if (!username || !password || !email || !phone || !role) {
+        return res.status(400).json({ error: "username, password, email, phone, and role are required" });
     }
     
     if (!['HOST', 'ADMIN', 'ENGINEER'].includes(role)) {
@@ -276,12 +278,14 @@ app.post("/users", authMiddleware, requireRole(['HOST']), async (req: Request, r
         const finalSecretPassword = role === 'HOST' ? (secretPassword || 'DEFAULTSECRET') : 'DEFAULTSECRET';
         
         const user = await prisma.user.create({ 
-            data: { username, password: hashed, role, secretPassword: finalSecretPassword } 
+            data: { username, password: hashed, email, phone, role, secretPassword: finalSecretPassword } 
         });
         
         const userResponse = { 
             id: user.id, 
             username: user.username, 
+            email: user.email,
+            phone: user.phone,
             role: user.role, 
             createdAt: user.createdAt 
         };
@@ -289,15 +293,20 @@ app.post("/users", authMiddleware, requireRole(['HOST']), async (req: Request, r
         emitToAll('user_created', userResponse);
         res.status(201).json(userResponse);
     } catch (err: any) {
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'Username, email, or phone already exists' });
+        }
         res.status(500).json({ error: String(err) });
     }
 });
 
 app.put("/users/:id", authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
     const userId = parseInt(req.params.id || '');
-    const { username, password, role, secretPassword } = req.body as {
+    const { username, password, email, phone, role, secretPassword } = req.body as {
         username?: string;
         password?: string;
+        email?: string;
+        phone?: string;
         role?: string;
         secretPassword?: string;
     };
@@ -312,6 +321,14 @@ app.put("/users/:id", authMiddleware, requireRole(['HOST']), async (req: Request
         
         if (username && username !== currentUser.username) {
             updateData.username = username;
+        }
+        
+        if (email && email !== currentUser.email) {
+            updateData.email = email;
+        }
+        
+        if (phone && phone !== currentUser.phone) {
+            updateData.phone = phone;
         }
         
         if (password) {
@@ -331,7 +348,7 @@ app.put("/users/:id", authMiddleware, requireRole(['HOST']), async (req: Request
         const user = await prisma.user.update({
             where: { id: userId },
             data: updateData,
-            select: { id: true, username: true, role: true, createdAt: true }
+            select: { id: true, username: true, email: true, phone: true, role: true, createdAt: true }
         });
         
         // Force logout the updated user via WebSocket
@@ -344,7 +361,7 @@ app.put("/users/:id", authMiddleware, requireRole(['HOST']), async (req: Request
         res.json(user);
     } catch (err: any) {
         if (err.code === 'P2002') {
-            return res.status(400).json({ error: 'Username already exists' });
+            return res.status(400).json({ error: 'Username, email, or phone already exists' });
         }
         res.status(500).json({ error: String(err) });
     }

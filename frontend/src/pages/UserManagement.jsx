@@ -36,12 +36,16 @@ const UserManagement = () => {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
+    email: '',
+    phone: '',
     role: 'ENGINEER',
     secretPassword: ''
   });
   const [editFormData, setEditFormData] = useState({
     username: '',
     password: '',
+    email: '',
+    phone: '',
     role: 'ENGINEER',
     secretPassword: ''
   });
@@ -95,6 +99,11 @@ const UserManagement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.username || !formData.password || !formData.email || !formData.phone) {
+      setAlertMessage('Username, password, email, and phone are required');
+      setShowAlert(true);
+      return;
+    }
     if (formData.role === 'HOST' && !formData.secretPassword.trim()) {
       setAlertMessage('Secret password is required for HOST role');
       setShowAlert(true);
@@ -118,6 +127,8 @@ const UserManagement = () => {
     setEditFormData({
       username: userToEdit.username,
       password: '',
+      email: userToEdit.email || '',
+      phone: userToEdit.phone || '',
       role: userToEdit.role,
       secretPassword: ''
     });
@@ -126,6 +137,11 @@ const UserManagement = () => {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    if (!editFormData.email || !editFormData.phone) {
+      setAlertMessage('Email and phone are required');
+      setShowAlert(true);
+      return;
+    }
     if (editFormData.role === 'HOST' && editingUser.role !== 'HOST' && !editFormData.secretPassword.trim()) {
       setAlertMessage('Secret password is required when promoting to HOST role');
       setShowAlert(true);
@@ -140,7 +156,9 @@ const UserManagement = () => {
       }
     }
     const updateData = {
-      role: editFormData.role
+      role: editFormData.role,
+      email: editFormData.email,
+      phone: editFormData.phone
     };
     if (editFormData.password) {
       updateData.password = editFormData.password;
@@ -214,7 +232,7 @@ const UserManagement = () => {
             await createUser(pendingAction.data);
             setSuccessMessage(`User "${pendingAction.data.username}" has been created successfully.`);
             setShowSuccessAlert(true);
-            setFormData({ username: '', password: '', role: 'USER', secretPassword: '' });
+            setFormData({ username: '', password: '', email: '', phone: '', role: 'ENGINEER', secretPassword: '' });
             setShowAddForm(false);
           } else if (pendingAction.type === 'edit') {
             const result = await updateUser(pendingAction.userId, pendingAction.data);
@@ -436,6 +454,12 @@ const UserManagement = () => {
                   Username
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Email
+                </th>
+                <th className="hidden lg:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Phone
+                </th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Role
                 </th>
                 <th className="hidden md:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -454,6 +478,12 @@ const UserManagement = () => {
                       <span className="text-lg">👤</span>
                       {u.username}
                     </div>
+                  </td>
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                    {u.email || 'N/A'}
+                  </td>
+                  <td className="hidden lg:table-cell px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                    {u.phone || 'N/A'}
                   </td>
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                     <span className={`px-3 py-1 text-xs font-medium rounded-full border ${
@@ -519,6 +549,28 @@ const UserManagement = () => {
                   type="text"
                   value={formData.username}
                   onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1">Email *</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1">Phone *</label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                   className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
                   required
                 />
@@ -616,6 +668,28 @@ const UserManagement = () => {
                   value={editFormData.username}
                   readOnly
                   className="w-full p-2 border rounded bg-gray-100 text-gray-600 cursor-not-allowed text-sm"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1">Email *</label>
+                <input
+                  type="email"
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1">Phone *</label>
+                <input
+                  type="tel"
+                  value={editFormData.phone}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
                   required
                 />
               </div>
