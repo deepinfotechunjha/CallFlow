@@ -14,7 +14,10 @@ async function main() {
     create: {
       username: 'host',
       password: hostPassword,
-      role: 'HOST'
+      email: 'host@callflow.com',
+      phone: '+1234567890',
+      role: 'HOST',
+      secretPassword: 'SECRET123'
     }
   });
 
@@ -26,6 +29,8 @@ async function main() {
     create: {
       username: 'admin',
       password: adminPassword,
+      email: 'admin@callflow.com',
+      phone: '+1234567889',
       role: 'ADMIN'
     }
   });
@@ -38,7 +43,24 @@ async function main() {
     create: {
       username: 'user',
       password: userPassword,
-      role: 'USER'
+      email: 'user@callflow.com',
+      phone: '+1234567888',
+      role: 'ENGINEER'
+    }
+  });
+
+  // Create second HOST user
+  const host2Password = await bcrypt.hash('host456', 10);
+  const host2 = await prisma.user.upsert({
+    where: { username: 'host2' },
+    update: {},
+    create: {
+      username: 'host2',
+      password: host2Password,
+      email: 'host2@callflow.com',
+      phone: '+1234567891',
+      role: 'HOST',
+      secretPassword: 'SECRET456'
     }
   });
 
@@ -46,6 +68,7 @@ async function main() {
   console.log('HOST: username=host, password=host123');
   console.log('ADMIN: username=admin, password=admin123');
   console.log('USER: username=user, password=user123');
+  console.log('HOST2: username=host2, password=host456, email=host2@callflow.com, secretPassword=SECRET456');
 }
 
 main()

@@ -117,3 +117,16 @@ model CarryInService {
   @@index([status])
   @@index([createdBy])
 }
+
+model OtpToken {
+  id        Int      @id @default(autoincrement())
+  email     String
+  otp       String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email, token])
+  @@index([expiresAt])
+}

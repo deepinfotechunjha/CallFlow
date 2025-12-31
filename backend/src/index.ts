@@ -7,6 +7,7 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 import type { Request, Response, NextFunction } from "express";
 
 // Extend Express Request type
@@ -57,6 +58,50 @@ app.use(cors({
 
 const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret';
 
+// Email configuration
+const emailTransporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER || 'your-email@gmail.com',
+    pass: process.env.EMAIL_PASS || 'your-app-password'
+  }
+});
+
+// Helper function to generate OTP
+function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Helper function to send OTP email
+async function sendOTPEmail(email: string, otp: string): Promise<boolean> {
+  try {
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'your-email@gmail.com',
+      to: email,
+      subject: 'CallFlow - Password Reset OTP',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2563eb;">CallFlow Secret Password Reset</h2>
+          <p>You have requested to reset your secret password for accessing User Management. Please use the following OTP to proceed:</p>
+          <div style="background-color: #f3f4f6; padding: 20px; text-align: center; margin: 20px 0;">
+            <h1 style="color: #1f2937; font-size: 32px; margin: 0; letter-spacing: 5px;">${otp}</h1>
+          </div>
+          <p>This OTP will expire in 10 minutes.</p>
+          <p>If you didn't request this secret password reset, please ignore this email.</p>
+          <hr style="margin: 30px 0;">
+          <p style="color: #6b7280; font-size: 12px;">CallFlow Call Management System</p>
+        </div>
+      `
+    };
+    
+    await emailTransporter.sendMail(mailOptions);
+    return true;
+  } catch (error) {
+    console.error('Failed to send OTP email:', error);
+    return false;
+  }
+}
+
 function signToken(payload: object) {
     return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
@@ -86,8 +131,27 @@ const cleanupOldNotifications = async () => {
     }
 };
 
+// Helper function to clean up expired OTP tokens
+const cleanupExpiredOtpTokens = async () => {
+    try {
+        const result = await prisma.otpToken.deleteMany({
+            where: {
+                expiresAt: { lt: new Date() }
+            }
+        });
+        if (result.count > 0) {
+            console.log(`Cleaned up ${result.count} expired OTP tokens`);
+        }
+    } catch (error) {
+        console.error('Failed to cleanup expired OTP tokens:', error);
+    }
+};
+
 // Run cleanup every hour
-setInterval(cleanupOldNotifications, 60 * 60 * 1000);
+setInterval(() => {
+    cleanupOldNotifications();
+    cleanupExpiredOtpTokens();
+}, 60 * 60 * 1000);
 
 // WebSocket connection handling
 const userSockets = new Map<number, string>();
@@ -247,6 +311,204 @@ app.post("/auth/verify-secret", authMiddleware, async (req: Request, res: Respon
         res.json({ success: true, hasAccess: dbUser.role === 'HOST' });
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
+    }
+});
+
+// Forgot Password endpoints
+app.post('/auth/forgot-password', authMiddleware, async (req: Request, res: Response) => {
+    const { email } = req.body as { email: string };
+    const user = req.user;
+    
+    if (!email) {
+        return res.status(400).json({ error: 'Email is required' });
+    }
+    
+    if (!user) {
+        return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    try {
+        // Check if user exists and email matches logged-in user
+        const dbUser = await prisma.user.findUnique({ 
+            where: { id: user.id },
+            select: { email: true, role: true, username: true }
+        });
+        
+        if (!dbUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        console.log('User email in DB:', dbUser.email);
+        console.log('Email entered:', email);
+        console.log('User role:', dbUser.role);
+        
+        if (dbUser.email !== email) {
+            return res.status(400).json({ error: `Email does not match your account. Your registered email is: ${dbUser.email}` });
+        }
+        
+        if (dbUser.role !== 'HOST') {
+            return res.status(403).json({ error: 'Only HOST users can reset secret password' });
+        }
+        
+        // Generate OTP and token
+        const otp = generateOTP();
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        
+        // Clean up old OTP tokens for this email
+        await prisma.otpToken.deleteMany({
+            where: { email }
+        });
+        
+        // Store OTP token
+        await prisma.otpToken.create({
+            data: {
+                email,
+                otp,
+                token,
+                expiresAt
+            }
+        });
+        
+        console.log('Generated OTP:', otp);
+        
+        // Send OTP email
+        const emailSent = await sendOTPEmail(email, otp);
+        if (!emailSent) {
+            return res.status(500).json({ error: 'Failed to send OTP email' });
+        }
+        
+        res.json({ success: true, token, message: 'OTP sent to your email address' });
+    } catch (err: any) {
+        console.error('Forgot password error:', err);
+        res.status(500).json({ error: 'Failed to process forgot password request' });
+    }
+});
+
+app.post('/auth/verify-otp', authMiddleware, async (req: Request, res: Response) => {
+    const { email, otp, token } = req.body as { email: string; otp: string; token: string };
+    const user = req.user;
+    
+    console.log('OTP Verification - Received:', { email, otp, token: token?.substring(0, 10) + '...' });
+    
+    if (!email || !otp || !token) {
+        return res.status(400).json({ error: 'Email, OTP, and token are required' });
+    }
+    
+    if (!user) {
+        return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    try {
+        // Verify user email matches
+        const dbUser = await prisma.user.findUnique({ 
+            where: { id: user.id },
+            select: { email: true }
+        });
+        
+        console.log('User DB email:', dbUser?.email, 'Provided email:', email);
+        
+        if (!dbUser || dbUser.email !== email) {
+            return res.status(400).json({ error: 'Invalid email' });
+        }
+        
+        // Find and verify OTP token
+        const otpRecord = await prisma.otpToken.findFirst({
+            where: {
+                email,
+                token,
+                used: false,
+                expiresAt: { gt: new Date() }
+            }
+        });
+        
+        console.log('OTP Record found:', !!otpRecord);
+        if (otpRecord) {
+            console.log('Stored OTP:', otpRecord.otp, 'Provided OTP:', otp);
+            console.log('Expires at:', otpRecord.expiresAt, 'Current time:', new Date());
+        }
+        
+        if (!otpRecord) {
+            return res.status(400).json({ error: 'Invalid or expired OTP token' });
+        }
+        
+        if (otpRecord.otp !== otp) {
+            return res.status(400).json({ error: 'Invalid OTP code' });
+        }
+        
+        res.json({ success: true, message: 'OTP verified successfully' });
+    } catch (err: any) {
+        console.error('OTP verification error:', err);
+        res.status(500).json({ error: 'Failed to verify OTP' });
+    }
+});
+
+app.post('/auth/reset-password', authMiddleware, async (req: Request, res: Response) => {
+    const { email, otp, token, newPassword } = req.body as { 
+        email: string; 
+        otp: string; 
+        token: string; 
+        newPassword: string; 
+    };
+    const user = req.user;
+    
+    if (!email || !otp || !token || !newPassword) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+    
+    if (newPassword.length < 6) {
+        return res.status(400).json({ error: 'Secret password must be at least 6 characters long' });
+    }
+    
+    if (!user) {
+        return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    try {
+        // Verify user email matches
+        const dbUser = await prisma.user.findUnique({ 
+            where: { id: user.id },
+            select: { email: true, role: true }
+        });
+        
+        if (!dbUser || dbUser.email !== email) {
+            return res.status(400).json({ error: 'Invalid email' });
+        }
+        
+        if (dbUser.role !== 'HOST') {
+            return res.status(403).json({ error: 'Only HOST users can reset secret password' });
+        }
+        
+        // Verify OTP token one more time
+        const otpRecord = await prisma.otpToken.findFirst({
+            where: {
+                email,
+                token,
+                otp,
+                used: false,
+                expiresAt: { gt: new Date() }
+            }
+        });
+        
+        if (!otpRecord) {
+            return res.status(400).json({ error: 'Invalid or expired OTP' });
+        }
+        
+        // Update user secret password (not login password)
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { secretPassword: newPassword }
+        });
+        
+        // Mark OTP as used
+        await prisma.otpToken.update({
+            where: { id: otpRecord.id },
+            data: { used: true }
+        });
+        
+        res.json({ success: true, message: 'Secret password reset successfully' });
+    } catch (err: any) {
+        res.status(500).json({ error: 'Failed to reset secret password' });
     }
 });
 

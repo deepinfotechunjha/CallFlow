@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import useCallStore from '../store/callStore';
 import useSocket from '../hooks/useSocket';
@@ -10,6 +11,7 @@ import apiClient from '../api/apiClient';
 import toast from 'react-hot-toast';
 
 const UserManagement = () => {
+  const navigate = useNavigate();
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -368,6 +370,18 @@ const UserManagement = () => {
                   className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
                 >
                   Cancel
+                </button>
+              </div>
+              
+              <div className="text-center mt-3">
+                <button
+                  onClick={() => {
+                    setShowSecretModal(false);
+                    navigate('/forgot-password');
+                  }}
+                  className="text-sm text-blue-600 hover:text-blue-800 underline"
+                >
+                  Forgot Secret Password?
                 </button>
               </div>
             </div>
