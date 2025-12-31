@@ -7,11 +7,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
-    "db:push": "npx prisma db push --accept-data-loss",
-    "migrate": "node scripts/migrate-schema.js",
-    "test:roles": "node scripts/test-roles.js",
-    "seed": "tsx prisma/seed.ts",
-    "seed:js": "node --no-warnings=ExperimentalWarning prisma/seed.js"
+    "db:push": "npx prisma db push --accept-data-loss"
   },
   "keywords": [],
   "author": "",
