@@ -58,6 +58,22 @@ app.use(cors({
 
 const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret';
 
+// In-memory OTP cache
+const otpCache = new Map();
+
+// Helper function to clean expired OTPs
+function cleanExpiredOTPs() {
+  const now = Date.now();
+  for (const [key, data] of otpCache.entries()) {
+    if (data.expiresAt < now) {
+      otpCache.delete(key);
+    }
+  }
+}
+
+// Clean expired OTPs every minute
+setInterval(cleanExpiredOTPs, 60 * 1000);
+
 // Email configuration
 const emailTransporter = nodemailer.createTransport({
   service: 'gmail',
@@ -131,26 +147,10 @@ const cleanupOldNotifications = async () => {
     }
 };
 
-// Helper function to clean up expired OTP tokens
-const cleanupExpiredOtpTokens = async () => {
-    try {
-        const result = await prisma.otpToken.deleteMany({
-            where: {
-                expiresAt: { lt: new Date() }
-            }
-        });
-        if (result.count > 0) {
-            console.log(`Cleaned up ${result.count} expired OTP tokens`);
-        }
-    } catch (error) {
-        console.error('Failed to cleanup expired OTP tokens:', error);
-    }
-};
-
 // Run cleanup every hour
 setInterval(() => {
     cleanupOldNotifications();
-    cleanupExpiredOtpTokens();
+    cleanExpiredOTPs();
 }, 60 * 60 * 1000);
 
 // WebSocket connection handling
@@ -353,21 +353,14 @@ app.post('/auth/forgot-password', authMiddleware, async (req: Request, res: Resp
         // Generate OTP and token
         const otp = generateOTP();
         const token = crypto.randomBytes(32).toString('hex');
-        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        const expiresAt = Date.now() + 2 * 60 * 1000; // 2 minutes
         
-        // Clean up old OTP tokens for this email
-        await prisma.otpToken.deleteMany({
-            where: { email }
-        });
-        
-        // Store OTP token
-        await prisma.otpToken.create({
-            data: {
-                email,
-                otp,
-                token,
-                expiresAt
-            }
+        // Store in memory cache
+        otpCache.set(token, {
+            email,
+            otp,
+            expiresAt,
+            used: false
         });
         
         console.log('Generated OTP:', otp);
@@ -375,6 +368,7 @@ app.post('/auth/forgot-password', authMiddleware, async (req: Request, res: Resp
         // Send OTP email
         const emailSent = await sendOTPEmail(email, otp);
         if (!emailSent) {
+            otpCache.delete(token); // Clean up on email failure
             return res.status(500).json({ error: 'Failed to send OTP email' });
         }
         
@@ -412,27 +406,29 @@ app.post('/auth/verify-otp', authMiddleware, async (req: Request, res: Response)
             return res.status(400).json({ error: 'Invalid email' });
         }
         
-        // Find and verify OTP token
-        const otpRecord = await prisma.otpToken.findFirst({
-            where: {
-                email,
-                token,
-                used: false,
-                expiresAt: { gt: new Date() }
-            }
-        });
+        // Check cache for OTP
+        const otpData = otpCache.get(token);
         
-        console.log('OTP Record found:', !!otpRecord);
-        if (otpRecord) {
-            console.log('Stored OTP:', otpRecord.otp, 'Provided OTP:', otp);
-            console.log('Expires at:', otpRecord.expiresAt, 'Current time:', new Date());
+        console.log('OTP Data found:', !!otpData);
+        if (otpData) {
+            console.log('Stored OTP:', otpData.otp, 'Provided OTP:', otp);
+            console.log('Expires at:', new Date(otpData.expiresAt), 'Current time:', new Date());
         }
         
-        if (!otpRecord) {
+        if (!otpData) {
             return res.status(400).json({ error: 'Invalid or expired OTP token' });
         }
         
-        if (otpRecord.otp !== otp) {
+        if (otpData.expiresAt < Date.now()) {
+            otpCache.delete(token);
+            return res.status(400).json({ error: 'OTP has expired' });
+        }
+        
+        if (otpData.used) {
+            return res.status(400).json({ error: 'OTP already used' });
+        }
+        
+        if (otpData.email !== email || otpData.otp !== otp) {
             return res.status(400).json({ error: 'Invalid OTP code' });
         }
         
@@ -479,32 +475,34 @@ app.post('/auth/reset-password', authMiddleware, async (req: Request, res: Respo
             return res.status(403).json({ error: 'Only HOST users can reset secret password' });
         }
         
-        // Verify OTP token one more time
-        const otpRecord = await prisma.otpToken.findFirst({
-            where: {
-                email,
-                token,
-                otp,
-                used: false,
-                expiresAt: { gt: new Date() }
-            }
-        });
+        // Verify OTP from cache
+        const otpData = otpCache.get(token);
         
-        if (!otpRecord) {
-            return res.status(400).json({ error: 'Invalid or expired OTP' });
+        if (!otpData) {
+            return res.status(400).json({ error: 'Invalid or expired OTP token' });
         }
         
-        // Update user secret password (not login password)
+        if (otpData.expiresAt < Date.now()) {
+            otpCache.delete(token);
+            return res.status(400).json({ error: 'OTP has expired' });
+        }
+        
+        if (otpData.used) {
+            return res.status(400).json({ error: 'OTP already used' });
+        }
+        
+        if (otpData.email !== email || otpData.otp !== otp) {
+            return res.status(400).json({ error: 'Invalid OTP' });
+        }
+        
+        // Update user secret password
         await prisma.user.update({
             where: { id: user.id },
             data: { secretPassword: newPassword }
         });
         
-        // Mark OTP as used
-        await prisma.otpToken.update({
-            where: { id: otpRecord.id },
-            data: { used: true }
-        });
+        // Mark OTP as used and delete from cache
+        otpCache.delete(token);
         
         res.json({ success: true, message: 'Secret password reset successfully' });
     } catch (err: any) {
