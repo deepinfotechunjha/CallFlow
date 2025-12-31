@@ -38,14 +38,14 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
-        origin: [process.env.FRONTEND_ORIGIN ?? 'https://call-manage.netlify.app', 'http://localhost:5173'],
+        origin: [process.env.FRONTEND_ORIGIN || 'http://localhost:5173'],
         methods: ["GET", "POST"]
     }
 });
 
 app.use(express.json());
 
-const allowedOrigins = [process.env.FRONTEND_ORIGIN ?? 'https://call-manage.netlify.app', 'http://localhost:5173'];
+const allowedOrigins = [process.env.FRONTEND_ORIGIN || 'http://localhost:5173'];
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin) return callback(null, true);

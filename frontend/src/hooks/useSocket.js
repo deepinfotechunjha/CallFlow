@@ -13,7 +13,8 @@ const useSocket = () => {
 
   useEffect(() => {
     if (user && !socket) {
-      const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:4000' : 'https://call-management-7hug.onrender.com');
+      // Use environment variable for API URL, fallback to localhost if not set
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
       
       socket = io(API_URL, {
         transports: ['websocket', 'polling']

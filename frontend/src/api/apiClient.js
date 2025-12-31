@@ -1,10 +1,8 @@
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
 
-// Use Vite environment variable for the API base URL when available.
-// During development this will default to the local backend. In production
-// set `VITE_API_URL` in your deployment to point to the deployed API.
-const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:4000' : 'https://call-management-7hug.onrender.com');
+// Use environment variable for API URL, fallback to localhost if not set
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
