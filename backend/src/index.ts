@@ -187,8 +187,8 @@ function authMiddleware(req: Request, res: Response, next: NextFunction) {
         req.user = payload;
         next();
     } catch (err: any) {
-        console.log('Authentication error:', err.message);
-        res.status(401).json({ error: 'Authentication failed' });
+        console.error('Authentication error:', err);
+        res.status(500).json({ error: 'Authentication failed' });
     }
 }
 
@@ -202,7 +202,8 @@ function requireRole(roles: string[]) {
             }
             next();
         } catch (err: any) {
-            res.status(403).json({ error: 'Authorization failed' });
+            console.error('Authorization error:', err);
+            res.status(500).json({ error: 'Authorization failed' });
         }
     };
 }
@@ -214,8 +215,9 @@ app.get("/health", async (_req: Request, res: Response) => {
     try {
         await prisma.$queryRaw`SELECT 1`;
         res.json({ status: "ok" });
-    } catch (err) {
-        res.status(500).json({ status: "error", error: String(err) });
+    } catch (err: any) {
+        console.error('Health check failed:', err);
+        res.status(500).json({ status: "error", error: 'Database connection failed' });
     }
 });
 
@@ -234,6 +236,7 @@ app.post('/auth/login', async (req: Request, res: Response) => {
         try {
             ok = await bcrypt.compare(password, user.password);
         } catch (e) {
+            console.error('Password comparison error:', e);
             ok = false;
         }
 
@@ -261,14 +264,19 @@ app.post('/auth/login', async (req: Request, res: Response) => {
             } 
         });
     } catch (err: any) {
+        console.error('Login error:', err);
         res.status(500).json({ error: 'Login failed' });
     }
 });
 
 app.get('/auth/me', authMiddleware, async (req: Request, res: Response) => {
     try {
+        if (!req.user?.id) {
+            return res.status(401).json({ error: 'User not authenticated' });
+        }
+        
         const user = await prisma.user.findUnique({ 
-            where: { id: req.user?.id },
+            where: { id: req.user.id },
             select: { id: true, username: true, email: true, phone: true, role: true, createdAt: true }
         });
         
@@ -278,6 +286,7 @@ app.get('/auth/me', authMiddleware, async (req: Request, res: Response) => {
         
         res.json(user);
     } catch (err: any) {
+        console.error('Auth me error:', err);
         res.status(500).json({ error: 'Failed to fetch user data' });
     }
 });
@@ -290,7 +299,7 @@ app.post("/auth/verify-secret", authMiddleware, async (req: Request, res: Respon
         return res.status(400).json({ error: 'Secret password is required' });
     }
     
-    if (!user) {
+    if (!user?.id) {
         return res.status(401).json({ error: 'User not authenticated' });
     }
     
@@ -310,7 +319,8 @@ app.post("/auth/verify-secret", authMiddleware, async (req: Request, res: Respon
         
         res.json({ success: true, hasAccess: dbUser.role === 'HOST' });
     } catch (err: any) {
-        res.status(500).json({ error: String(err) });
+        console.error('Verify secret error:', err);
+        res.status(500).json({ error: 'Failed to verify secret password' });
     }
 });
 
@@ -323,7 +333,7 @@ app.post('/auth/forgot-password', authMiddleware, async (req: Request, res: Resp
         return res.status(400).json({ error: 'Email is required' });
     }
     
-    if (!user) {
+    if (!user?.id) {
         return res.status(401).json({ error: 'User not authenticated' });
     }
     
