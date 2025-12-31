@@ -185,7 +185,7 @@ const Dashboard = () => {
           return;
         }
         
-        exportCallsToExcel(dataToExport);
+        await exportCallsToExcel(dataToExport);
         toast.success(`Successfully exported ${dataToExport.length} calls to Excel`);
         setShowExportModal(false);
       } else {
