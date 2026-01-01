@@ -7,7 +7,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
-    "db:push": "npx prisma db push --accept-data-loss"
+    "db:push": "npx prisma db push --accept-data-loss",
+    "seed": "node scripts/seed.js"
   },
   "keywords": [],
   "author": "",
@@ -15,24 +16,24 @@
   "type": "module",
   "dependencies": {
     "@prisma/client": "^6.3.1",
-    "bcryptjs": "^3.0.2",
-    "cors": "^2.8.5",
-    "dotenv": "^16.6.1",
-    "express": "^4.18.2",
-    "jsonwebtoken": "^9.0.2",
-    "nodemailer": "^7.0.12",
-    "socket.io": "^4.8.1"
-  },
-  "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.10.1",
     "@types/nodemailer": "^6.4.21",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^7.0.12",
     "prisma": "^6.3.1",
-    "ts-node": "^10.9.2",
-    "tsx": "^4.21.0",
+    "socket.io": "^4.8.1",
     "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0"
   }
 }

@@ -36,24 +36,43 @@ dotenv.config();
 const prisma = new PrismaClient();
 const app = express();
 const httpServer = createServer(app);
+
+const allowedOrigins = [
+    process.env.FRONTEND_ORIGIN || 'http://localhost:5173',
+    'https://call-manage.netlify.app', // Production frontend
+    'https://deploy-call.netlify.app'  // Alternative production URL
+];
+
 const io = new Server(httpServer, {
     cors: {
-        origin: [process.env.FRONTEND_ORIGIN || 'http://localhost:5173'],
-        methods: ["GET", "POST"]
+        origin: allowedOrigins,
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
 
 app.use(express.json());
 
-const allowedOrigins = [process.env.FRONTEND_ORIGIN || 'http://localhost:5173'];
 app.use(cors({
     origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, Postman, etc.)
         if (!origin) return callback(null, true);
+        
+        // Check if origin is in allowed list
         if (allowedOrigins.includes(origin)) return callback(null, true);
-        if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) return callback(null, true);
+        
+        // Allow localhost in development
+        if (process.env.NODE_ENV !== 'production' && 
+            (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1'))) {
+            return callback(null, true);
+        }
+        
+        console.warn(`CORS blocked origin: ${origin}`);
         return callback(new Error('Not allowed by CORS'));
     },
-    methods: ["GET", "POST", "PUT", "DELETE"]
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+    optionsSuccessStatus: 200
 }));
 
 const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret';
@@ -1607,18 +1626,63 @@ io.on('connection', (socket) => {
     });
 });
 
-// Start server
-httpServer.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+// Global error handler
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    console.error('Unhandled error:', err);
+    
+    // Don't leak error details in production
+    if (process.env.NODE_ENV === 'production') {
+        res.status(500).json({ error: 'Internal server error' });
+    } else {
+        res.status(500).json({ error: err.message, stack: err.stack });
+    }
 });
 
+// Handle 404 routes
+app.use('*', (req: Request, res: Response) => {
+    res.status(404).json({ error: 'Route not found' });
+});
+
+// Start server with proper error handling
+httpServer.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+}).on('error', (err: Error) => {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+});
 // Handle graceful shutdown
 process.on("SIGINT", async () => {
-    await prisma.$disconnect();
-    process.exit(0);
+    console.log('Received SIGINT, shutting down gracefully...');
+    try {
+        await prisma.$disconnect();
+        console.log('Database disconnected');
+        process.exit(0);
+    } catch (err) {
+        console.error('Error during shutdown:', err);
+        process.exit(1);
+    }
 });
 
 process.on("SIGTERM", async () => {
-    await prisma.$disconnect();
-    process.exit(0);
+    console.log('Received SIGTERM, shutting down gracefully...');
+    try {
+        await prisma.$disconnect();
+        console.log('Database disconnected');
+        process.exit(0);
+    } catch (err) {
+        console.error('Error during shutdown:', err);
+        process.exit(1);
+    }
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err: Error) => {
+    console.error('Uncaught Exception:', err);
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    process.exit(1);
 });

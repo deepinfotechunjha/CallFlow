@@ -1,8 +1,9 @@
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
 
-// Use environment variable for API URL, fallback to localhost if not set
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+// Use environment variable for API URL, fallback based on environment
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.PROD ? 'https://call-management-7hug.onrender.com' : 'http://localhost:4000');
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
