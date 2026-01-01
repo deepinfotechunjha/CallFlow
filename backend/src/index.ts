@@ -39,8 +39,9 @@ const httpServer = createServer(app);
 
 const allowedOrigins = [
     process.env.FRONTEND_ORIGIN || 'http://localhost:5173',
-    'https://call-manage.netlify.app', // Production frontend
-    'https://deploy-call.netlify.app'  // Alternative production URL
+    'https://call-manage.netlify.app',
+    'https://deploy-call.netlify.app',
+    'https://deploycall.netlify.app'  // Add your actual Netlify URL
 ];
 
 const io = new Server(httpServer, {
@@ -229,14 +230,29 @@ function requireRole(roles: string[]) {
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 
+// Initialize database connection
+async function initializeDatabase() {
+    try {
+        await prisma.$connect();
+        console.log('Database connected successfully');
+        
+        // Check if tables exist by trying to count users
+        const userCount = await prisma.user.count();
+        console.log(`Database initialized. User count: ${userCount}`);
+    } catch (error) {
+        console.error('Database initialization failed:', error);
+        throw error;
+    }
+}
+
 // Health check endpoint
 app.get("/health", async (_req: Request, res: Response) => {
     try {
         await prisma.$queryRaw`SELECT 1`;
-        res.json({ status: "ok" });
+        res.json({ status: "ok", message: "Server and database are running" });
     } catch (err: any) {
         console.error('Health check failed:', err);
-        res.status(500).json({ status: "error", error: 'Database connection failed' });
+        res.status(500).json({ status: "error", error: 'Database connection failed', details: err.message });
     }
 });
 
@@ -1644,13 +1660,22 @@ app.use('*', (req: Request, res: Response) => {
 });
 
 // Start server with proper error handling
-httpServer.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-}).on('error', (err: Error) => {
-    console.error('Failed to start server:', err);
-    process.exit(1);
-});
+async function startServer() {
+    try {
+        await initializeDatabase();
+        
+        httpServer.listen(PORT, '0.0.0.0', () => {
+            console.log(`Server running on port ${PORT}`);
+            console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+            console.log(`Health check: https://deploy-call-1.onrender.com/health`);
+        });
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);
+    }
+}
+
+startServer();
 // Handle graceful shutdown
 process.on("SIGINT", async () => {
     console.log('Received SIGINT, shutting down gracefully...');

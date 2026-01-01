@@ -8,7 +8,9 @@
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "db:push": "npx prisma db push --accept-data-loss",
-    "seed": "node scripts/seed.js"
+    "db:deploy": "npx prisma migrate deploy",
+    "seed": "node scripts/seed.js",
+    "postinstall": "npx prisma generate"
   },
   "keywords": [],
   "author": "",
