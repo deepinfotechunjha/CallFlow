@@ -4,9 +4,14 @@ import useServiceCategoryStore from '../store/serviceCategoryStore';
 import useAuthStore from '../store/authStore';
 import useSocket from '../hooks/useSocket';
 import useClickOutside from '../hooks/useClickOutside';
+import ExportModal from '../components/ExportModal';
+import { exportCarryInServicesToExcel } from '../utils/excelExport';
+import toast from 'react-hot-toast';
 
 const CarryInService = () => {
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [filter, setFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL_CATEGORIES');
@@ -33,7 +38,7 @@ const CarryInService = () => {
 
   const { services, fetchServices, addService, completeService, deliverService, findCustomerByPhone } = useCarryInServiceStore();
   const { serviceCategories, fetchServiceCategories } = useServiceCategoryStore();
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   
   // Initialize WebSocket connection
   useSocket();
@@ -233,6 +238,43 @@ const CarryInService = () => {
 
   const counts = getFilterCounts();
 
+  const handleExport = async (exportType, password) => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/auth/verify-secret`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ secretPassword: password })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success && data.hasAccess) {
+        const dataToExport = exportType === 'filtered' ? filteredServices : services;
+        
+        if (dataToExport.length === 0) {
+          toast.error('No data to export');
+          return;
+        }
+        
+        await exportCarryInServicesToExcel(dataToExport);
+        toast.success(`Successfully exported ${dataToExport.length} services to Excel`);
+        setShowExportModal(false);
+      } else {
+        toast.error('Invalid secret password');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export data. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-3">
@@ -240,12 +282,27 @@ const CarryInService = () => {
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">Carry-In Service 🔧</h1>
           <p className="text-gray-600">Manage device repairs and service requests</p>
         </div>
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium text-sm sm:text-base w-full sm:w-auto shadow-sm transition-all"
-        >
-          + Add Service
-        </button>
+        <div className="flex gap-3 w-full sm:w-auto">
+          {user?.role === 'HOST' && (
+            <button
+              onClick={() => setShowExportModal(true)}
+              disabled={isExporting}
+              className={`px-4 sm:px-6 py-3 rounded-xl font-medium text-sm sm:text-base whitespace-nowrap flex items-center gap-2 shadow-sm transition-all ${
+                isExporting 
+                  ? 'bg-gray-400 cursor-not-allowed text-white' 
+                  : 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800'
+              }`}
+            >
+              {isExporting ? '⏳ Exporting...' : '📊 Export'}
+            </button>
+          )}
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium text-sm sm:text-base whitespace-nowrap shadow-sm transition-all"
+          >
+            + Add Service
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -941,6 +998,17 @@ const CarryInService = () => {
             )}
           </div>
         </div>
+      )}
+
+      {showExportModal && (
+        <ExportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          onExport={handleExport}
+          totalCount={services.length}
+          filteredCount={filteredServices.length}
+          title="Export Carry-In Services to Excel"
+        />
       )}
     </div>
   );
