@@ -77,6 +77,92 @@ export const exportCallsToExcel = async (calls) => {
   }
 };
 
+export const exportCarryInServicesToExcel = async (services) => {
+  try {
+    if (!services || services.length === 0) {
+      throw new Error('No data to export');
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Carry-In Services');
+
+    // Define columns
+    worksheet.columns = [
+      { header: 'ID', key: 'id', width: 10 },
+      { header: 'Customer Name', key: 'customerName', width: 20 },
+      { header: 'Phone', key: 'phone', width: 15 },
+      { header: 'Email', key: 'email', width: 25 },
+      { header: 'Address', key: 'address', width: 30 },
+      { header: 'Category', key: 'category', width: 20 },
+      { header: 'Service Description', key: 'serviceDescription', width: 40 },
+      { header: 'Status', key: 'status', width: 25 },
+      { header: 'Created By', key: 'createdBy', width: 15 },
+      { header: 'Completed By', key: 'completedBy', width: 15 },
+      { header: 'Delivered By', key: 'deliveredBy', width: 15 },
+      { header: 'Complete Remark', key: 'completeRemark', width: 30 },
+      { header: 'Deliver Remark', key: 'deliverRemark', width: 30 },
+      { header: 'Created At', key: 'createdAt', width: 20 },
+      { header: 'Completed At', key: 'completedAt', width: 20 },
+      { header: 'Delivered At', key: 'deliveredAt', width: 20 }
+    ];
+
+    // Add data
+    services.forEach(service => {
+      worksheet.addRow({
+        id: service.id || '',
+        customerName: service.customerName || '',
+        phone: service.phone || '',
+        email: service.email || '',
+        address: service.address || '',
+        category: service.category || '',
+        serviceDescription: service.serviceDescription || '',
+        status: getCarryInServiceStatusLabel(service.status) || '',
+        createdBy: service.createdBy || '',
+        completedBy: service.completedBy || '',
+        deliveredBy: service.deliveredBy || '',
+        completeRemark: service.completeRemark || '',
+        deliverRemark: service.deliverRemark || '',
+        createdAt: service.createdAt ? new Date(service.createdAt).toLocaleString() : '',
+        completedAt: service.completedAt ? new Date(service.completedAt).toLocaleString() : '',
+        deliveredAt: service.deliveredAt ? new Date(service.deliveredAt).toLocaleString() : ''
+      });
+    });
+
+    // Style header row
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    const fileName = `CarryInServices_Export_${new Date().toISOString().split('T')[0]}.xlsx`;
+    const buffer = await workbook.xlsx.writeBuffer();
+    
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    return true;
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
+
+const getCarryInServiceStatusLabel = (status) => {
+  switch (status) {
+    case 'PENDING': return 'Pending';
+    case 'COMPLETED_NOT_COLLECTED': return 'Completed (Not Collected)';
+    case 'COMPLETED_AND_COLLECTED': return 'Completed & Collected';
+    default: return status;
+  }
+};
+
 export const exportUsersToExcel = async (users, calls) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Users');

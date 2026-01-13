@@ -13,6 +13,7 @@ import toast from 'react-hot-toast';
 const Dashboard = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const { user, token } = useAuthStore();
   const [filter, setFilter] = useState(user?.role === 'ADMIN' || user?.role === 'HOST' ? 'ALL' : 'MY_TASKS');
   const [dateFilter, setDateFilter] = useState({ type: '', start: '', end: '' });
@@ -165,6 +166,8 @@ const Dashboard = () => {
   };
 
   const handleExport = async (exportType, password) => {
+    if (isExporting) return;
+    setIsExporting(true);
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/auth/verify-secret`, {
         method: 'POST',
@@ -194,6 +197,8 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Export error:', error);
       toast.error('Failed to export data. Please try again.');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -208,9 +213,14 @@ const Dashboard = () => {
           {user?.role === 'HOST' && (
             <button
               onClick={() => setShowExportModal(true)}
-              className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-green-700 hover:to-green-800 font-medium text-sm sm:text-base whitespace-nowrap flex items-center gap-2 shadow-sm transition-all"
+              disabled={isExporting}
+              className={`px-4 sm:px-6 py-3 rounded-xl font-medium text-sm sm:text-base whitespace-nowrap flex items-center gap-2 shadow-sm transition-all ${
+                isExporting 
+                  ? 'bg-gray-400 cursor-not-allowed text-white' 
+                  : 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800'
+              }`}
             >
-              📊 Export
+              {isExporting ? '⏳ Exporting...' : '📊 Export'}
             </button>
           )}
           <button

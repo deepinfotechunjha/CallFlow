@@ -98,8 +98,8 @@ setInterval(cleanExpiredOTPs, 60 * 1000);
 const emailTransporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER || 'your-email@gmail.com',
-    pass: process.env.EMAIL_PASS || 'your-app-password'
+    user: process.env.EMAIL_USER ,
+    pass: process.env.EMAIL_PASS 
   }
 });
 
@@ -555,7 +555,7 @@ app.post('/auth/reset-password', authMiddleware, async (req: Request, res: Respo
     }
 });
 
-// User endpoints
+// User endpoints - display purpose anywhere 
 app.get("/users", authMiddleware, requireRole(['HOST', 'ADMIN']), async (_req: Request, res: Response) => {
     try {
         const users = await prisma.user.findMany({ 
@@ -567,6 +567,7 @@ app.get("/users", authMiddleware, requireRole(['HOST', 'ADMIN']), async (_req: R
     }
 });
 
+// to create user
 app.post("/users", authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
     const { username, password, email, phone, role, secretPassword } = req.body as { username: string; password: string; email: string; phone: string; role: string; secretPassword?: string };
     
@@ -581,6 +582,8 @@ app.post("/users", authMiddleware, requireRole(['HOST']), async (req: Request, r
     try {
         const hashed = await bcrypt.hash(password, 10);
         const finalSecretPassword = role === 'HOST' ? (secretPassword || 'DEFAULTSECRET') : 'DEFAULTSECRET';
+
+        // const FinalHashedSecretPass = await bcrypt.hash(finalSecretPassword,10);
         
         const user = await prisma.user.create({ 
             data: { username, password: hashed, email, phone, role, secretPassword: finalSecretPassword } 
@@ -595,7 +598,7 @@ app.post("/users", authMiddleware, requireRole(['HOST']), async (req: Request, r
             createdAt: user.createdAt 
         };
         
-        emitToAll('user_created', userResponse);
+        emitToAll('user_created', userResponse);    //(eventname , Response)
         res.status(201).json(userResponse);
     } catch (err: any) {
         if (err.code === 'P2002') {
@@ -749,6 +752,7 @@ app.get('/calls', authMiddleware, async (req: Request, res: Response) => {
     }
 });
 
+// create call 
 app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
     const { customerName, phone, email, address, problem, category, assignedTo, engineerRemark, createdBy } = req.body as {
         customerName: string;
@@ -821,6 +825,7 @@ app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to create call' });
     }
 });
+
 
 app.put('/calls/:id', authMiddleware, requireRole(['HOST', 'ADMIN']), async (req: Request, res: Response) => {
     const callId = parseInt(req.params.id || '');
