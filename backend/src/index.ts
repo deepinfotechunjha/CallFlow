@@ -477,6 +477,10 @@ app.post('/auth/verify-otp', authMiddleware, async (req: Request, res: Response)
             return res.status(400).json({ error: 'Invalid OTP code' });
         }
         
+        // Mark OTP as verified (not used yet) after successful verification
+        otpData.verified = true;
+        otpCache.set(token, otpData);
+        
         res.json({ success: true, message: 'OTP verified successfully' });
     } catch (err: any) {
         console.error('OTP verification error:', err);
@@ -534,6 +538,10 @@ app.post('/auth/reset-password', authMiddleware, async (req: Request, res: Respo
         
         if (otpData.used) {
             return res.status(400).json({ error: 'OTP already used' });
+        }
+        
+        if (!otpData.verified) {
+            return res.status(400).json({ error: 'OTP not verified. Please verify OTP first.' });
         }
         
         if (otpData.email !== email || otpData.otp !== otp) {

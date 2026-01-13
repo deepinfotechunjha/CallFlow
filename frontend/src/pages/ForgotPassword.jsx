@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import apiClient from '../api/apiClient';
@@ -14,8 +14,17 @@ const ForgotPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [otpToken, setOtpToken] = useState('');
+  const [timeLeft, setTimeLeft] = useState(0);
   const navigate = useNavigate();
   const { user } = useAuthStore();
+
+  // Timer countdown effect
+  useEffect(() => {
+    if (timeLeft > 0) {
+      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [timeLeft]);
 
   const handleSendOTP = async (e) => {
     e.preventDefault();
@@ -30,6 +39,7 @@ const ForgotPassword = () => {
       if (response.data.success) {
         setOtpToken(response.data.token);
         setStep(2);
+        setTimeLeft(120); // 2 minutes in seconds
         toast.success('OTP sent to your email address');
       }
     } catch (error) {
@@ -104,6 +114,7 @@ const ForgotPassword = () => {
       const response = await apiClient.post('/auth/forgot-password', { email });
       if (response.data.success) {
         setOtpToken(response.data.token);
+        setTimeLeft(120); // Reset timer to 2 minutes
         toast.success('New OTP sent to your email');
       }
     } catch (error) {
@@ -159,7 +170,7 @@ const ForgotPassword = () => {
             }`}>
               2
             </div>
-            <span className="text-xs text-gray-500 mt-2">New Password</span>
+            <span className="text-xs text-gray-500 mt-2">Enter OTP</span>
           </div>
           <div className={`h-1 w-16 ${
             step >= 3 ? 'bg-blue-600' : 'bg-gray-200'
@@ -170,7 +181,7 @@ const ForgotPassword = () => {
             }`}>
               3
             </div>
-            <span className="text-xs text-gray-500 mt-2">Enter OTP</span>
+            <span className="text-xs text-gray-500 mt-2">New Password</span>
           </div>
         </div>
       </div>
@@ -215,13 +226,23 @@ const ForgotPassword = () => {
                 required
               />
               <p className="text-xs text-gray-500 mt-1 text-center">OTP sent to <span className="font-medium">{email}</span></p>
+              {timeLeft > 0 && (
+                <p className="text-xs text-blue-600 mt-1 text-center font-medium">
+                  Time remaining: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                </p>
+              )}
+              {timeLeft === 0 && (
+                <p className="text-xs text-red-600 mt-1 text-center font-medium">
+                  OTP expired. Please resend.
+                </p>
+              )}
             </div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || timeLeft === 0}
               className="w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400 transition-colors"
             >
-              {isLoading ? 'Verifying...' : 'Verify OTP'}
+              {isLoading ? 'Verifying...' : timeLeft === 0 ? 'OTP Expired' : 'Verify OTP'}
             </button>
             <div className="text-center space-y-2">
               <button
