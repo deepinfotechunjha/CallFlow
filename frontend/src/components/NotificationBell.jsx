@@ -43,12 +43,10 @@ const NotificationBell = () => {
   const deleteNotifications = async (notificationIds) => {
     try {
       if (notificationIds.length === 1) {
-        // Single delete
         await apiClient.delete(`/notifications/${notificationIds[0]}`);
       } else {
-        // Bulk delete
-        await apiClient.delete('/notifications/bulk', {
-          data: { notificationIds }
+        await apiClient.post('/notifications/bulk-delete', {
+          notificationIds
         });
       }
       setNotifications(prev => {

@@ -41,7 +41,9 @@ const allowedOrigins = [
     process.env.FRONTEND_ORIGIN || 'http://localhost:5173',
     'https://call-manage.netlify.app',
     'https://deploy-call.netlify.app',
-    'https://deploycall.netlify.app'  // Add your actual Netlify URL
+    'https://deploycall.netlify.app' ,
+    'http://localhost:5174',
+    'http://localhost:5175' // Add your actual Netlify URL
 ];
 
 const io = new Server(httpServer, {
@@ -1322,16 +1324,16 @@ app.delete('/notifications/:id', authMiddleware, async (req: Request, res: Respo
     }
 });
 
-// Bulk delete notifications
-app.delete('/notifications/bulk', authMiddleware, async (req: Request, res: Response) => {
+// Bulk delete notifications (POST)
+app.post('/notifications/bulk-delete', authMiddleware, async (req: Request, res: Response) => {
     const { notificationIds } = req.body as { notificationIds: number[] };
     
     if (!req.user?.username) {
         return res.status(401).json({ error: 'User not authenticated' });
     }
     
-    if (!notificationIds || !Array.isArray(notificationIds)) {
-        return res.status(400).json({ error: 'Invalid notification IDs' });
+    if (!notificationIds || !Array.isArray(notificationIds) || notificationIds.length === 0) {
+        return res.status(400).json({ error: 'Invalid or empty notification IDs array' });
     }
     
     try {
@@ -1343,7 +1345,8 @@ app.delete('/notifications/bulk', authMiddleware, async (req: Request, res: Resp
         });
         res.json({ success: true });
     } catch (err: any) {
-        res.status(500).json({ error: String(err) });
+        console.error('Bulk delete error:', err);
+        res.status(500).json({ error: 'Failed to delete notifications' });
     }
 });
 
