@@ -196,20 +196,20 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
             <tr>
               <th className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 w-12">#</th>
               {showCheckboxes && (
-                <th className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 w-12">
-                  <span className="sr-only">Select</span>
+                <th className="px-1 py-4 text-center text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 w-8 min-w-8">
+                  ✓
                 </th>
               )}
-              <th onClick={() => handleSort('customer')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-48">Customer & Address {getSortIcon('customer')}</th>
-              <th onClick={() => handleSort('phone')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-36">Phone & Email {getSortIcon('phone')}</th>
-              <th onClick={() => handleSort('category')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-24">Category {getSortIcon('category')}</th>
-              <th onClick={() => handleSort('problem')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-44">Problem {getSortIcon('problem')}</th>
-              <th onClick={() => handleSort('status')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-20">Status {getSortIcon('status')}</th>
-              <th onClick={() => handleSort('assignment')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-24">Assignment {getSortIcon('assignment')}</th>
-              <th onClick={() => handleSort('date')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-20">Date & Time {getSortIcon('date')}</th>
-              <th onClick={() => handleSort('engineerRemark')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden xl:table-cell cursor-pointer hover:bg-blue-700 min-w-24">Engineer Remark {getSortIcon('engineerRemark')}</th>
-              <th onClick={() => handleSort('completionRemark')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden xl:table-cell cursor-pointer hover:bg-blue-700 min-w-24">Completion Remark {getSortIcon('completionRemark')}</th>
-              <th className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider min-w-24">Actions</th>
+              <th onClick={() => handleSort('customer')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-0 w-auto">Customer {getSortIcon('customer')}</th>
+              <th onClick={() => handleSort('phone')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-0 w-auto hidden sm:table-cell">Contact {getSortIcon('phone')}</th>
+              <th onClick={() => handleSort('category')} className="px-1 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-0 w-auto hidden md:table-cell">Cat {getSortIcon('category')}</th>
+              <th onClick={() => handleSort('problem')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-0 w-auto">Problem {getSortIcon('problem')}</th>
+              <th onClick={() => handleSort('status')} className="px-1 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-0 w-auto">Status {getSortIcon('status')}</th>
+              <th onClick={() => handleSort('assignment')} className="px-1 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-0 w-auto hidden lg:table-cell">Assign {getSortIcon('assignment')}</th>
+              <th onClick={() => handleSort('date')} className="px-1 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-0 w-auto hidden lg:table-cell">Date {getSortIcon('date')}</th>
+              <th onClick={() => handleSort('engineerRemark')} className="px-1 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden xl:table-cell cursor-pointer hover:bg-blue-700 min-w-0 w-auto">Eng Rem {getSortIcon('engineerRemark')}</th>
+              <th onClick={() => handleSort('completionRemark')} className="px-1 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden xl:table-cell cursor-pointer hover:bg-blue-700 min-w-0 w-auto">Comp Rem {getSortIcon('completionRemark')}</th>
+              <th className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider min-w-0 w-auto">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -229,43 +229,43 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                       </div>
                     </td>
                     {showCheckboxes && (
-                      <td className="px-2 py-3 border-r border-gray-200" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-1 py-3 border-r border-gray-200 text-center" onClick={(e) => e.stopPropagation()}>
                         {call.status === 'COMPLETED' ? (
                           <input
                             type="checkbox"
                             checked={selectedCalls.includes(call.id)}
                             onChange={() => onSelectCall(call.id)}
-                            className="w-5 h-5 text-red-600 rounded focus:ring-red-500 cursor-pointer"
+                            className="w-4 h-4 text-red-600 rounded focus:ring-red-500 cursor-pointer"
                           />
                         ) : (
-                          <div className="w-5 h-5"></div>
+                          <div className="w-4 h-4"></div>
                         )}
                       </td>
                     )}
-                    <td className="px-2 py-3 border-r border-gray-200">
+                    <td className="px-1 py-3 border-r border-gray-200">
                       <div className="space-y-1">
                         <div className="text-xs font-semibold text-gray-900 truncate" title={call?.customerName}>{call?.customerName}</div>
                         {call?.address && (
-                          <div className="text-xs text-gray-600 bg-gray-100 px-1 py-1 rounded break-words" style={{maxHeight: '60px', overflow: 'auto'}} title={call?.address}>{call?.address}</div>
+                          <div className="text-xs text-gray-600 bg-gray-100 px-1 py-1 rounded truncate" title={call?.address}>{call?.address?.substring(0, 20)}...</div>
                         )}
                       </div>
                     </td>
-                    <td className="px-2 py-3 border-r border-gray-200">
+                    <td className="px-1 py-3 border-r border-gray-200 hidden sm:table-cell">
                       <div className="space-y-1">
                         <div className="text-xs font-medium text-gray-900 bg-blue-50 px-1 py-1 rounded truncate" title={call?.phone}>{call?.phone}</div>
                         {call?.email && (
-                          <div className="text-xs text-gray-600 bg-green-50 px-1 py-1 rounded truncate" title={call?.email}>{call?.email}</div>
+                          <div className="text-xs text-gray-600 bg-green-50 px-1 py-1 rounded truncate" title={call?.email}>{call?.email?.substring(0, 15)}...</div>
                         )}
                       </div>
                     </td>
-                    <td className="px-1 py-3 border-r border-gray-200">
+                    <td className="px-1 py-3 border-r border-gray-200 hidden md:table-cell">
                       <span className="inline-block px-1 py-1 text-xs font-semibold rounded bg-indigo-100 text-indigo-800 truncate" title={call.category}>
-                        {call.category}
+                        {call.category?.substring(0, 8)}
                       </span>
                     </td>
-                    <td className="px-2 py-3 border-r border-gray-200">
-                      <div className="text-xs text-gray-900 bg-yellow-50 p-1 rounded border-l-2 border-yellow-400 leading-tight" style={{maxHeight: '60px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical'}} title={call.problem}>
-                        {call.problem}
+                    <td className="px-1 py-3 border-r border-gray-200">
+                      <div className="text-xs text-gray-900 bg-yellow-50 p-1 rounded border-l-2 border-yellow-400 leading-tight truncate" title={call.problem}>
+                        {call.problem?.substring(0, 30)}...
                       </div>
                     </td>
                     <td className="px-1 py-3 border-r border-gray-200">
@@ -299,18 +299,18 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                         )}
                       </div>
                     </td>
-                    <td className="px-1 py-3 border-r border-gray-200">
+                    <td className="px-1 py-3 border-r border-gray-200 hidden lg:table-cell">
                       <div className="space-y-1">
-                        <div className="bg-gray-100 px-1 py-1 rounded text-xs font-medium text-gray-900 truncate" title={call.createdBy}>{call.createdBy}</div>
+                        <div className="bg-gray-100 px-1 py-1 rounded text-xs font-medium text-gray-900 truncate" title={call.createdBy}>{call.createdBy?.substring(0, 8)}</div>
                         {call.assignedTo && (
-                          <div className="bg-green-100 px-1 py-1 rounded text-xs font-medium text-green-800 truncate" title={call.assignedTo}>{call.assignedTo}</div>
+                          <div className="bg-green-100 px-1 py-1 rounded text-xs font-medium text-green-800 truncate" title={call.assignedTo}>{call.assignedTo?.substring(0, 8)}</div>
                         )}
                       </div>
                     </td>
-                    <td className="px-1 py-3 border-r border-gray-200">
-                      <div className="bg-gray-100 p-1 rounded space-y-1">
-                        <div className="text-xs font-medium text-gray-900">{new Date(call.createdAt).toLocaleDateString()}</div>
-                        <div className="text-xs text-gray-600">{new Date(call.createdAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', hour12: true})}</div>
+                    <td className="px-1 py-3 border-r border-gray-200 hidden lg:table-cell">
+                      <div className="bg-gray-100 p-1 rounded">
+                        <div className="text-xs font-medium text-gray-900">{new Date(call.createdAt).toLocaleDateString('en-GB').substring(0, 5)}</div>
+                        <div className="text-xs text-gray-600">{new Date(call.createdAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</div>
                       </div>
                     </td>
                     <td className="px-1 py-3 border-r border-gray-200 hidden xl:table-cell">
@@ -323,12 +323,12 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                         {call.remark ? (call.remark.length > 15 ? call.remark.substring(0, 15) + '...' : call.remark) : '-'}
                       </div>
                     </td>
-                    <td className="px-2 py-3 text-sm font-medium" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-1 py-3 text-sm font-medium" onClick={(e) => e.stopPropagation()}>
                       <div className="flex flex-col gap-1">
                         {canEdit && (
                           <button
                             onClick={() => openEditModal(call)}
-                            className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-2 py-1 rounded text-xs hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-sm font-semibold"
+                            className="bg-orange-500 text-white px-1 py-1 rounded text-xs hover:bg-orange-600 transition-colors font-semibold"
                           >
                             Edit
                           </button>
@@ -336,7 +336,7 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                         {canAssign && call.status !== 'COMPLETED' && (
                           <button
                             onClick={() => setShowAssign(prev => ({ ...prev, [call.id]: true }))}
-                            className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-2 py-1 rounded text-xs hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 shadow-sm font-semibold"
+                            className="bg-blue-500 text-white px-1 py-1 rounded text-xs hover:bg-blue-600 transition-colors font-semibold"
                           >
                             {call.assignedTo ? 'Reassign' : 'Assign'}
                           </button>
@@ -344,9 +344,9 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                         {canComplete && call.status !== 'COMPLETED' && (
                           <button
                             onClick={() => setShowComplete(prev => ({ ...prev, [call.id]: true }))}
-                            className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-2 py-1 rounded text-xs hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-sm font-semibold"
+                            className="bg-green-500 text-white px-1 py-1 rounded text-xs hover:bg-green-600 transition-colors font-semibold"
                           >
-                            Complete
+                            Done
                           </button>
                         )}
                       </div>
