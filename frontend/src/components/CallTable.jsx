@@ -346,7 +346,7 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                             onClick={() => setShowComplete(prev => ({ ...prev, [call.id]: true }))}
                             className="bg-green-500 text-white px-1 py-1 rounded text-xs hover:bg-green-600 transition-colors font-semibold"
                           >
-                            Done
+                            Complete
                           </button>
                         )}
                       </div>
