@@ -4,7 +4,7 @@ import useAuthStore from '../store/authStore';
 import useCategoryStore from '../store/categoryStore';
 import useClickOutside from '../hooks/useClickOutside';
 
-const CallTable = ({ calls }) => {
+const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = false }) => {
   const [showAssign, setShowAssign] = useState({});
   const [showEdit, setShowEdit] = useState({});
   const [showComplete, setShowComplete] = useState({});
@@ -195,6 +195,11 @@ const CallTable = ({ calls }) => {
           <thead className="bg-gradient-to-r from-blue-600 to-purple-600">
             <tr>
               <th className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 w-12">#</th>
+              {showCheckboxes && (
+                <th className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 w-12">
+                  <span className="sr-only">Select</span>
+                </th>
+              )}
               <th onClick={() => handleSort('customer')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-48">Customer & Address {getSortIcon('customer')}</th>
               <th onClick={() => handleSort('phone')} className="px-3 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-36">Phone & Email {getSortIcon('phone')}</th>
               <th onClick={() => handleSort('category')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-24">Category {getSortIcon('category')}</th>
@@ -223,6 +228,20 @@ const CallTable = ({ calls }) => {
                         {index + 1}
                       </div>
                     </td>
+                    {showCheckboxes && (
+                      <td className="px-2 py-3 border-r border-gray-200" onClick={(e) => e.stopPropagation()}>
+                        {call.status === 'COMPLETED' ? (
+                          <input
+                            type="checkbox"
+                            checked={selectedCalls.includes(call.id)}
+                            onChange={() => onSelectCall(call.id)}
+                            className="w-5 h-5 text-red-600 rounded focus:ring-red-500 cursor-pointer"
+                          />
+                        ) : (
+                          <div className="w-5 h-5"></div>
+                        )}
+                      </td>
+                    )}
                     <td className="px-2 py-3 border-r border-gray-200">
                       <div className="space-y-1">
                         <div className="text-xs font-semibold text-gray-900 truncate" title={call?.customerName}>{call?.customerName}</div>

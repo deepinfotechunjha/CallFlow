@@ -7,13 +7,16 @@ import AddCallForm from '../components/AddCallForm';
 import CallCard from '../components/CallCard';
 import CallTable from '../components/CallTable';
 import ExportModal from '../components/ExportModal';
+import BulkDeleteModal from '../components/BulkDeleteModal';
 import { exportCallsToExcel } from '../utils/excelExport';
 import toast from 'react-hot-toast';
 
 const Dashboard = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedCalls, setSelectedCalls] = useState([]);
   const { user, token } = useAuthStore();
   const [filter, setFilter] = useState(user?.role === 'ADMIN' || user?.role === 'HOST' ? 'ALL' : 'MY_TASKS');
   const [dateFilter, setDateFilter] = useState({ type: '', start: '', end: '' });
@@ -22,7 +25,7 @@ const Dashboard = () => {
   const [statusFilter, setStatusFilter] = useState('ALL_STATUS');
   const [categoryFilter, setCategoryFilter] = useState('ALL_CATEGORIES');
   
-  const { calls, fetchCalls } = useCallStore();
+  const { calls, fetchCalls, bulkDeleteCalls } = useCallStore();
   const { users, fetchUsers } = useAuthStore();
   const { categories, fetchCategories } = useCategoryStore();
   
@@ -105,6 +108,36 @@ const Dashboard = () => {
     
     return true;
   });
+
+  const completedCalls = filteredCalls.filter(c => c.status === 'COMPLETED');
+  const isAllSelected = completedCalls.length > 0 && selectedCalls.length === completedCalls.length;
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedCalls([]);
+    } else {
+      setSelectedCalls(completedCalls.map(c => c.id));
+    }
+  };
+
+  const handleSelectCall = (callId) => {
+    setSelectedCalls(prev => 
+      prev.includes(callId) ? prev.filter(id => id !== callId) : [...prev, callId]
+    );
+  };
+
+  const handleBulkDelete = async (secretPassword) => {
+    try {
+      const response = await bulkDeleteCalls(selectedCalls, secretPassword);
+      if (response.callsData) {
+        await exportCallsToExcel(response.callsData);
+      }
+      setSelectedCalls([]);
+      setShowBulkDeleteModal(false);
+    } catch (error) {
+      // Error handled in store
+    }
+  };
 
   const uniqueCategories = categories.map(c => c.name);
 
@@ -210,6 +243,14 @@ const Dashboard = () => {
           <p className="text-gray-600">Hello <span className="font-semibold text-blue-600">{user?.username}</span>, here's your call management overview</p>
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
+          {user?.role === 'HOST' && selectedCalls.length > 0 && (
+            <button
+              onClick={() => setShowBulkDeleteModal(true)}
+              className="px-4 sm:px-6 py-3 rounded-xl font-medium text-sm sm:text-base whitespace-nowrap flex items-center gap-2 shadow-sm transition-all bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800"
+            >
+              🗑️ Delete ({selectedCalls.length})
+            </button>
+          )}
           {user?.role === 'HOST' && (
             <button
               onClick={() => setShowExportModal(true)}
@@ -413,12 +454,35 @@ const Dashboard = () => {
 
       {/* Desktop Table View (hidden on mobile) */}
       <div className="hidden lg:block">
+        {user?.role === 'HOST' && completedCalls.length > 0 && (
+          <div className="mb-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                onChange={handleSelectAll}
+                className="w-5 h-5 text-red-600 rounded focus:ring-red-500"
+              />
+              <span className="font-medium text-gray-700">Select All Completed ({completedCalls.length})</span>
+            </label>
+            {selectedCalls.length > 0 && (
+              <span className="text-sm text-gray-600">
+                {selectedCalls.length} selected
+              </span>
+            )}
+          </div>
+        )}
         {filteredCalls.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">No calls found</p>
           </div>
         ) : (
-          <CallTable calls={filteredCalls} />
+          <CallTable 
+            calls={filteredCalls} 
+            selectedCalls={selectedCalls}
+            onSelectCall={handleSelectCall}
+            showCheckboxes={user?.role === 'HOST'}
+          />
         )}
       </div>
 
@@ -446,6 +510,14 @@ const Dashboard = () => {
           totalCount={calls.length}
           filteredCount={filteredCalls.length}
           title="Export Calls to Excel"
+        />
+      )}
+      {showBulkDeleteModal && (
+        <BulkDeleteModal
+          isOpen={showBulkDeleteModal}
+          onClose={() => setShowBulkDeleteModal(false)}
+          onConfirm={handleBulkDelete}
+          selectedCount={selectedCalls.length}
         />
       )}
     </div>

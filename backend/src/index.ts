@@ -140,6 +140,43 @@ async function sendOTPEmail(email: string, otp: string): Promise<boolean> {
   }
 }
 
+// Helper function to send deletion notification email
+async function sendDeletionNotificationEmail(
+  hostEmails: string[], 
+  deletedByName: string, 
+  deletedAt: Date, 
+  callCount: number
+): Promise<void> {
+  try {
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'your-email@gmail.com',
+      to: hostEmails.join(','),
+      subject: 'CallFlow - Completed Calls Deleted',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #dc2626;">🗑️ Completed Calls Deletion Notice</h2>
+          <p>A HOST user has deleted completed calls from the system.</p>
+          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <strong>Deleted By:</strong> ${deletedByName}<br>
+            <strong>Date:</strong> ${deletedAt.toLocaleDateString()}<br>
+            <strong>Time:</strong> ${deletedAt.toLocaleTimeString()}<br>
+            <strong>Number of Calls Deleted:</strong> ${callCount}
+          </div>
+          <p style="color: #6b7280; font-size: 12px;">
+            This is an automated notification. The deleted data has been exported to the HOST's device.
+          </p>
+          <hr style="margin: 30px 0;">
+          <p style="color: #6b7280; font-size: 12px;">CallFlow Call Management System</p>
+        </div>
+      `
+    };
+    
+    await emailTransporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error('Failed to send deletion notification email:', error);
+  }
+}
+
 function signToken(payload: object) {
     return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
@@ -1419,6 +1456,135 @@ app.get('/analytics/engineers', authMiddleware, requireRole(['HOST']), async (re
         res.json(analytics);
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
+    }
+});
+
+// Deletion History endpoint
+app.get('/analytics/deletion-history', authMiddleware, requireRole(['HOST']), async (_req: Request, res: Response) => {
+    try {
+        const history = await prisma.deletionHistory.findMany({
+            orderBy: { deletedAt: 'desc' },
+            take: 30
+        });
+        res.json(history);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// Bulk Delete Calls endpoint
+app.post('/calls/bulk-delete', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const { callIds, secretPassword } = req.body as { callIds: number[]; secretPassword: string };
+    const user = req.user;
+    
+    if (!callIds || !Array.isArray(callIds) || callIds.length === 0) {
+        return res.status(400).json({ error: 'Call IDs are required' });
+    }
+    
+    if (!secretPassword) {
+        return res.status(400).json({ error: 'Secret password is required' });
+    }
+    
+    try {
+        // Verify secret password
+        const dbUser = await prisma.user.findUnique({ 
+            where: { id: user!.id },
+            select: { secretPassword: true, username: true, email: true }
+        });
+        
+        if (!dbUser || dbUser.secretPassword !== secretPassword) {
+            return res.status(401).json({ error: 'Invalid secret password' });
+        }
+        
+        // Fetch calls to delete (only COMPLETED)
+        const callsToDelete = await prisma.call.findMany({
+            where: { 
+                id: { in: callIds },
+                status: 'COMPLETED'
+            }
+        });
+        
+        if (callsToDelete.length === 0) {
+            return res.status(400).json({ error: 'No completed calls found to delete' });
+        }
+        
+        // Delete calls and create history record in transaction
+        await prisma.$transaction([
+            prisma.call.deleteMany({
+                where: { id: { in: callsToDelete.map(c => c.id) } }
+            }),
+            prisma.deletionHistory.create({
+                data: {
+                    deletedBy: user!.id,
+                    deletedByName: user!.username,
+                    callCount: callsToDelete.length
+                }
+            })
+        ]);
+        
+        // Auto-cleanup: Keep only latest 30 entries
+        const totalHistoryCount = await prisma.deletionHistory.count();
+        if (totalHistoryCount > 30) {
+            const excessCount = totalHistoryCount - 30;
+            const oldestEntries = await prisma.deletionHistory.findMany({
+                orderBy: { deletedAt: 'asc' },
+                take: excessCount,
+                select: { id: true }
+            });
+            
+            await prisma.deletionHistory.deleteMany({
+                where: { id: { in: oldestEntries.map(e => e.id) } }
+            });
+            
+            console.log(`Cleaned up ${excessCount} old deletion history entries`);
+        }
+        
+        // Get all other HOSTs
+        const otherHosts = await prisma.user.findMany({
+            where: { 
+                role: 'HOST',
+                id: { not: user!.id }
+            },
+            select: { username: true, email: true }
+        });
+        
+        // Create notifications and send emails to other HOSTs
+        if (otherHosts.length > 0) {
+            await prisma.notification.createMany({
+                data: otherHosts.map(host => ({
+                    userId: host.username,
+                    message: `${user!.username} deleted ${callsToDelete.length} completed calls`,
+                    type: 'BULK_DELETION',
+                    isRead: false
+                }))
+            });
+            
+            // Send Socket.io notification
+            emitToAll('calls_bulk_deleted', {
+                deletedBy: user!.username,
+                deletedAt: new Date(),
+                count: callsToDelete.length,
+                callIds: callsToDelete.map(c => c.id)
+            });
+            
+            // Send emails
+            const hostEmails = otherHosts.map(h => h.email);
+            await sendDeletionNotificationEmail(
+                hostEmails, 
+                user!.username, 
+                new Date(), 
+                callsToDelete.length
+            );
+        }
+        
+        res.json({ 
+            success: true, 
+            deletedCount: callsToDelete.length,
+            callsData: callsToDelete
+        });
+    } catch (err: any) {
+        console.error('Bulk delete error:', err);
+        res.status(500).json({ error: 'Failed to delete calls' });
     }
 });
 

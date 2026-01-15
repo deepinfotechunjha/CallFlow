@@ -23,6 +23,12 @@ const useCallStore = create((set, get) => ({
   handleCallAssigned: (call) => get().handleCallUpdate(call),
   handleCallCompleted: (call) => get().handleCallUpdate(call),
   
+  handleCallsBulkDeleted: (data) => {
+    set(state => ({
+      calls: state.calls.filter(c => !data.deletedIds.includes(c.id))
+    }));
+  },
+  
   addCall: async (callData) => {
     try {
       const response = await apiClient.post('/calls', callData);
@@ -100,6 +106,21 @@ const useCallStore = create((set, get) => ({
       return response.data;
     } catch (error) {
       toast.error('Failed to complete call');
+      throw error;
+    }
+  },
+
+  bulkDeleteCalls: async (callIds, secretPassword) => {
+    try {
+      const response = await apiClient.post('/calls/bulk-delete', {
+        callIds,
+        secretPassword
+      });
+      toast.success(`Successfully deleted ${response.data.deletedCount} calls`);
+      return response.data;
+    } catch (error) {
+      const message = error.response?.data?.error || 'Failed to delete calls';
+      toast.error(message);
       throw error;
     }
   }
