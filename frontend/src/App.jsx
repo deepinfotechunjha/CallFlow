@@ -10,6 +10,8 @@ import EngineerAnalytics from './pages/EngineerAnalytics';
 import CategorySettings from './pages/CategorySettings';
 import CustomerDirectory from './pages/CustomerDirectory';
 import CarryInService from './pages/CarryInService';
+import AdminLogin from './pages/AdminLogin';
+import AdminUserManagement from './pages/AdminUserManagement';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import useAuthStore from './store/authStore';
@@ -18,7 +20,7 @@ import useSocket from './hooks/useSocket';
 function App() {
   const { pathname } = useLocation();
   const { user, isInitialized, initializeAuth } = useAuthStore();
-  const showNavbar = user && pathname !== '/login';
+  const showNavbar = user && pathname !== '/login' && !pathname.startsWith('/secreturl');
   
   // Initialize auth on app startup
   useEffect(() => {
@@ -47,6 +49,8 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/secreturl" element={<AdminLogin />} />
+          <Route path="/secreturl/manage" element={<AdminUserManagement />} />
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute allowedRoles={['HOST']}><UserManagement /></ProtectedRoute>} />

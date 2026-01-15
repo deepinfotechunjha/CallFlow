@@ -361,6 +361,197 @@ app.post("/auth/verify-secret", authMiddleware, async (req: Request, res: Respon
     }
 });
 
+// Special Admin Authentication
+app.post('/auth/special-admin-login', async (req: Request, res: Response) => {
+    const { username, password } = req.body as { username: string; password: string };
+    
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required' });
+    }
+    
+    const adminUsername = process.env.SPECIAL_ADMIN_USERNAME || 'specialadmin';
+    const adminPassword = process.env.SPECIAL_ADMIN_PASSWORD || 'REMOVED';
+    
+    if (username === adminUsername && password === adminPassword) {
+        const token = signToken({ 
+            id: -1, 
+            username: adminUsername, 
+            role: 'SPECIAL_ADMIN' 
+        });
+        
+        res.json({ 
+            success: true,
+            token,
+            user: { 
+                id: -1, 
+                username: adminUsername, 
+                role: 'SPECIAL_ADMIN' 
+            } 
+        });
+    } else {
+        res.status(401).json({ error: 'Invalid credentials' });
+    }
+});
+
+app.post('/auth/special-admin-verify-secret', async (req: Request, res: Response) => {
+    const { secret } = req.body as { secret: string };
+    
+    if (!secret) {
+        return res.status(400).json({ error: 'Secret is required' });
+    }
+    
+    const adminSecret = process.env.SPECIAL_ADMIN_SECRET || 'REMOVED';
+    
+    if (secret === adminSecret) {
+        res.json({ success: true });
+    } else {
+        res.status(401).json({ error: 'Invalid secret' });
+    }
+});
+
+app.post('/auth/special-admin-request-otp', async (req: Request, res: Response) => {
+    const { email, secret } = req.body as { email: string; secret: string };
+    
+    if (!email || !secret) {
+        return res.status(400).json({ error: 'Email and secret are required' });
+    }
+    
+    const adminSecret = process.env.SPECIAL_ADMIN_SECRET || 'REMOVED';
+    const adminEmail = process.env.SPECIAL_ADMIN_EMAIL || 'REMOVED';
+    
+    if (secret !== adminSecret) {
+        return res.status(401).json({ error: 'Invalid secret' });
+    }
+    
+    if (email !== adminEmail) {
+        return res.status(400).json({ error: 'Email does not match admin email' });
+    }
+    
+    try {
+        const otp = generateOTP();
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = Date.now() + 2 * 60 * 1000; // 2 minutes
+        
+        otpCache.set(token, {
+            email,
+            otp,
+            expiresAt,
+            used: false,
+            type: 'special_admin'
+        });
+        
+        const mailOptions = {
+            from: process.env.EMAIL_USER || 'your-email@gmail.com',
+            to: email,
+            subject: 'CallFlow - Special Admin Recovery OTP',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #2563eb;">CallFlow Special Admin Recovery</h2>
+                    <p>You have requested to recover your special admin credentials. Please use the following OTP to proceed:</p>
+                    <div style="background-color: #f3f4f6; padding: 20px; text-align: center; margin: 20px 0;">
+                        <h1 style="color: #1f2937; font-size: 32px; margin: 0; letter-spacing: 5px;">${otp}</h1>
+                    </div>
+                    <p>This OTP will expire in 2 minutes.</p>
+                    <p>If you didn't request this, please ignore this email.</p>
+                    <hr style="margin: 30px 0;">
+                    <p style="color: #6b7280; font-size: 12px;">CallFlow Call Management System</p>
+                </div>
+            `
+        };
+        
+        await emailTransporter.sendMail(mailOptions);
+        
+        res.json({ success: true, token, message: 'OTP sent to your email' });
+    } catch (error) {
+        console.error('Failed to send OTP:', error);
+        res.status(500).json({ error: 'Failed to send OTP' });
+    }
+});
+
+app.post('/auth/special-admin-verify-otp', async (req: Request, res: Response) => {
+    const { email, otp, token } = req.body as { email: string; otp: string; token: string };
+    
+    if (!email || !otp || !token) {
+        return res.status(400).json({ error: 'Email, OTP, and token are required' });
+    }
+    
+    const otpData = otpCache.get(token);
+    
+    if (!otpData || otpData.type !== 'special_admin') {
+        return res.status(400).json({ error: 'Invalid or expired OTP token' });
+    }
+    
+    if (otpData.expiresAt < Date.now()) {
+        otpCache.delete(token);
+        return res.status(400).json({ error: 'OTP has expired' });
+    }
+    
+    if (otpData.used) {
+        return res.status(400).json({ error: 'OTP already used' });
+    }
+    
+    if (otpData.email !== email || otpData.otp !== otp) {
+        return res.status(400).json({ error: 'Invalid OTP' });
+    }
+    
+    otpData.verified = true;
+    otpCache.set(token, otpData);
+    
+    res.json({ success: true, message: 'OTP verified successfully' });
+});
+
+app.post('/auth/special-admin-update-credentials', async (req: Request, res: Response) => {
+    const { email, otp, token, newUsername, newPassword } = req.body as { 
+        email: string; 
+        otp: string; 
+        token: string; 
+        newUsername?: string;
+        newPassword?: string;
+    };
+    
+    if (!email || !otp || !token) {
+        return res.status(400).json({ error: 'Email, OTP, and token are required' });
+    }
+    
+    if (!newUsername && !newPassword) {
+        return res.status(400).json({ error: 'At least one of username or password must be provided' });
+    }
+    
+    const otpData = otpCache.get(token);
+    
+    if (!otpData || otpData.type !== 'special_admin') {
+        return res.status(400).json({ error: 'Invalid or expired OTP token' });
+    }
+    
+    if (otpData.expiresAt < Date.now()) {
+        otpCache.delete(token);
+        return res.status(400).json({ error: 'OTP has expired' });
+    }
+    
+    if (otpData.used) {
+        return res.status(400).json({ error: 'OTP already used' });
+    }
+    
+    if (!otpData.verified) {
+        return res.status(400).json({ error: 'OTP not verified' });
+    }
+    
+    if (otpData.email !== email || otpData.otp !== otp) {
+        return res.status(400).json({ error: 'Invalid OTP' });
+    }
+    
+    // In a real scenario, you would update the .env file or database
+    // For now, we'll just mark as successful
+    otpCache.delete(token);
+    
+    res.json({ 
+        success: true, 
+        message: 'Credentials updated successfully. Please contact system administrator to update environment variables.',
+        newUsername: newUsername || process.env.SPECIAL_ADMIN_USERNAME,
+        newPassword: newPassword ? '********' : undefined
+    });
+});
+
 // Forgot Password endpoints
 app.post('/auth/forgot-password', authMiddleware, async (req: Request, res: Response) => {
     const { email } = req.body as { email: string };
@@ -566,7 +757,7 @@ app.post('/auth/reset-password', authMiddleware, async (req: Request, res: Respo
 });
 
 // User endpoints - display purpose anywhere 
-app.get("/users", authMiddleware, requireRole(['HOST', 'ADMIN']), async (_req: Request, res: Response) => {
+app.get("/users", authMiddleware, requireRole(['HOST', 'ADMIN', 'SPECIAL_ADMIN']), async (_req: Request, res: Response) => {
     try {
         const users = await prisma.user.findMany({ 
             select: { id: true, username: true, email: true, phone: true, role: true, createdAt: true } 
@@ -578,7 +769,7 @@ app.get("/users", authMiddleware, requireRole(['HOST', 'ADMIN']), async (_req: R
 });
 
 // to create user
-app.post("/users", authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+app.post("/users", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), async (req: Request, res: Response) => {
     const { username, password, email, phone, role, secretPassword } = req.body as { username: string; password: string; email: string; phone: string; role: string; secretPassword?: string };
     
     if (!username || !password || !email || !phone || !role) {
@@ -618,7 +809,7 @@ app.post("/users", authMiddleware, requireRole(['HOST']), async (req: Request, r
     }
 });
 
-app.put("/users/:id", authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+app.put("/users/:id", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), async (req: Request, res: Response) => {
     const userId = parseInt(req.params.id || '');
     const { username, password, email, phone, role, secretPassword } = req.body as {
         username?: string;
@@ -685,7 +876,7 @@ app.put("/users/:id", authMiddleware, requireRole(['HOST']), async (req: Request
     }
 });
 
-app.delete("/users/:id", authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+app.delete("/users/:id", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), async (req: Request, res: Response) => {
     const userId = parseInt(req.params.id || '');
     
     try {

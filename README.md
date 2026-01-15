@@ -36,6 +36,7 @@ Deploy_call/
 - **Real-time Sync**: Zustand stores keep UI in sync with API
 - **Secure Auth**: JWT tokens, bcrypt password hashing
 - **Responsive UI**: Tailwind CSS, mobile-friendly design
+- **Special Admin Route**: Isolated admin portal with OTP-based recovery (see [SPECIAL_ADMIN_ROUTE.md](SPECIAL_ADMIN_ROUTE.md))
 
 ## Setup & Installation
 
@@ -156,6 +157,12 @@ After seeding, use the credentials you set in `SEED_HOST_USERNAME` and `SEED_HOS
 | `FRONTEND_ORIGIN` | No | `https://call-manage.netlify.app` | Allowed CORS origin |
 | `PORT` | No | `4000` | Backend server port |
 | `RUN_PRISMA_PUSH` | No | `false` | Run migrations on startup (unsafe for production) |
+| `EMAIL_USER` | Yes | - | Email address for sending OTPs |
+| `EMAIL_PASS` | Yes | - | Email app password |
+| `SPECIAL_ADMIN_USERNAME` | No | `specialadmin` | Special admin username |
+| `SPECIAL_ADMIN_PASSWORD` | No | - | Special admin password |
+| `SPECIAL_ADMIN_SECRET` | No | - | Secret key for admin recovery |
+| `SPECIAL_ADMIN_EMAIL` | No | - | Admin email for OTP delivery |
 
 ### Backend Seed Script
 When running `npm run seed`:
