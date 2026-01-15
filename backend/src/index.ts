@@ -41,9 +41,10 @@ const allowedOrigins = [
     process.env.FRONTEND_ORIGIN || 'http://localhost:5173',
     'https://call-manage.netlify.app',
     'https://deploy-call.netlify.app',
-    'https://deploycall.netlify.app' ,
+    'https://deploycall.netlify.app',
+    'https://deepcallflow.netlify.app', // Add your actual Netlify URL
     'http://localhost:5174',
-    'http://localhost:5175' // Add your actual Netlify URL
+    'http://localhost:5175'
 ];
 
 const io = new Server(httpServer, {
