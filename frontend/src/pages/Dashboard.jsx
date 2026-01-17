@@ -488,6 +488,24 @@ const Dashboard = () => {
 
       {/* Mobile Card View (hidden on desktop) */}
       <div className="lg:hidden">
+        {user?.role === 'HOST' && completedCalls.length > 0 && (
+          <div className="mb-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                onChange={handleSelectAll}
+                className="w-5 h-5 text-red-600 rounded focus:ring-red-500"
+              />
+              <span className="font-medium text-gray-700">Select All Completed ({completedCalls.length})</span>
+            </label>
+            {selectedCalls.length > 0 && (
+              <span className="text-sm text-gray-600">
+                {selectedCalls.length} selected
+              </span>
+            )}
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredCalls.length === 0 ? (
             <div className="col-span-full text-center py-12">
@@ -495,7 +513,13 @@ const Dashboard = () => {
             </div>
           ) : (
             filteredCalls.map(call => (
-              <CallCard key={call.id} call={call} />
+              <CallCard 
+                key={call.id} 
+                call={call} 
+                selectedCalls={selectedCalls}
+                onSelectCall={handleSelectCall}
+                showCheckboxes={user?.role === 'HOST'}
+              />
             ))
           )}
         </div>

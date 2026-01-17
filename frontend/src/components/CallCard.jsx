@@ -4,7 +4,7 @@ import useAuthStore from '../store/authStore';
 import useCategoryStore from '../store/categoryStore';
 import useClickOutside from '../hooks/useClickOutside';
 
-const CallCard = ({ call }) => {
+const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = false }) => {
   const [showAssign, setShowAssign] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
@@ -170,6 +170,16 @@ const CallCard = ({ call }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-md p-3 sm:p-4 border-l-4 border-blue-500">
+      {showCheckboxes && call.status === 'COMPLETED' && (
+        <div className="flex justify-end mb-2">
+          <input
+            type="checkbox"
+            checked={selectedCalls.includes(call.id)}
+            onChange={() => onSelectCall(call.id)}
+            className="w-5 h-5 text-red-600 rounded focus:ring-red-500 cursor-pointer"
+          />
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row justify-between items-start mb-3 gap-2">
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-base sm:text-lg break-words">{call?.customerName}</h3>
