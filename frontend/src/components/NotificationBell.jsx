@@ -22,7 +22,7 @@ const NotificationBell = () => {
   const fetchNotifications = async () => {
     try {
       const response = await apiClient.get('/notifications');
-      setNotifications(response.data);
+      setNotifications(response.data || []);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
     }
@@ -42,6 +42,15 @@ const NotificationBell = () => {
 
   const deleteNotifications = async (notificationIds) => {
     try {
+      // Immediately update UI for better UX
+      const originalNotifications = notifications;
+      setNotifications(prev => {
+        const filtered = prev.filter(n => !notificationIds.includes(n.id));
+        setSelectedNotifications(new Set());
+        setSelectAll(false);
+        return filtered;
+      });
+      
       if (notificationIds.length === 1) {
         await apiClient.delete(`/notifications/${notificationIds[0]}`);
       } else {
@@ -49,15 +58,13 @@ const NotificationBell = () => {
           notificationIds
         });
       }
-      setNotifications(prev => {
-        const filtered = prev.filter(n => !notificationIds.includes(n.id));
-        setSelectedNotifications(new Set());
-        setSelectAll(false);
-        return filtered;
-      });
+      
       fetchUnreadCount();
     } catch (error) {
       console.error('Failed to delete notifications:', error);
+      // Revert UI changes on error
+      fetchNotifications();
+      fetchUnreadCount();
     }
   };
 
@@ -95,10 +102,21 @@ const NotificationBell = () => {
       fetchUnreadCount();
       
       // Listen for real-time notification updates
-      const handleNotificationUpdate = () => {
+      const handleNotificationUpdate = (event) => {
         fetchUnreadCount();
         if (showDropdown) {
           fetchNotifications();
+        }
+        
+        // Handle specific notification data if provided
+        if (event.detail && event.detail.userId === user.username) {
+          // Immediately update unread count for current user
+          setUnreadCount(prev => prev + 1);
+          
+          // If dropdown is open, refresh notifications
+          if (showDropdown) {
+            setTimeout(fetchNotifications, 100);
+          }
         }
       };
       

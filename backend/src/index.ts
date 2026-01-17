@@ -279,6 +279,9 @@ async function initializeDatabase() {
         // Check if tables exist by trying to count users
         const userCount = await prisma.user.count();
         console.log(`Database initialized. User count: ${userCount}`);
+        
+        // Initial cleanup of old notifications
+        await cleanupOldNotifications();
     } catch (error) {
         console.error('Database initialization failed:', error);
         throw error;
@@ -1250,52 +1253,49 @@ app.put('/calls/:id/increment', authMiddleware, async (req: Request, res: Respon
         emitToAll('call_updated', updatedCall);
         
         // Create notifications only if the call is assigned or has a creator
-        const notifications = [];
-        
-        // Notify original creator if different from current user
-        if (call.createdBy && call.createdBy !== user?.username) {
-            notifications.push({
-                userId: call.createdBy,
-                message: `${call.customerName} (${call.phone}) - Repeat call (${call.category})`,
-                type: 'DUPLICATE_CALL',
-                callId: call.id
+        try {
+            const notificationUsers = new Set();
+            
+            // Notify original creator if different from current user
+            if (call.createdBy && call.createdBy !== user?.username) {
+                notificationUsers.add(call.createdBy);
+            }
+            
+            // Notify assigned engineer if different from current user and call is assigned
+            if (call.assignedTo && call.assignedTo !== user?.username) {
+                notificationUsers.add(call.assignedTo);
+            }
+            
+            // Notify all HOSTs and ADMINs
+            const admins = await prisma.user.findMany({
+                where: { role: { in: ['HOST', 'ADMIN'] } },
+                select: { username: true }
             });
-        }
-        
-        // Notify assigned engineer if different from current user and call is assigned
-        if (call.assignedTo && call.assignedTo !== user?.username) {
-            notifications.push({
-                userId: call.assignedTo,
-                message: `${call.customerName} (${call.phone}) called back about ${call.category}`,
-                type: 'DUPLICATE_CALL',
-                callId: call.id
+            
+            admins.forEach(admin => {
+                if (admin.username !== user?.username) {
+                    notificationUsers.add(admin.username);
+                }
             });
-        }
-        
-        // Notify all HOSTs and ADMINs
-        const admins = await prisma.user.findMany({
-            where: { role: { in: ['HOST', 'ADMIN'] } },
-            select: { username: true }
-        });
-        
-        admins.forEach(admin => {
-            if (admin.username !== user?.username) {
-                notifications.push({
-                    userId: admin.username,
+            
+            // Create notifications for unique users
+            if (notificationUsers.size > 0) {
+                const notifications = Array.from(notificationUsers).map(userId => ({
+                    userId,
                     message: `${call.customerName} (${call.phone}) - Repeat call (${call.category})`,
                     type: 'DUPLICATE_CALL',
                     callId: call.id
+                }));
+                
+                await prisma.notification.createMany({ data: notifications });
+                
+                // Emit notification events
+                notifications.forEach(notification => {
+                    emitToAll('notification_created', notification);
                 });
             }
-        });
-        
-        // Create all notifications
-        if (notifications.length > 0) {
-            const createdNotifications = await prisma.notification.createMany({ data: notifications });
-            // Emit notification events to specific users
-            notifications.forEach(notification => {
-                emitToAll('notification_created', notification);
-            });
+        } catch (notificationError) {
+            console.error('Failed to create notifications:', notificationError);
         }
         
         res.json(updatedCall);
@@ -1596,14 +1596,6 @@ app.get('/notifications', authMiddleware, async (req: Request, res: Response) =>
     }
     
     try {
-        // Auto-delete notifications older than 24 hours
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        await prisma.notification.deleteMany({
-            where: {
-                createdAt: { lt: twentyFourHoursAgo }
-            }
-        });
-        
         const notifications = await prisma.notification.findMany({
             where: { userId: req.user.username },
             orderBy: { createdAt: 'desc' },
@@ -1611,7 +1603,8 @@ app.get('/notifications', authMiddleware, async (req: Request, res: Response) =>
         });
         res.json(notifications);
     } catch (err: any) {
-        res.status(500).json({ error: String(err) });
+        console.error('Failed to fetch notifications:', err);
+        res.status(500).json({ error: 'Failed to fetch notifications' });
     }
 });
 
@@ -1621,14 +1614,6 @@ app.get('/notifications/unread-count', authMiddleware, async (req: Request, res:
     }
     
     try {
-        // Auto-delete notifications older than 24 hours
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        await prisma.notification.deleteMany({
-            where: {
-                createdAt: { lt: twentyFourHoursAgo }
-            }
-        });
-        
         const count = await prisma.notification.count({
             where: { 
                 userId: req.user.username,
@@ -1637,7 +1622,8 @@ app.get('/notifications/unread-count', authMiddleware, async (req: Request, res:
         });
         res.json({ count });
     } catch (err: any) {
-        res.status(500).json({ error: String(err) });
+        console.error('Failed to fetch unread count:', err);
+        res.status(500).json({ error: 'Failed to fetch unread count' });
     }
 });
 
@@ -1646,6 +1632,10 @@ app.put('/notifications/:id/read', authMiddleware, async (req: Request, res: Res
     
     if (!req.user?.username) {
         return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    if (isNaN(notificationId)) {
+        return res.status(400).json({ error: 'Invalid notification ID' });
     }
     
     try {
@@ -1658,7 +1648,8 @@ app.put('/notifications/:id/read', authMiddleware, async (req: Request, res: Res
         });
         res.json({ success: true });
     } catch (err: any) {
-        res.status(500).json({ error: String(err) });
+        console.error('Failed to mark notification as read:', err);
+        res.status(500).json({ error: 'Failed to mark notification as read' });
     }
 });
 
@@ -1667,6 +1658,10 @@ app.delete('/notifications/:id', authMiddleware, async (req: Request, res: Respo
     
     if (!req.user?.username) {
         return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    if (isNaN(notificationId)) {
+        return res.status(400).json({ error: 'Invalid notification ID' });
     }
     
     try {
@@ -1678,7 +1673,8 @@ app.delete('/notifications/:id', authMiddleware, async (req: Request, res: Respo
         });
         res.json({ success: true });
     } catch (err: any) {
-        res.status(500).json({ error: String(err) });
+        console.error('Failed to delete notification:', err);
+        res.status(500).json({ error: 'Failed to delete notification' });
     }
 });
 
@@ -1694,14 +1690,18 @@ app.post('/notifications/bulk-delete', authMiddleware, async (req: Request, res:
         return res.status(400).json({ error: 'Invalid or empty notification IDs array' });
     }
     
+    if (notificationIds.length > 100) {
+        return res.status(400).json({ error: 'Cannot delete more than 100 notifications at once' });
+    }
+    
     try {
-        await prisma.notification.deleteMany({
+        const result = await prisma.notification.deleteMany({
             where: { 
                 id: { in: notificationIds },
                 userId: req.user.username
             }
         });
-        res.json({ success: true });
+        res.json({ success: true, deletedCount: result.count });
     } catch (err: any) {
         console.error('Bulk delete error:', err);
         res.status(500).json({ error: 'Failed to delete notifications' });

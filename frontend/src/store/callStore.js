@@ -25,7 +25,7 @@ const useCallStore = create((set, get) => ({
   
   handleCallsBulkDeleted: (data) => {
     set(state => ({
-      calls: state.calls.filter(c => !data.deletedIds.includes(c.id))
+      calls: state.calls.filter(c => !data.callIds?.includes(c.id))
     }));
   },
   
