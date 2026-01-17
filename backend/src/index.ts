@@ -65,13 +65,15 @@ app.use(cors({
         // Check if origin is in allowed list
         if (allowedOrigins.includes(origin)) return callback(null, true);
         
-        // Allow localhost in development
-        if (process.env.NODE_ENV !== 'production' && 
-            (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1'))) {
-            return callback(null, true);
+        // Allow localhost in development with proper validation
+        if (process.env.NODE_ENV !== 'production') {
+            const localhostPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+            if (localhostPattern.test(origin)) {
+                return callback(null, true);
+            }
         }
         
-        console.warn(`CORS blocked origin: ${origin}`);
+        console.warn('CORS blocked origin: [REDACTED]');
         return callback(new Error('Not allowed by CORS'));
     },
     methods: ["GET", "POST", "PUT", "DELETE"],
@@ -1281,7 +1283,7 @@ app.put('/calls/:id/increment', authMiddleware, async (req: Request, res: Respon
             // Create notifications for unique users
             if (notificationUsers.size > 0) {
                 const notifications = Array.from(notificationUsers).map(userId => ({
-                    userId,
+                    userId: userId as string,
                     message: `${call.customerName} (${call.phone}) - Repeat call (${call.category})`,
                     type: 'DUPLICATE_CALL',
                     callId: call.id
@@ -1786,6 +1788,11 @@ app.put('/categories/:id', authMiddleware, requireRole(['HOST']), async (req: Re
 
 app.delete('/categories/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
     const categoryId = parseInt(req.params.id || '');
+    
+    // CSRF protection: require X-Requested-With header
+    if (!req.headers['x-requested-with']) {
+        return res.status(403).json({ error: 'CSRF protection: X-Requested-With header required' });
+    }
     
     try {
         const category = await prisma.category.update({
