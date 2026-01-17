@@ -6,9 +6,10 @@ const prisma = new PrismaClient();
 async function main() {
   const username = process.env.SEED_HOST_USERNAME;
   const password = process.env.SEED_HOST_PASSWORD;
+  const secretPassword = process.env.SEED_SECRET_PASSWORD;
 
-  if (!username || !password) {
-    console.error('SEED_HOST_USERNAME and SEED_HOST_PASSWORD environment variables are required');
+  if (!username || !password || !secretPassword) {
+    console.error('SEED_HOST_USERNAME, SEED_HOST_PASSWORD, and SEED_SECRET_PASSWORD environment variables are required');
     process.exit(1);
   }
 
@@ -23,7 +24,7 @@ async function main() {
       email: `${username}@example.com`,
       phone: '1234567890',
       role: 'HOST',
-      secretPassword: 'DEFAULTSECRET'
+      secretPassword
     }
   });
 
