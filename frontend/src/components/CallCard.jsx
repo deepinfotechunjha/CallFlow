@@ -275,8 +275,8 @@ const CallCard = ({ call }) => {
                 className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select Engineer</option>
-                {users.filter(u => u.role === 'ENGINEER').map(u => (
-                  <option key={u.id} value={u.username}>{u.username}</option>
+                {users.filter(u => u.role === 'ENGINEER' || u.role === 'ADMIN').map(u => (
+                  <option key={u.id} value={u.username}>{u.username} ({u.role})</option>
                 ))}
               </select>
             </div>
