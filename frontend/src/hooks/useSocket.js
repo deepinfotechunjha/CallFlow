@@ -107,8 +107,10 @@ const useSocket = () => {
 
       // Notification events
       socket.on('notification_created', (notification) => {
-        // Trigger notification bell to refresh
-        window.dispatchEvent(new CustomEvent('notification_update'));
+        // Trigger notification bell to refresh with notification data
+        window.dispatchEvent(new CustomEvent('notification_update', { 
+          detail: notification 
+        }));
       });
 
       socket.on('disconnect', () => {
