@@ -180,6 +180,43 @@ async function sendDeletionNotificationEmail(
   }
 }
 
+// Helper function to send service deletion notification email
+async function sendServiceDeletionNotificationEmail(
+  hostEmails: string[], 
+  deletedByName: string, 
+  deletedAt: Date, 
+  serviceCount: number
+): Promise<void> {
+  try {
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'your-email@gmail.com',
+      to: hostEmails.join(','),
+      subject: 'CallFlow - Delivered Services Deleted',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #dc2626;">🗑️ Delivered Services Deletion Notice</h2>
+          <p>A HOST user has deleted delivered services from the system.</p>
+          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <strong>Deleted By:</strong> ${deletedByName}<br>
+            <strong>Date:</strong> ${deletedAt.toLocaleDateString()}<br>
+            <strong>Time:</strong> ${deletedAt.toLocaleTimeString()}<br>
+            <strong>Number of Services Deleted:</strong> ${serviceCount}
+          </div>
+          <p style="color: #6b7280; font-size: 12px;">
+            This is an automated notification. The deleted data has been exported to the HOST's device.
+          </p>
+          <hr style="margin: 30px 0;">
+          <p style="color: #6b7280; font-size: 12px;">CallFlow Call Management System</p>
+        </div>
+      `
+    };
+    
+    await emailTransporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error('Failed to send service deletion notification email:', error);
+  }
+}
+
 function signToken(payload: object) {
     return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
@@ -1475,6 +1512,19 @@ app.get('/analytics/deletion-history', authMiddleware, requireRole(['HOST']), as
     }
 });
 
+// Service Deletion History endpoint
+app.get('/analytics/service-deletion-history', authMiddleware, requireRole(['HOST']), async (_req: Request, res: Response) => {
+    try {
+        const history = await prisma.serviceDeletionHistory.findMany({
+            orderBy: { deletedAt: 'desc' },
+            take: 30
+        });
+        res.json(history);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
 // Bulk Delete Calls endpoint
 app.post('/calls/bulk-delete', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
     const { callIds, secretPassword } = req.body as { callIds: number[]; secretPassword: string };
@@ -1964,6 +2014,16 @@ app.post('/carry-in-services/:id/complete', authMiddleware, async (req: Request,
     }
     
     try {
+        // Check if service exists and is in PENDING status
+        const existingService = await prisma.carryInService.findUnique({ where: { id: serviceId } });
+        if (!existingService) {
+            return res.status(404).json({ error: 'Service not found' });
+        }
+        
+        if (existingService.status !== 'PENDING') {
+            return res.status(400).json({ error: 'Service must be in PENDING status to complete' });
+        }
+        
         const service = await prisma.carryInService.update({
             where: { id: serviceId },
             data: {
@@ -1990,6 +2050,16 @@ app.post('/carry-in-services/:id/deliver', authMiddleware, async (req: Request, 
     }
     
     try {
+        // Check if service exists and is in COMPLETED_NOT_COLLECTED status
+        const existingService = await prisma.carryInService.findUnique({ where: { id: serviceId } });
+        if (!existingService) {
+            return res.status(404).json({ error: 'Service not found' });
+        }
+        
+        if (existingService.status !== 'COMPLETED_NOT_COLLECTED') {
+            return res.status(400).json({ error: 'Service must be completed before delivery' });
+        }
+        
         const service = await prisma.carryInService.update({
             where: { id: serviceId },
             data: {
@@ -2004,6 +2074,125 @@ app.post('/carry-in-services/:id/deliver', authMiddleware, async (req: Request, 
         res.json(service);
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
+    }
+});
+
+// Bulk Delete Carry-In Services endpoint
+app.post('/carry-in-services/bulk-delete', authMiddleware, async (req: Request, res: Response) => {
+    const { serviceIds, secretPassword } = req.body as { serviceIds: number[]; secretPassword: string };
+    const user = req.user;
+    
+    if (!serviceIds || !Array.isArray(serviceIds) || serviceIds.length === 0) {
+        return res.status(400).json({ error: 'Service IDs are required' });
+    }
+    
+    if (!secretPassword) {
+        return res.status(400).json({ error: 'Secret password is required' });
+    }
+    
+    // Check if user is HOST
+    if (user?.role !== 'HOST') {
+        return res.status(403).json({ error: 'Only HOST users can delete services' });
+    }
+    
+    try {
+        // Verify secret password
+        const dbUser = await prisma.user.findUnique({ 
+            where: { id: user!.id },
+            select: { secretPassword: true, username: true, email: true }
+        });
+        
+        if (!dbUser || dbUser.secretPassword !== secretPassword) {
+            return res.status(401).json({ error: 'Invalid secret password' });
+        }
+        
+        // Fetch services to delete (only COMPLETED_AND_COLLECTED)
+        const servicesToDelete = await prisma.carryInService.findMany({
+            where: { 
+                id: { in: serviceIds },
+                status: 'COMPLETED_AND_COLLECTED'
+            }
+        });
+        
+        if (servicesToDelete.length === 0) {
+            return res.status(400).json({ error: 'No delivered services found to delete' });
+        }
+        
+        // Delete services and create history record in transaction
+        await prisma.$transaction([
+            prisma.carryInService.deleteMany({
+                where: { id: { in: servicesToDelete.map(s => s.id) } }
+            }),
+            prisma.serviceDeletionHistory.create({
+                data: {
+                    deletedBy: user!.id,
+                    deletedByName: user!.username,
+                    serviceCount: servicesToDelete.length
+                }
+            })
+        ]);
+        
+        // Auto-cleanup: Keep only latest 30 entries
+        const totalHistoryCount = await prisma.serviceDeletionHistory.count();
+        if (totalHistoryCount > 30) {
+            const excessCount = totalHistoryCount - 30;
+            const oldestEntries = await prisma.serviceDeletionHistory.findMany({
+                orderBy: { deletedAt: 'asc' },
+                take: excessCount,
+                select: { id: true }
+            });
+            
+            await prisma.serviceDeletionHistory.deleteMany({
+                where: { id: { in: oldestEntries.map(e => e.id) } }
+            });
+        }
+        
+        // Get all other HOSTs
+        const otherHosts = await prisma.user.findMany({
+            where: { 
+                role: 'HOST',
+                id: { not: user!.id }
+            },
+            select: { username: true, email: true }
+        });
+        
+        // Create notifications and send emails to other HOSTs
+        if (otherHosts.length > 0) {
+            await prisma.notification.createMany({
+                data: otherHosts.map(host => ({
+                    userId: host.username,
+                    message: `${user!.username} deleted ${servicesToDelete.length} delivered services`,
+                    type: 'SERVICE_BULK_DELETION',
+                    isRead: false
+                }))
+            });
+            
+            // Send Socket.io notification
+            emitToAll('services_bulk_deleted', {
+                deletedBy: user!.username,
+                deletedAt: new Date(),
+                count: servicesToDelete.length,
+                serviceIds: servicesToDelete.map(s => s.id)
+            });
+            
+            // Send emails
+            const hostEmails = otherHosts.map(h => h.email);
+            await sendServiceDeletionNotificationEmail(
+                hostEmails, 
+                user!.username, 
+                new Date(), 
+                servicesToDelete.length
+            );
+        }
+        
+        res.json({ 
+            success: true, 
+            deletedCount: servicesToDelete.length,
+            servicesData: servicesToDelete
+        });
+    } catch (err: any) {
+        console.error('Service bulk delete error:', err);
+        res.status(500).json({ error: 'Failed to delete services' });
     }
 });
 

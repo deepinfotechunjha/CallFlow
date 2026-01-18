@@ -70,6 +70,21 @@ const useCarryInServiceStore = create((set, get) => ({
     } catch (error) {
       return null;
     }
+  },
+
+  bulkDeleteServices: async (serviceIds, secretPassword) => {
+    try {
+      const response = await apiClient.post('/carry-in-services/bulk-delete', {
+        serviceIds,
+        secretPassword
+      });
+      toast.success(`Successfully deleted ${response.data.deletedCount} services`);
+      return response.data;
+    } catch (error) {
+      const errorMessage = error.response?.data?.error || 'Failed to delete services';
+      toast.error(errorMessage);
+      throw error;
+    }
   }
 }));
 
