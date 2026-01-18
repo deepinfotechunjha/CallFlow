@@ -70,6 +70,10 @@ const useSocket = () => {
         useCallStore.getState().handleCallsBulkDeleted(data);
       });
 
+      socket.on('services_bulk_deleted', (data) => {
+        useCarryInServiceStore.getState().handleServicesBulkDeleted(data);
+      });
+
       // Carry-in service events
       socket.on('service_created', (service) => {
         useCarryInServiceStore.getState().handleServiceCreated(service);

@@ -19,6 +19,12 @@ const useCarryInServiceStore = create((set, get) => ({
     }));
   },
 
+  handleServicesBulkDeleted: (data) => {
+    set(state => ({
+      services: state.services.filter(s => !data.serviceIds?.includes(s.id))
+    }));
+  },
+
   fetchServices: async () => {
     set({ loading: true });
     try {
