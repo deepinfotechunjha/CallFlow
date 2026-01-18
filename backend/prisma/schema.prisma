@@ -8,15 +8,16 @@ datasource db {
 }
 
 model User {
-  id              Int               @id @default(autoincrement())
-  username        String            @unique
-  password        String
-  email           String            @unique
-  phone           String            @unique
-  createdAt       DateTime          @default(now())
-  role            String
-  secretPassword  String            @default("DEFAULTSECRET")
-  deletionHistory DeletionHistory[]
+  id                      Int                      @id @default(autoincrement())
+  username                String                   @unique
+  password                String
+  email                   String                   @unique
+  phone                   String                   @unique
+  createdAt               DateTime                 @default(now())
+  role                    String
+  secretPassword          String                   @default("DEFAULTSECRET")
+  deletionHistory         DeletionHistory[]
+  serviceDeletionHistory  ServiceDeletionHistory[]
 }
 
 model Call {
@@ -138,6 +139,18 @@ model DeletionHistory {
   deletedByName String
   deletedAt     DateTime @default(now())
   callCount     Int
+  user          User     @relation(fields: [deletedBy], references: [id], onDelete: Cascade)
+
+  @@index([deletedBy])
+  @@index([deletedAt])
+}
+
+model ServiceDeletionHistory {
+  id            Int      @id @default(autoincrement())
+  deletedBy     Int
+  deletedByName String
+  deletedAt     DateTime @default(now())
+  serviceCount  Int
   user          User     @relation(fields: [deletedBy], references: [id], onDelete: Cascade)
 
   @@index([deletedBy])

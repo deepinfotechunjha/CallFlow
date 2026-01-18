@@ -5,13 +5,16 @@ import useAuthStore from '../store/authStore';
 import useSocket from '../hooks/useSocket';
 import useClickOutside from '../hooks/useClickOutside';
 import ExportModal from '../components/ExportModal';
-import { exportCarryInServicesToExcel } from '../utils/excelExport';
+import BulkDeleteModal from '../components/BulkDeleteModal';
+import { exportCarryInServicesToExcel, exportDeletedServicesToExcel } from '../utils/excelExport';
 import toast from 'react-hot-toast';
 
 const CarryInService = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedServices, setSelectedServices] = useState([]);
   const [filter, setFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL_CATEGORIES');
@@ -36,7 +39,7 @@ const CarryInService = () => {
   const [isCompleting, setIsCompleting] = useState(false);
   const [isDelivering, setIsDelivering] = useState(false);
 
-  const { services, fetchServices, addService, completeService, deliverService, findCustomerByPhone } = useCarryInServiceStore();
+  const { services, fetchServices, addService, completeService, deliverService, findCustomerByPhone, bulkDeleteServices } = useCarryInServiceStore();
   const { serviceCategories, fetchServiceCategories } = useServiceCategoryStore();
   const { user, token } = useAuthStore();
   
@@ -238,6 +241,36 @@ const CarryInService = () => {
 
   const counts = getFilterCounts();
 
+  const deliveredServices = filteredServices.filter(s => s.status === 'COMPLETED_AND_COLLECTED');
+  const isAllSelected = deliveredServices.length > 0 && selectedServices.length === deliveredServices.length;
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedServices([]);
+    } else {
+      setSelectedServices(deliveredServices.map(s => s.id));
+    }
+  };
+
+  const handleSelectService = (serviceId) => {
+    setSelectedServices(prev => 
+      prev.includes(serviceId) ? prev.filter(id => id !== serviceId) : [...prev, serviceId]
+    );
+  };
+
+  const handleBulkDelete = async (secretPassword) => {
+    try {
+      const response = await bulkDeleteServices(selectedServices, secretPassword);
+      if (response.servicesData) {
+        await exportDeletedServicesToExcel(response.servicesData);
+      }
+      setSelectedServices([]);
+      setShowBulkDeleteModal(false);
+    } catch (error) {
+      // Error handled in store
+    }
+  };
+
   const handleExport = async (exportType, password) => {
     if (isExporting) return;
     setIsExporting(true);
@@ -283,6 +316,14 @@ const CarryInService = () => {
           <p className="text-gray-600">Manage device repairs and service requests</p>
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
+          {user?.role === 'HOST' && selectedServices.length > 0 && (
+            <button
+              onClick={() => setShowBulkDeleteModal(true)}
+              className="px-4 sm:px-6 py-3 rounded-xl font-medium text-sm sm:text-base whitespace-nowrap flex items-center gap-2 shadow-sm transition-all bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800"
+            >
+              🗑️ Delete ({selectedServices.length})
+            </button>
+          )}
           {user?.role === 'HOST' && (
             <button
               onClick={() => setShowExportModal(true)}
@@ -496,9 +537,37 @@ const CarryInService = () => {
           <>
             {/* Mobile/Tablet Card View */}
             <div className="lg:hidden">
+              {user?.role === 'HOST' && deliveredServices.length > 0 && (
+                <div className="mb-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected}
+                      onChange={handleSelectAll}
+                      className="w-5 h-5 text-red-600 rounded focus:ring-red-500"
+                    />
+                    <span className="font-medium text-gray-700">Select All Delivered ({deliveredServices.length})</span>
+                  </label>
+                  {selectedServices.length > 0 && (
+                    <span className="text-sm text-gray-600">
+                      {selectedServices.length} selected
+                    </span>
+                  )}
+                </div>
+              )}
               <div className="divide-y divide-gray-200">
                 {filteredServices.map((service, index) => (
                   <div key={service.id} className="p-4 hover:bg-gray-50 transition-colors">
+                    {user?.role === 'HOST' && service.status === 'COMPLETED_AND_COLLECTED' && (
+                      <div className="flex justify-end mb-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedServices.includes(service.id)}
+                          onChange={() => handleSelectService(service.id)}
+                          className="w-5 h-5 text-red-600 rounded focus:ring-red-500 cursor-pointer"
+                        />
+                      </div>
+                    )}
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
@@ -580,12 +649,35 @@ const CarryInService = () => {
 
             {/* Desktop Table View */}
             <div className="hidden lg:block overflow-x-auto">
+              {user?.role === 'HOST' && deliveredServices.length > 0 && (
+                <div className="mb-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected}
+                      onChange={handleSelectAll}
+                      className="w-5 h-5 text-red-600 rounded focus:ring-red-500"
+                    />
+                    <span className="font-medium text-gray-700">Select All Delivered ({deliveredServices.length})</span>
+                  </label>
+                  {selectedServices.length > 0 && (
+                    <span className="text-sm text-gray-600">
+                      {selectedServices.length} selected
+                    </span>
+                  )}
+                </div>
+              )}
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
                       Sr.No
                     </th>
+                    {user?.role === 'HOST' && (
+                      <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-8 min-w-8">
+                        ✓
+                      </th>
+                    )}
                     <th onClick={() => handleSort('customer')} className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-40">
                       Customer {getSortIcon('customer')}
                     </th>
@@ -618,6 +710,20 @@ const CarryInService = () => {
                       <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-500">
                         {index + 1}
                       </td>
+                      {user?.role === 'HOST' && (
+                        <td className="px-1 py-3 border-r border-gray-200 text-center" onClick={(e) => e.stopPropagation()}>
+                          {service.status === 'COMPLETED_AND_COLLECTED' ? (
+                            <input
+                              type="checkbox"
+                              checked={selectedServices.includes(service.id)}
+                              onChange={() => handleSelectService(service.id)}
+                              className="w-4 h-4 text-red-600 rounded focus:ring-red-500 cursor-pointer"
+                            />
+                          ) : (
+                            <div className="w-4 h-4"></div>
+                          )}
+                        </td>
+                      )}
                       <td className="px-2 py-3">
                         <div className="flex items-center gap-2">
                           <span className="text-lg">👤</span>
@@ -1008,6 +1114,14 @@ const CarryInService = () => {
           totalCount={services.length}
           filteredCount={filteredServices.length}
           title="Export Carry-In Services to Excel"
+        />
+      )}
+      {showBulkDeleteModal && (
+        <BulkDeleteModal
+          isOpen={showBulkDeleteModal}
+          onClose={() => setShowBulkDeleteModal(false)}
+          onConfirm={handleBulkDelete}
+          selectedCount={selectedServices.length}
         />
       )}
     </div>
