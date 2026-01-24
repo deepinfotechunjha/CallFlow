@@ -31,13 +31,18 @@ interface AuthenticatedRequest extends Request {
     };
 }
 
+// Validate required environment variables
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL environment variable is required');
+}
+
 dotenv.config();
 
 // Enhanced Prisma configuration for Neon free tier
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DATABASE_URL
+      url: process.env.DATABASE_URL!
     }
   },
   log: ['error', 'warn'],
@@ -474,7 +479,7 @@ app.get('/auth/me', authMiddleware, async (req: Request, res: Response) => {
         }
         
         const user = await withRetry(() => prisma.user.findUnique({ 
-            where: { id: req.user.id },
+            where: { id: req.user!.id },
             select: { id: true, username: true, email: true, phone: true, role: true, createdAt: true }
         }));
         
@@ -1120,7 +1125,7 @@ app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
         customerName: string;
         phone: string;
         email?: string;
-        address?: string;
+        address: string;
         problem: string;
         category: string;
         assignedTo?: string;
@@ -1128,8 +1133,8 @@ app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
         createdBy?: string;
     };
 
-    if (!customerName || !phone || !problem || !category) {
-        return res.status(400).json({ error: 'Missing required fields' });
+    if (!customerName || !phone || !address || !problem || !category) {
+        return res.status(400).json({ error: 'Customer name, phone, address, problem, and category are required' });
     }
 
     try {
@@ -1158,7 +1163,7 @@ app.post('/calls', authMiddleware, async (req: Request, res: Response) => {
                     customerName,
                     phone,
                     email: email || null,
-                    address: address || null,
+                    address: address,
                     problem,
                     category,
                     status: assignedTo ? 'ASSIGNED' : 'PENDING',
@@ -2030,13 +2035,13 @@ app.post('/carry-in-services', authMiddleware, async (req: Request, res: Respons
         customerName: string;
         phone: string;
         email?: string;
-        address?: string;
+        address: string;
         category: string;
         serviceDescription?: string;
     };
     
-    if (!customerName || !phone || !category) {
-        return res.status(400).json({ error: 'Customer name, phone, and category are required' });
+    if (!customerName || !phone || !address || !category) {
+        return res.status(400).json({ error: 'Customer name, phone, address, and category are required' });
     }
     
     try {
@@ -2061,7 +2066,7 @@ app.post('/carry-in-services', authMiddleware, async (req: Request, res: Respons
                     customerName,
                     phone,
                     email: email || null,
-                    address: address || null,
+                    address: address,
                     category,
                     serviceDescription: serviceDescription || null,
                     customerId: customer.id,

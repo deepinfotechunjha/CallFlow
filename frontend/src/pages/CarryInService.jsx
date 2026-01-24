@@ -840,12 +840,13 @@ const CarryInService = () => {
               </div>
 
               <div>
-                <label className="block text-xs sm:text-sm font-medium mb-1">Address</label>
+                <label className="block text-xs sm:text-sm font-medium mb-1">Address *</label>
                 <textarea
                   value={formData.address}
                   onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                   className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
                   rows="2"
+                  required
                 />
               </div>
 
