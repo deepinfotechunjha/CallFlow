@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import useClickOutside from '../hooks/useClickOutside';
 
 const ExportModal = ({ isOpen, onClose, onExport, totalCount, filteredCount, title = "Export Data" }) => {
@@ -6,6 +7,7 @@ const ExportModal = ({ isOpen, onClose, onExport, totalCount, filteredCount, tit
   const [exportType, setExportType] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const modalRef = useClickOutside(() => onClose());
 
@@ -141,6 +143,19 @@ const ExportModal = ({ isOpen, onClose, onExport, totalCount, filteredCount, tit
                 className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
               >
                 Export
+              </button>
+            </div>
+            
+            <div className="mt-3 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  navigate('/forgot-password');
+                }}
+                className="text-sm text-blue-600 hover:text-blue-800 underline"
+              >
+                Forgot Secret Password?
               </button>
             </div>
           </>
