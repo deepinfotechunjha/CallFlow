@@ -24,6 +24,7 @@ const useCallStore = create((set, get) => ({
   handleCallCompleted: (call) => get().handleCallUpdate(call),
   
   handleCallsBulkDeleted: (data) => {
+    console.log('Handling bulk delete:', data);
     set(state => ({
       calls: state.calls.filter(c => !data.callIds?.includes(c.id))
     }));
@@ -116,6 +117,10 @@ const useCallStore = create((set, get) => ({
         callIds,
         secretPassword
       });
+      
+      // Immediately update the UI by removing deleted calls
+      get().handleCallsBulkDeleted({ callIds });
+      
       toast.success(`Successfully deleted ${response.data.deletedCount} calls`);
       return response.data;
     } catch (error) {
