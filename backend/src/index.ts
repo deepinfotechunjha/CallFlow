@@ -33,7 +33,54 @@ interface AuthenticatedRequest extends Request {
 
 dotenv.config();
 
-const prisma = new PrismaClient();
+// Enhanced Prisma configuration for Neon free tier
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL
+    }
+  },
+  log: ['error', 'warn'],
+  errorFormat: 'pretty'
+});
+
+// Connection retry wrapper
+async function withRetry<T>(operation: () => Promise<T>, maxRetries = 3): Promise<T> {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      if (i === maxRetries - 1) throw error;
+      
+      // Check if it's a connection error
+      if (error.code === 'P1001' || error.message.includes('timeout') || error.message.includes('connection')) {
+        console.log(`Database connection attempt ${i + 1} failed, retrying in ${2000 * (i + 1)}ms...`);
+        await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1))); // Exponential backoff
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
+// Keep database alive system
+let keepAliveInterval: NodeJS.Timeout;
+
+async function startKeepAlive() {
+  const interval = parseInt(process.env.KEEP_ALIVE_INTERVAL || '240000'); // 4 minutes default
+  
+  keepAliveInterval = setInterval(async () => {
+    try {
+      await withRetry(() => prisma.$queryRaw`SELECT 1`);
+      console.log('Database keep-alive ping successful');
+    } catch (error) {
+      console.error('Keep-alive ping failed:', error);
+    }
+  }, interval);
+  
+  console.log(`Database keep-alive started (${interval/1000}s interval)`);
+}
 const app = express();
 const httpServer = createServer(app);
 
@@ -246,6 +293,21 @@ const cleanupOldNotifications = async () => {
     }
 };
 
+// Database health monitoring
+setInterval(async () => {
+  try {
+    const start = Date.now();
+    await withRetry(() => prisma.$queryRaw`SELECT 1`);
+    const latency = Date.now() - start;
+    
+    if (latency > 5000) {
+      console.warn(`High database latency detected: ${latency}ms`);
+    }
+  } catch (error) {
+    console.error('Database health check failed:', error);
+  }
+}, 5 * 60 * 1000); // Every 5 minutes
+
 // Run cleanup every hour
 setInterval(() => {
     cleanupOldNotifications();
@@ -309,32 +371,51 @@ function requireRole(roles: string[]) {
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 
-// Initialize database connection
+// Initialize database connection with retry logic
 async function initializeDatabase() {
     try {
-        await prisma.$connect();
+        await withRetry(() => prisma.$connect());
         console.log('Database connected successfully');
         
         // Check if tables exist by trying to count users
-        const userCount = await prisma.user.count();
+        const userCount = await withRetry(() => prisma.user.count());
         console.log(`Database initialized. User count: ${userCount}`);
         
         // Initial cleanup of old notifications
         await cleanupOldNotifications();
+        
+        // Start keep-alive system
+        await startKeepAlive();
     } catch (error) {
         console.error('Database initialization failed:', error);
         throw error;
     }
 }
 
-// Health check endpoint
+// Enhanced health check endpoint
 app.get("/health", async (_req: Request, res: Response) => {
     try {
-        await prisma.$queryRaw`SELECT 1`;
-        res.json({ status: "ok", message: "Server and database are running" });
+        const start = Date.now();
+        await withRetry(() => prisma.$queryRaw`SELECT 1`);
+        const latency = Date.now() - start;
+        
+        const userCount = await withRetry(() => prisma.user.count());
+        
+        res.json({ 
+            status: "ok", 
+            message: "Server and database are running",
+            userCount,
+            latency: `${latency}ms`,
+            timestamp: new Date().toISOString()
+        });
     } catch (err: any) {
         console.error('Health check failed:', err);
-        res.status(500).json({ status: "error", error: 'Database connection failed', details: err.message });
+        res.status(500).json({ 
+            status: "error", 
+            error: 'Database connection failed', 
+            details: err.message,
+            timestamp: new Date().toISOString()
+        });
     }
 });
 
@@ -346,7 +427,7 @@ app.post('/auth/login', async (req: Request, res: Response) => {
     }
 
     try {
-        const user = await prisma.user.findUnique({ where: { username } });
+        const user = await withRetry(() => prisma.user.findUnique({ where: { username } }));
         if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 
         let ok = false;
@@ -392,10 +473,10 @@ app.get('/auth/me', authMiddleware, async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'User not authenticated' });
         }
         
-        const user = await prisma.user.findUnique({ 
+        const user = await withRetry(() => prisma.user.findUnique({ 
             where: { id: req.user.id },
             select: { id: true, username: true, email: true, phone: true, role: true, createdAt: true }
-        });
+        }));
         
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -2250,6 +2331,10 @@ startServer();
 process.on("SIGINT", async () => {
     console.log('Received SIGINT, shutting down gracefully...');
     try {
+        if (keepAliveInterval) {
+            clearInterval(keepAliveInterval);
+            console.log('Keep-alive interval cleared');
+        }
         await prisma.$disconnect();
         console.log('Database disconnected');
         process.exit(0);
@@ -2262,6 +2347,10 @@ process.on("SIGINT", async () => {
 process.on("SIGTERM", async () => {
     console.log('Received SIGTERM, shutting down gracefully...');
     try {
+        if (keepAliveInterval) {
+            clearInterval(keepAliveInterval);
+            console.log('Keep-alive interval cleared');
+        }
         await prisma.$disconnect();
         console.log('Database disconnected');
         process.exit(0);

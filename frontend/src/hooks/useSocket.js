@@ -21,7 +21,20 @@ const useSocket = () => {
       });
 
       socket.on('connect', () => {
+        console.log('Connected to server');
         socket.emit('register', user.id);
+      });
+
+      socket.on('connect_error', (error) => {
+        console.error('Socket connection error:', error);
+      });
+
+      socket.on('disconnect', (reason) => {
+        console.log('Disconnected from server:', reason);
+        if (reason === 'io server disconnect') {
+          // Server disconnected, try to reconnect
+          socket.connect();
+        }
       });
 
       // User management events
@@ -115,10 +128,6 @@ const useSocket = () => {
         window.dispatchEvent(new CustomEvent('notification_update', { 
           detail: notification 
         }));
-      });
-
-      socket.on('disconnect', () => {
-        // WebSocket disconnected
       });
     }
 
