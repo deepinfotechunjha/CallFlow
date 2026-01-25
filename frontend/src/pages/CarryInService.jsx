@@ -6,6 +6,7 @@ import useSocket from '../hooks/useSocket';
 import useClickOutside from '../hooks/useClickOutside';
 import ExportModal from '../components/ExportModal';
 import BulkDeleteModal from '../components/BulkDeleteModal';
+import ShareServiceModal from '../components/ShareServiceModal';
 import { exportCarryInServicesToExcel, exportDeletedServicesToExcel } from '../utils/excelExport';
 import toast from 'react-hot-toast';
 
@@ -13,6 +14,7 @@ const CarryInService = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [showShareServiceModal, setShowShareServiceModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [selectedServices, setSelectedServices] = useState([]);
   const [filter, setFilter] = useState('ALL');
@@ -343,6 +345,12 @@ const CarryInService = () => {
               {isExporting ? '⏳ Exporting...' : '📊 Export'}
             </button>
           )}
+          <button
+            onClick={() => setShowShareServiceModal(true)}
+            className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-purple-700 hover:to-purple-800 font-medium text-sm sm:text-base whitespace-nowrap shadow-sm transition-all flex items-center gap-2"
+          >
+            🔗 Share
+          </button>
           <button
             onClick={() => setShowAddForm(true)}
             className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium text-sm sm:text-base whitespace-nowrap shadow-sm transition-all"
@@ -1119,6 +1127,12 @@ const CarryInService = () => {
         </div>
       )}
 
+      {showShareServiceModal && (
+        <ShareServiceModal
+          isOpen={showShareServiceModal}
+          onClose={() => setShowShareServiceModal(false)}
+        />
+      )}
       {showExportModal && (
         <ExportModal
           isOpen={showExportModal}

@@ -8,6 +8,7 @@ import CallCard from '../components/CallCard';
 import CallTable from '../components/CallTable';
 import ExportModal from '../components/ExportModal';
 import BulkDeleteModal from '../components/BulkDeleteModal';
+import ShareModal from '../components/ShareModal';
 import { exportCallsToExcel } from '../utils/excelExport';
 import toast from 'react-hot-toast';
 
@@ -15,6 +16,7 @@ const Dashboard = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [selectedCalls, setSelectedCalls] = useState([]);
   const { user, token } = useAuthStore();
@@ -264,6 +266,12 @@ const Dashboard = () => {
               {isExporting ? '⏳ Exporting...' : '📊 Export'}
             </button>
           )}
+          <button
+            onClick={() => setShowShareModal(true)}
+            className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-purple-700 hover:to-purple-800 font-medium text-sm sm:text-base whitespace-nowrap shadow-sm transition-all flex items-center gap-2"
+          >
+            🔗 Share
+          </button>
           <button
             onClick={() => setShowAddForm(true)}
             className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium text-sm sm:text-base whitespace-nowrap shadow-sm transition-all"
@@ -526,6 +534,12 @@ const Dashboard = () => {
       </div>
 
       {showAddForm && <AddCallForm onClose={() => setShowAddForm(false)} />}
+      {showShareModal && (
+        <ShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+        />
+      )}
       {showExportModal && (
         <ExportModal
           isOpen={showExportModal}

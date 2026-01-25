@@ -28,7 +28,7 @@ const useServiceCategoryStore = create((set, get) => ({
   
   fetchServiceCategories: async () => {
     try {
-      const response = await apiClient.get('/service-categories');
+      const response = await apiClient.get('/service-categories/protected');
       set({ serviceCategories: response.data });
       return response.data;
     } catch (error) {
