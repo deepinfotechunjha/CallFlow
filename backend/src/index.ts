@@ -10,6 +10,10 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import type { Request, Response, NextFunction } from "express";
 
+
+dotenv.config();
+
+
 // Extend Express Request type
 declare global {
     namespace Express {
@@ -36,7 +40,6 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is required');
 }
 
-dotenv.config();
 
 // Enhanced Prisma configuration for Neon free tier
 const prisma = new PrismaClient({
