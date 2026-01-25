@@ -949,7 +949,7 @@ app.post("/users", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), async
     
     try {
         const hashed = await bcrypt.hash(password, 10);
-        const hashedSecretPassword = await bcrypt.hash(finalSecretPassword, 10);
+        const hashedSecretPassword = await bcrypt.hash(secretPassword || 'DEFAULTSECRET', 10);
         
         const user = await prisma.user.create({ 
             data: { username, password: hashed, email, phone, role, secretPassword: hashedSecretPassword } 
@@ -1013,7 +1013,7 @@ app.put("/users/:id", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), as
             updateData.role = role;
             
             if (role === 'HOST' && currentUser.role !== 'HOST') {
-                updateData.secretPassword = await bcrypt.hash(secretPassword, 10);
+                updateData.secretPassword = await bcrypt.hash(secretPassword || 'DEFAULTSECRET', 10);
             } else if (role !== 'HOST' && currentUser.role === 'HOST') {
                 updateData.secretPassword = await bcrypt.hash('DEFAULTSECRET', 10);
             }
