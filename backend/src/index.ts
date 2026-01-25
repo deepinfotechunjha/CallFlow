@@ -141,6 +141,9 @@ const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret';
 // In-memory OTP cache
 const otpCache = new Map();
 
+// In-memory share links cache
+const shareLinks = new Map();
+
 // Helper function to clean expired OTPs
 function cleanExpiredOTPs() {
   const now = Date.now();
@@ -151,8 +154,22 @@ function cleanExpiredOTPs() {
   }
 }
 
+// Helper function to clean expired share links
+function cleanExpiredShareLinks() {
+  const now = Date.now();
+  const twentyFourHours = 24 * 60 * 60 * 1000;
+  for (const [linkId, timestamp] of shareLinks.entries()) {
+    if (now - timestamp > twentyFourHours) {
+      shareLinks.delete(linkId);
+    }
+  }
+}
+
 // Clean expired OTPs every minute
 setInterval(cleanExpiredOTPs, 60 * 1000);
+
+// Clean expired share links every hour
+setInterval(cleanExpiredShareLinks, 60 * 60 * 1000);
 
 // Email configuration
 const emailTransporter = nodemailer.createTransport({
@@ -326,6 +343,7 @@ setInterval(async () => {
 setInterval(() => {
     cleanupOldNotifications();
     cleanExpiredOTPs();
+    cleanExpiredShareLinks();
 }, 60 * 60 * 1000);
 
 // WebSocket connection handling
@@ -346,7 +364,7 @@ function authMiddleware(req: Request, res: Response, next: NextFunction) {
         }
         const parts = auth.split(' ');
         if (parts.length !== 2 || parts[0] !== 'Bearer') {
-            console.log('Invalid Authorization format:', auth);
+            console.log('Invalid Authorization format:', auth.substring(0, 20) + '...');
             return res.status(401).json({ error: 'Invalid Authorization format' });
         }
         const token = parts[1];
@@ -1915,7 +1933,19 @@ app.post('/notifications/bulk-delete', authMiddleware, async (req: Request, res:
 });
 
 // Categories endpoints
-app.get('/categories', authMiddleware, async (_req: Request, res: Response) => {
+app.get('/categories', async (_req: Request, res: Response) => {
+    try {
+        const categories = await prisma.category.findMany({
+            where: { isActive: true },
+            orderBy: { name: 'asc' }
+        });
+        res.json(categories);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.get('/categories/protected', authMiddleware, async (_req: Request, res: Response) => {
     try {
         const categories = await prisma.category.findMany({
             where: { isActive: true },
@@ -2012,7 +2042,19 @@ app.delete('/categories/:id', authMiddleware, requireRole(['HOST']), async (req:
 });
 
 // Service Categories endpoints
-app.get('/service-categories', authMiddleware, async (_req: Request, res: Response) => {
+app.get('/service-categories', async (_req: Request, res: Response) => {
+    try {
+        const categories = await prisma.serviceCategory.findMany({
+            where: { isActive: true },
+            orderBy: { name: 'asc' }
+        });
+        res.json(categories);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.get('/service-categories/protected', authMiddleware, async (_req: Request, res: Response) => {
     try {
         const categories = await prisma.serviceCategory.findMany({
             where: { isActive: true },
@@ -2355,7 +2397,250 @@ app.post('/carry-in-services/bulk-delete', authMiddleware, async (req: Request, 
     }
 });
 
-// WebSocket setup
+// Share link endpoints
+app.post('/share/create-link', authMiddleware, async (req: Request, res: Response) => {
+    try {
+        const linkId = crypto.randomUUID();
+        const timestamp = Date.now();
+        
+        shareLinks.set(linkId, timestamp);
+        
+        const shareUrl = `${process.env.FRONTEND_ORIGIN || 'http://localhost:5173'}/share/${linkId}`;
+        
+        res.json({ 
+            success: true, 
+            shareUrl,
+            linkId,
+            expiresAt: new Date(timestamp + 24 * 60 * 60 * 1000).toISOString()
+        });
+    } catch (err: any) {
+        console.error('Create share link error:', err);
+        res.status(500).json({ error: 'Failed to create share link' });
+    }
+});
+
+app.get('/share/:linkId', async (req: Request, res: Response) => {
+    const { linkId } = req.params;
+    
+    if (!linkId) {
+        return res.status(400).json({ error: 'Link ID is required' });
+    }
+    
+    try {
+        const timestamp = shareLinks.get(linkId);
+        
+        if (!timestamp) {
+            return res.status(404).json({ error: 'Share link not found or expired' });
+        }
+        
+        const now = Date.now();
+        const twentyFourHours = 24 * 60 * 60 * 1000;
+        
+        if (now - timestamp > twentyFourHours) {
+            shareLinks.delete(linkId);
+            return res.status(404).json({ error: 'Share link has expired' });
+        }
+        
+        res.json({ 
+            success: true, 
+            valid: true,
+            createdAt: new Date(timestamp).toISOString(),
+            expiresAt: new Date(timestamp + twentyFourHours).toISOString()
+        });
+    } catch (err: any) {
+        console.error('Validate share link error:', err);
+        res.status(500).json({ error: 'Failed to validate share link' });
+    }
+});
+
+app.post('/share/:linkId/submit', async (req: Request, res: Response) => {
+    const { linkId } = req.params;
+    const { customerName, phone, email, address, problem, category } = req.body as {
+        customerName: string;
+        phone: string;
+        email?: string;
+        address: string;
+        problem: string;
+        category: string;
+    };
+    
+    if (!linkId) {
+        return res.status(400).json({ error: 'Link ID is required' });
+    }
+    
+    if (!customerName || !phone || !address || !problem || !category) {
+        return res.status(400).json({ error: 'Customer name, phone, address, problem, and category are required' });
+    }
+    
+    try {
+        const timestamp = shareLinks.get(linkId);
+        
+        if (!timestamp) {
+            return res.status(404).json({ error: 'Share link not found or expired' });
+        }
+        
+        const now = Date.now();
+        const twentyFourHours = 24 * 60 * 60 * 1000;
+        
+        if (now - timestamp > twentyFourHours) {
+            shareLinks.delete(linkId);
+            return res.status(404).json({ error: 'Share link has expired' });
+        }
+        
+        // Create customer if doesn't exist
+        let customer = null;
+        if (phone) {
+            customer = await prisma.customer.findUnique({ where: { phone } });
+            
+            if (!customer) {
+                customer = await prisma.customer.create({
+                    data: {
+                        name: customerName,
+                        phone,
+                        email: email || null,
+                        address: address || null,
+                        outsideCalls: 0,
+                        carryInServices: 0,
+                        totalInteractions: 0
+                    }
+                });
+            }
+        }
+        
+        // Create the call
+        const [call] = await prisma.$transaction([
+            prisma.call.create({
+                data: {
+                    customerName,
+                    phone,
+                    email: email || null,
+                    address: address,
+                    problem,
+                    category,
+                    status: 'PENDING',
+                    createdBy: 'Share Link',
+                    customerId: customer?.id || null,
+                }
+            }),
+            customer ? prisma.customer.update({
+                where: { id: customer.id },
+                data: {
+                    outsideCalls: { increment: 1 },
+                    totalInteractions: { increment: 1 },
+                    lastCallDate: new Date(),
+                    lastActivityDate: new Date()
+                }
+            }) : prisma.$queryRaw`SELECT 1`
+        ]);
+        
+        // Delete the share link after successful use
+        shareLinks.delete(linkId);
+        
+        // Emit real-time update
+        emitToAll('call_created', call);
+        
+        res.status(201).json({ 
+            success: true, 
+            call,
+            message: 'Call submitted successfully' 
+        });
+    } catch (err: any) {
+        console.error('Submit share link call error:', err);
+        res.status(500).json({ error: 'Failed to submit call' });
+    }
+});
+
+app.post('/share/:linkId/submit-service', async (req: Request, res: Response) => {
+    const { linkId } = req.params;
+    const { customerName, phone, email, address, category, serviceDescription } = req.body as {
+        customerName: string;
+        phone: string;
+        email?: string;
+        address: string;
+        category: string;
+        serviceDescription?: string;
+    };
+    
+    if (!linkId) {
+        return res.status(400).json({ error: 'Link ID is required' });
+    }
+    
+    if (!customerName || !phone || !address || !category) {
+        return res.status(400).json({ error: 'Customer name, phone, address, and category are required' });
+    }
+    
+    try {
+        const timestamp = shareLinks.get(linkId);
+        
+        if (!timestamp) {
+            return res.status(404).json({ error: 'Share link not found or expired' });
+        }
+        
+        const now = Date.now();
+        const twentyFourHours = 24 * 60 * 60 * 1000;
+        
+        if (now - timestamp > twentyFourHours) {
+            shareLinks.delete(linkId);
+            return res.status(404).json({ error: 'Share link has expired' });
+        }
+        
+        // Create customer if doesn't exist
+        let customer = await prisma.customer.findUnique({ where: { phone } });
+        if (!customer) {
+            customer = await prisma.customer.create({
+                data: { 
+                    name: customerName, 
+                    phone, 
+                    email: email || null, 
+                    address: address || null,
+                    outsideCalls: 0,
+                    carryInServices: 0,
+                    totalInteractions: 0
+                }
+            });
+        }
+        
+        // Create the service
+        const [service] = await prisma.$transaction([
+            prisma.carryInService.create({
+                data: {
+                    customerName,
+                    phone,
+                    email: email || null,
+                    address: address,
+                    category,
+                    serviceDescription: serviceDescription || null,
+                    customerId: customer.id,
+                    createdBy: 'Share Link'
+                }
+            }),
+            prisma.customer.update({
+                where: { id: customer.id },
+                data: {
+                    carryInServices: { increment: 1 },
+                    totalInteractions: { increment: 1 },
+                    lastServiceDate: new Date(),
+                    lastActivityDate: new Date()
+                }
+            })
+        ]);
+        
+        // Delete the share link after successful use
+        shareLinks.delete(linkId);
+        
+        // Emit real-time update
+        emitToAll('service_created', service);
+        
+        res.status(201).json({ 
+            success: true, 
+            service,
+            message: 'Service submitted successfully' 
+        });
+    } catch (err: any) {
+        console.error('Submit share link service error:', err);
+        res.status(500).json({ error: 'Failed to submit service' });
+    }
+});
 io.on('connection', (socket) => {
     socket.on('register', (userId: number) => {
         userSockets.set(userId, socket.id);

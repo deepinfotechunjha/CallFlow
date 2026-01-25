@@ -12,6 +12,8 @@ import CustomerDirectory from './pages/CustomerDirectory';
 import CarryInService from './pages/CarryInService';
 import AdminLogin from './pages/AdminLogin';
 import AdminUserManagement from './pages/AdminUserManagement';
+import PublicCallForm from './pages/PublicCallForm';
+import PublicServiceForm from './pages/PublicServiceForm';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import useAuthStore from './store/authStore';
@@ -20,7 +22,7 @@ import useSocket from './hooks/useSocket';
 function App() {
   const { pathname } = useLocation();
   const { user, isInitialized, initializeAuth } = useAuthStore();
-  const showNavbar = user && pathname !== '/login' && !pathname.startsWith('/secreturl');
+  const showNavbar = user && pathname !== '/login' && !pathname.startsWith('/secreturl') && !pathname.startsWith('/share');
   
   // Initialize auth on app startup
   useEffect(() => {
@@ -49,6 +51,8 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/share/:linkId" element={<PublicCallForm />} />
+          <Route path="/share-service/:linkId" element={<PublicServiceForm />} />
           <Route path="/secreturl" element={<AdminLogin />} />
           <Route path="/secreturl/manage" element={<AdminUserManagement />} />
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
