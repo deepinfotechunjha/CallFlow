@@ -83,6 +83,10 @@ const useSocket = () => {
         useCallStore.getState().handleCallsBulkDeleted(data);
       });
 
+      socket.on('customer_updated', (customer) => {
+        useCallStore.getState().handleCustomerUpdated(customer);
+      });
+
       socket.on('services_bulk_deleted', (data) => {
         useCarryInServiceStore.getState().handleServicesBulkDeleted(data);
       });
