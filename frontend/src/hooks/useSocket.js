@@ -79,6 +79,10 @@ const useSocket = () => {
         useCallStore.getState().handleCallCompleted(call);
       });
 
+      socket.on('call_visited', (call) => {
+        useCallStore.getState().handleCallVisited(call);
+      });
+
       socket.on('calls_bulk_deleted', (data) => {
         useCallStore.getState().handleCallsBulkDeleted(data);
       });

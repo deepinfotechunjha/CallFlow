@@ -22,6 +22,7 @@ const useCallStore = create((set, get) => ({
   handleCallUpdated: (call) => get().handleCallUpdate(call),
   handleCallAssigned: (call) => get().handleCallUpdate(call),
   handleCallCompleted: (call) => get().handleCallUpdate(call),
+  handleCallVisited: (call) => get().handleCallUpdate(call),
   
   handleCallsBulkDeleted: (data) => {
     console.log('Handling bulk delete:', data);
@@ -128,6 +129,19 @@ const useCallStore = create((set, get) => ({
       return response.data;
     } catch (error) {
       toast.error('Failed to complete call');
+      throw error;
+    }
+  },
+
+  visitCall: async (callId, visitedRemark) => {
+    try {
+      const response = await apiClient.post(`/calls/${callId}/visited`, {
+        visitedRemark
+      });
+      toast.success('Call marked as visited');
+      return response.data;
+    } catch (error) {
+      toast.error('Failed to mark call as visited');
       throw error;
     }
   },

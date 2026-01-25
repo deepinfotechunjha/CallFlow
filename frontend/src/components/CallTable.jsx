@@ -11,6 +11,8 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
   const [isActionModalOpen, setIsActionModalOpen] = useState({});
   const [selectedWorker, setSelectedWorker] = useState({});
   const [remark, setRemark] = useState({});
+  const [visitedRemark, setVisitedRemark] = useState({});
+  const [completeAction, setCompleteAction] = useState({});
   const [engineerRemark, setEngineerRemark] = useState({});
   const [isUpdating, setIsUpdating] = useState({});
   const [isAssigning, setIsAssigning] = useState({});
@@ -19,7 +21,7 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
   const [selectedCall, setSelectedCall] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   
-  const { updateCall, assignCall, completeCall } = useCallStore();
+  const { updateCall, assignCall, completeCall, visitCall } = useCallStore();
   const { user, users, token } = useAuthStore();
   const { categories, fetchCategories } = useCategoryStore();
 
@@ -114,12 +116,19 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
     setIsCompleting(prev => ({ ...prev, [callId]: true }));
     
     try {
-      await completeCall(callId, remark[callId] || '');
+      const action = completeAction[callId] || 'complete';
+      if (action === 'complete') {
+        await completeCall(callId, remark[callId] || '');
+      } else {
+        await visitCall(callId, visitedRemark[callId] || '');
+      }
       setShowComplete(prev => ({ ...prev, [callId]: false }));
       setRemark(prev => ({ ...prev, [callId]: '' }));
+      setVisitedRemark(prev => ({ ...prev, [callId]: '' }));
+      setCompleteAction(prev => ({ ...prev, [callId]: 'complete' }));
       setIsActionModalOpen(prev => ({ ...prev, [callId]: false }));
     } catch (error) {
-      // Error handling is done in completeCall
+      // Error handling is done in completeCall/visitCall
     } finally {
       setIsCompleting(prev => ({ ...prev, [callId]: false }));
     }
@@ -185,6 +194,10 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
     } else if (call.status === 'ASSIGNED') {
       tags.push({ label: 'PENDING', color: 'bg-yellow-100 text-yellow-800' });
       tags.push({ label: 'ASSIGNED', color: 'bg-blue-100 text-blue-800' });
+    } else if (call.status === 'VISITED') {
+      tags.push({ label: 'PENDING', color: 'bg-yellow-100 text-yellow-800' });
+      tags.push({ label: 'ASSIGNED', color: 'bg-blue-100 text-blue-800' });
+      tags.push({ label: 'VISITED', color: 'bg-purple-100 text-purple-800' });
     } else if (call.status === 'COMPLETED') {
       tags.push({ label: 'COMPLETED', color: 'bg-green-100 text-green-800' });
     }
@@ -283,6 +296,18 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                               ASSGN
                             </span>
                           </>
+                        ) : call.status === 'VISITED' ? (
+                          <>
+                            <span className="inline-flex px-1 py-1 text-xs font-bold rounded bg-yellow-100 text-yellow-800 truncate">
+                              PEND
+                            </span>
+                            <span className="inline-flex px-1 py-1 text-xs font-bold rounded bg-blue-100 text-blue-800 truncate">
+                              ASSGN
+                            </span>
+                            <span className="inline-flex px-1 py-1 text-xs font-bold rounded bg-purple-100 text-purple-800 truncate">
+                              VISIT
+                            </span>
+                          </>
                         ) : call.status === 'COMPLETED' ? (
                           <span className="inline-flex px-1 py-1 text-xs font-bold rounded bg-green-100 text-green-800 truncate">
                             COMP
@@ -299,6 +324,11 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                             'bg-red-100 text-red-800'
                           }`}>
                             {call.callCount}x
+                          </span>
+                        )}
+                        {call.visitedRemark && (
+                          <span className="inline-flex px-1 py-1 text-xs font-bold rounded bg-purple-100 text-purple-800 truncate">
+                            V:{call.visitedRemark.split('\n').length}
                           </span>
                         )}
                       </div>
@@ -578,37 +608,74 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
           <div key={`complete-${callId}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={(e) => handleModalBackdropClick(e, parseInt(callId), 'complete')}>
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
               <h2 className="text-xl font-bold mb-4">Complete Call</h2>
-              <p className="text-gray-600 mb-4">
-                Are you sure you want to mark this call as completed?
-              </p>
               
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Remark (optional)</label>
+                <div className="flex gap-4 mb-4">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name={`completeAction-${callId}`}
+                      value="complete"
+                      checked={(completeAction[callId] || 'complete') === 'complete'}
+                      onChange={(e) => setCompleteAction(prev => ({ ...prev, [callId]: e.target.value }))}
+                      className="mr-2"
+                    />
+                    Complete
+                  </label>
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name={`completeAction-${callId}`}
+                      value="visited"
+                      checked={(completeAction[callId] || 'complete') === 'visited'}
+                      onChange={(e) => setCompleteAction(prev => ({ ...prev, [callId]: e.target.value }))}
+                      className="mr-2"
+                    />
+                    Visited
+                  </label>
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">
+                  {(completeAction[callId] || 'complete') === 'complete' ? 'Completion Remark (optional)' : 'Visit Remark'}
+                </label>
                 <textarea
-                  value={remark[callId] || ''}
-                  onChange={(e) => setRemark(prev => ({ ...prev, [callId]: e.target.value }))}
+                  value={(completeAction[callId] || 'complete') === 'complete' ? (remark[callId] || '') : (visitedRemark[callId] || '')}
+                  onChange={(e) => {
+                    if ((completeAction[callId] || 'complete') === 'complete') {
+                      setRemark(prev => ({ ...prev, [callId]: e.target.value }));
+                    } else {
+                      setVisitedRemark(prev => ({ ...prev, [callId]: e.target.value }));
+                    }
+                  }}
                   className="w-full p-2 border rounded focus:ring-2 focus:ring-green-500"
                   rows="3"
-                  placeholder="Add any notes about the completion..."
+                  placeholder={(completeAction[callId] || 'complete') === 'complete' ? 'Add any notes about the completion...' : 'Describe what happened during this visit...'}
+                  required={(completeAction[callId] || 'complete') === 'visited'}
                 />
               </div>
               
               <div className="flex gap-2">
                 <button
                   onClick={() => handleComplete(parseInt(callId))}
-                  disabled={isCompleting[callId]}
+                  disabled={isCompleting[callId] || ((completeAction[callId] || 'complete') === 'visited' && !(visitedRemark[callId] || '').trim())}
                   className={`flex-1 py-2 rounded font-medium ${
-                    isCompleting[callId] 
-                      ? 'bg-green-400 text-white cursor-not-allowed' 
-                      : 'bg-green-600 text-white hover:bg-green-700'
+                    isCompleting[callId] || ((completeAction[callId] || 'complete') === 'visited' && !(visitedRemark[callId] || '').trim())
+                      ? 'bg-gray-400 text-white cursor-not-allowed' 
+                      : (completeAction[callId] || 'complete') === 'complete'
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : 'bg-purple-600 text-white hover:bg-purple-700'
                   }`}
                 >
-                  {isCompleting[callId] ? 'Processing...' : 'Confirm'}
+                  {isCompleting[callId] ? 'Processing...' : ((completeAction[callId] || 'complete') === 'complete' ? 'Complete' : 'Mark as Visited')}
                 </button>
                 <button
                   onClick={() => {
                     setShowComplete(prev => ({ ...prev, [callId]: false }));
                     setRemark(prev => ({ ...prev, [callId]: '' }));
+                    setVisitedRemark(prev => ({ ...prev, [callId]: '' }));
+                    setCompleteAction(prev => ({ ...prev, [callId]: 'complete' }));
                     setIsActionModalOpen(prev => ({ ...prev, [callId]: false }));
                   }}
                   className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
@@ -730,12 +797,24 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
               <div className="mt-1 p-3 bg-yellow-50 rounded border border-yellow-200">{selectedCall.problem}</div>
             </div>
             
-            {(selectedCall.remark || selectedCall.engineerRemark) && (
+            {(selectedCall.remark || selectedCall.visitedRemark) && (
               <div className="mt-4 space-y-3">
                 {selectedCall.engineerRemark && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Engineer Instructions</label>
                     <div className="mt-1 p-2 bg-blue-50 rounded border">{selectedCall.engineerRemark}</div>
+                  </div>
+                )}
+                {selectedCall.visitedRemark && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Visit History</label>
+                    <div className="mt-1 p-3 bg-purple-50 rounded border border-purple-200 max-h-32 overflow-y-auto">
+                      {selectedCall.visitedRemark.split('\n').map((visit, index) => (
+                        <div key={index} className="text-sm text-purple-800 mb-1 last:mb-0">
+                          {visit}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
                 {selectedCall.remark && (
