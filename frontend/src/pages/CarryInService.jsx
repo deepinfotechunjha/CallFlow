@@ -38,6 +38,7 @@ const CarryInService = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [isCompleting, setIsCompleting] = useState(false);
   const [isDelivering, setIsDelivering] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { services, fetchServices, addService, completeService, deliverService, findCustomerByPhone, bulkDeleteServices } = useCarryInServiceStore();
   const { serviceCategories, fetchServiceCategories } = useServiceCategoryStore();
@@ -102,6 +103,9 @@ const CarryInService = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
     try {
       await addService(formData);
       setFormData({ customerName: '', phone: '', email: '', address: '', category: '', serviceDescription: '' });
@@ -109,6 +113,8 @@ const CarryInService = () => {
       setCustomerFound(false);
     } catch (error) {
       console.error('Error adding service:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -879,14 +885,20 @@ const CarryInService = () => {
               <div className="flex flex-col sm:flex-row gap-2 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-medium text-sm"
+                  disabled={isSubmitting}
+                  className={`flex-1 py-2 rounded font-medium text-sm ${
+                    isSubmitting
+                      ? 'bg-blue-400 text-white cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
                 >
-                  Add Service
+                  {isSubmitting ? 'Adding...' : 'Add Service'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddForm(false)}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 text-sm"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 text-sm disabled:opacity-50"
                 >
                   Cancel
                 </button>

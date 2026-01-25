@@ -8,6 +8,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
   const [showAssign, setShowAssign] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState('');
   const [remark, setRemark] = useState('');
   const [engineerRemark, setEngineerRemark] = useState('');
@@ -169,13 +170,19 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-3 sm:p-4 border-l-4 border-blue-500">
+    <div 
+      className="bg-white rounded-lg shadow-md p-3 sm:p-4 border-l-4 border-blue-500 cursor-pointer hover:shadow-lg transition-shadow"
+      onClick={() => setShowDetails(true)}
+    >
       {showCheckboxes && call.status === 'COMPLETED' && (
         <div className="flex justify-end mb-2">
           <input
             type="checkbox"
             checked={selectedCalls.includes(call.id)}
-            onChange={() => onSelectCall(call.id)}
+            onChange={(e) => {
+              e.stopPropagation();
+              onSelectCall(call.id);
+            }}
             className="w-5 h-5 text-red-600 rounded focus:ring-red-500 cursor-pointer"
           />
         </div>
@@ -243,7 +250,10 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
       <div className="flex gap-2 mt-2 flex-wrap">
         {canEdit && (
           <button
-            onClick={handleEditOpen}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEditOpen();
+            }}
             className="px-3 py-1 bg-orange-600 text-white text-sm rounded hover:bg-orange-700 min-w-[60px]"
           >
             Edit
@@ -252,7 +262,10 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
         
         {canAssign && call.status !== 'COMPLETED' && (
           <button
-            onClick={() => setShowAssign(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowAssign(true);
+            }}
             className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 min-w-[80px]"
           >
             {call.assignedTo ? 'Reassign' : 'Assign'}
@@ -261,7 +274,10 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
         
         {canComplete && call.status !== 'COMPLETED' && (
           <button
-            onClick={handleCompleteClick}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCompleteClick();
+            }}
             className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 min-w-[100px]"
           >
             Mark Complete
@@ -424,7 +440,10 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowEdit(false)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowEdit(false);
+                  }}
                   className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
                 >
                   Cancel
@@ -476,6 +495,114 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showDetails && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={(e) => e.target === e.currentTarget && setShowDetails(false)}>
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Call Details</h2>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDetails(false);
+                }} 
+                className="text-gray-500 hover:text-gray-700 text-xl p-2 hover:bg-gray-100 rounded"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
+                <div className="p-3 bg-gray-50 rounded border">{call.customerName}</div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <div className="p-3 bg-gray-50 rounded border">{call.phone}</div>
+              </div>
+              {call.email && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <div className="p-3 bg-gray-50 rounded border break-all">{call.email}</div>
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <div className="p-3 bg-gray-50 rounded border">{call.category}</div>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Problem</label>
+                <div className="p-3 bg-gray-50 rounded border">{call.problem}</div>
+              </div>
+              {call.address && (
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                  <div className="p-3 bg-gray-50 rounded border">{call.address}</div>
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <div className="p-3">
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(call.status)}`}>
+                    {call.status}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Created By</label>
+                <div className="p-3 bg-gray-50 rounded border">{call.createdBy}</div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Created At</label>
+                <div className="p-3 bg-gray-50 rounded border">{new Date(call.createdAt).toLocaleString()}</div>
+              </div>
+              {call.assignedTo && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+                    <div className="p-3 bg-blue-50 rounded border">{call.assignedTo}</div>
+                  </div>
+                  {call.assignedAt && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Assigned At</label>
+                      <div className="p-3 bg-blue-50 rounded border">{new Date(call.assignedAt).toLocaleString()}</div>
+                    </div>
+                  )}
+                </>
+              )}
+              {call.completedBy && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Completed By</label>
+                    <div className="p-3 bg-green-50 rounded border">{call.completedBy}</div>
+                  </div>
+                  {call.completedAt && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Completed At</label>
+                      <div className="p-3 bg-green-50 rounded border">{new Date(call.completedAt).toLocaleString()}</div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            
+            {call.engineerRemark && (
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Engineer Instructions</label>
+                <div className="p-3 bg-yellow-50 rounded border">{call.engineerRemark}</div>
+              </div>
+            )}
+            
+            {call.remark && (
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Completion Remark</label>
+                <div className="p-3 bg-green-50 rounded border">{call.remark}</div>
+              </div>
+            )}
           </div>
         </div>
       )}
