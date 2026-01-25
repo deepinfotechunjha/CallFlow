@@ -10,8 +10,10 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
   const [showComplete, setShowComplete] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [completeAction, setCompleteAction] = useState('complete');
   const [selectedWorker, setSelectedWorker] = useState('');
   const [remark, setRemark] = useState('');
+  const [visitedRemark, setVisitedRemark] = useState('');
   const [engineerRemark, setEngineerRemark] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
@@ -25,7 +27,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
     category: ''
   });
   
-  const { updateCall, assignCall, completeCall } = useCallStore();
+  const { updateCall, assignCall, completeCall, visitCall } = useCallStore();
   const { user, users, token } = useAuthStore();
   const { categories, fetchCategories } = useCategoryStore();
 
@@ -98,12 +100,18 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
     setIsCompleting(true);
     
     try {
-      await completeCall(call.id, remark);
+      if (completeAction === 'complete') {
+        await completeCall(call.id, remark);
+      } else {
+        await visitCall(call.id, visitedRemark);
+      }
       setShowComplete(false);
       setRemark('');
+      setVisitedRemark('');
+      setCompleteAction('complete');
       setIsActionModalOpen(false);
     } catch (error) {
-      // Error handling is done in completeCall
+      // Error handling is done in completeCall/visitCall
     } finally {
       setIsCompleting(false);
     }
@@ -166,6 +174,10 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
       // Show both PENDING and ASSIGNED tags for assigned calls
       tags.push({ label: 'PENDING', color: 'bg-yellow-100 text-yellow-800' });
       tags.push({ label: 'ASSIGNED', color: 'bg-blue-100 text-blue-800' });
+    } else if (call.status === 'VISITED') {
+      tags.push({ label: 'PENDING', color: 'bg-yellow-100 text-yellow-800' });
+      tags.push({ label: 'ASSIGNED', color: 'bg-blue-100 text-blue-800' });
+      tags.push({ label: 'VISITED', color: 'bg-purple-100 text-purple-800' });
     } else if (call.status === 'COMPLETED') {
       tags.push({ label: 'COMPLETED', color: 'bg-green-100 text-green-800' });
     }
@@ -216,6 +228,13 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
                 'bg-red-100 text-red-800'
               }`}>
                 Called {call.callCount}x
+              </span>
+            </div>
+          )}
+          {call.visitedRemark && (
+            <div className="flex">
+              <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                Visits: {call.visitedRemark.split('\n').length}
               </span>
             </div>
           )}
@@ -467,37 +486,68 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={(e) => handleModalBackdropClick(e, 'complete')}>
           <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Complete Call</h2>
-            <p className="text-gray-600 mb-4">
-              Are you sure you want to mark this call as completed?
-            </p>
             
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Remark (optional)</label>
+              <div className="flex gap-4 mb-4">
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="radio"
+                    name="completeAction"
+                    value="complete"
+                    checked={completeAction === 'complete'}
+                    onChange={(e) => setCompleteAction(e.target.value)}
+                    className="mr-2"
+                  />
+                  Complete
+                </label>
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="radio"
+                    name="completeAction"
+                    value="visited"
+                    checked={completeAction === 'visited'}
+                    onChange={(e) => setCompleteAction(e.target.value)}
+                    className="mr-2"
+                  />
+                  Visited
+                </label>
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">
+                {completeAction === 'complete' ? 'Completion Remark (optional)' : 'Visit Remark'}
+              </label>
               <textarea
-                value={remark}
-                onChange={(e) => setRemark(e.target.value)}
+                value={completeAction === 'complete' ? remark : visitedRemark}
+                onChange={(e) => completeAction === 'complete' ? setRemark(e.target.value) : setVisitedRemark(e.target.value)}
                 className="w-full p-2 border rounded focus:ring-2 focus:ring-green-500"
                 rows="3"
-                placeholder="Add any notes about the completion..."
+                placeholder={completeAction === 'complete' ? 'Add any notes about the completion...' : 'Describe what happened during this visit...'}
+                required={completeAction === 'visited'}
               />
             </div>
             
             <div className="flex gap-2">
               <button
                 onClick={handleCompleteConfirm}
-                disabled={isCompleting}
+                disabled={isCompleting || (completeAction === 'visited' && !visitedRemark.trim())}
                 className={`flex-1 py-2 rounded font-medium ${
-                  isCompleting 
-                    ? 'bg-green-400 text-white cursor-not-allowed' 
-                    : 'bg-green-600 text-white hover:bg-green-700'
+                  isCompleting || (completeAction === 'visited' && !visitedRemark.trim())
+                    ? 'bg-gray-400 text-white cursor-not-allowed' 
+                    : completeAction === 'complete'
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-purple-600 text-white hover:bg-purple-700'
                 }`}
               >
-                {isCompleting ? 'Processing...' : 'Confirm'}
+                {isCompleting ? 'Processing...' : (completeAction === 'complete' ? 'Complete' : 'Mark as Visited')}
               </button>
               <button
                 onClick={() => {
                   setShowComplete(false);
                   setRemark('');
+                  setVisitedRemark('');
+                  setCompleteAction('complete');
                   setIsActionModalOpen(false);
                 }}
                 className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
@@ -611,6 +661,19 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Completion Remark</label>
                 <div className="p-3 bg-green-50 rounded border">{call.remark}</div>
+              </div>
+            )}
+            
+            {call.visitedRemark && (
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Visit History</label>
+                <div className="p-3 bg-purple-50 rounded border border-purple-200 max-h-32 overflow-y-auto">
+                  {call.visitedRemark.split('\n').map((visit, index) => (
+                    <div key={index} className="text-sm text-purple-800 mb-1 last:mb-0">
+                      {visit}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

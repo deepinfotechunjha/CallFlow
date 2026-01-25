@@ -89,6 +89,7 @@ const Dashboard = () => {
     if (statusFilter !== 'ALL_STATUS') {
       if (statusFilter === 'PENDING' && call.status !== 'PENDING') return false;
       if (statusFilter === 'ASSIGNED' && call.status !== 'ASSIGNED') return false;
+      if (statusFilter === 'VISITED' && call.status !== 'VISITED') return false;
       if (statusFilter === 'COMPLETED' && call.status !== 'COMPLETED') return false;
     }
     
@@ -180,11 +181,11 @@ const Dashboard = () => {
     if (user?.role === 'ENGINEER') {
       return calls.filter(call => {
         const isMyCall = call.createdBy === user?.username || call.assignedTo === user?.username;
-        const isPending = call.status === 'PENDING' || call.status === 'ASSIGNED';
+        const isPending = call.status === 'PENDING' || call.status === 'ASSIGNED' || call.status === 'VISITED';
         return isMyCall && isPending;
       }).length;
     }
-    return calls.filter(c => c.status === 'PENDING' || c.status === 'ASSIGNED').length;
+    return calls.filter(c => c.status === 'PENDING' || c.status === 'ASSIGNED' || c.status === 'VISITED').length;
   };
 
   const getCompletedCalls = () => {
@@ -404,6 +405,7 @@ const Dashboard = () => {
             <option value="ALL_STATUS">All Status</option>
             <option value="PENDING">Pending</option>
             <option value="ASSIGNED">Assigned</option>
+            <option value="VISITED">Visited</option>
             <option value="COMPLETED">Completed</option>
           </select>
           

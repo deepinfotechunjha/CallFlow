@@ -1346,6 +1346,60 @@ app.post('/calls/:id/complete', authMiddleware, async (req: Request, res: Respon
     }
 });
 
+app.post('/calls/:id/visited', authMiddleware, async (req: Request, res: Response) => {
+    const callId = parseInt(req.params.id || '');
+    const { visitedRemark } = req.body as { visitedRemark: string };
+    const user = req.user;
+    
+    if (!visitedRemark || !visitedRemark.trim()) {
+        return res.status(400).json({ error: 'Visited remark is required' });
+    }
+    
+    try {
+        const call = await prisma.call.findUnique({ where: { id: callId } });
+        if (!call) {
+            return res.status(404).json({ error: 'Call not found' });
+        }
+        
+        // Check permissions: assigned engineer OR HOST/ADMIN
+        const canMarkVisited = call.assignedTo === user?.username || ['HOST', 'ADMIN'].includes(user?.role || '');
+        if (!canMarkVisited) {
+            return res.status(403).json({ error: 'Cannot mark this call as visited' });
+        }
+        
+        // Format new visit entry with timestamp and username
+        const timestamp = new Date().toLocaleString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+        const newVisitEntry = `${user?.username} (${timestamp}): ${visitedRemark.trim()}`;
+        
+        // Append to existing visited remarks or create new
+        const updatedVisitedRemark = call.visitedRemark 
+            ? `${call.visitedRemark}\n${newVisitEntry}`
+            : newVisitEntry;
+        
+        const updatedCall = await prisma.call.update({
+            where: { id: callId },
+            data: {
+                status: 'VISITED',
+                visitedRemark: updatedVisitedRemark,
+                visitedBy: user?.username || 'system',
+                visitedAt: new Date()
+            },
+            include: { customer: true }
+        });
+        
+        emitToAll('call_visited', updatedCall);
+        res.json(updatedCall);
+    } catch (err: any) {
+        res.status(500).json({ error: 'Failed to mark call as visited' });
+    }
+});
+
 // Check for duplicate calls
 app.post('/calls/check-duplicate', authMiddleware, async (req: Request, res: Response) => {
     const { phone, category } = req.body as { phone: string; category: string };
