@@ -141,6 +141,9 @@ const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret';
 // In-memory OTP cache
 const otpCache = new Map();
 
+// In-memory used share tokens cache (for one-time use)
+const usedShareTokens = new Set();
+
 // Helper function to clean expired OTPs
 function cleanExpiredOTPs() {
   const now = Date.now();
@@ -151,8 +154,20 @@ function cleanExpiredOTPs() {
   }
 }
 
+// Helper function to clean expired used tokens
+function cleanExpiredUsedTokens() {
+  // Clear all used tokens older than 24 hours (they would be expired anyway)
+  // Since we can't track individual token expiry in Set, we clear all periodically
+  if (usedShareTokens.size > 1000) {
+    usedShareTokens.clear();
+  }
+}
+
 // Clean expired OTPs every minute
 setInterval(cleanExpiredOTPs, 60 * 1000);
+
+// Clean expired used tokens every hour
+setInterval(cleanExpiredUsedTokens, 60 * 60 * 1000);
 
 // Email configuration
 const emailTransporter = nodemailer.createTransport({
@@ -326,6 +341,7 @@ setInterval(async () => {
 setInterval(() => {
     cleanupOldNotifications();
     cleanExpiredOTPs();
+    cleanExpiredUsedTokens();
 }, 60 * 60 * 1000);
 
 // WebSocket connection handling
@@ -346,7 +362,7 @@ function authMiddleware(req: Request, res: Response, next: NextFunction) {
         }
         const parts = auth.split(' ');
         if (parts.length !== 2 || parts[0] !== 'Bearer') {
-            console.log('Invalid Authorization format:', auth);
+            console.log('Invalid Authorization format:', auth.substring(0, 20) + '...');
             return res.status(401).json({ error: 'Invalid Authorization format' });
         }
         const token = parts[1];
@@ -1969,7 +1985,19 @@ app.post('/notifications/bulk-delete', authMiddleware, async (req: Request, res:
 });
 
 // Categories endpoints
-app.get('/categories', authMiddleware, async (_req: Request, res: Response) => {
+app.get('/categories', async (_req: Request, res: Response) => {
+    try {
+        const categories = await prisma.category.findMany({
+            where: { isActive: true },
+            orderBy: { name: 'asc' }
+        });
+        res.json(categories);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.get('/categories/protected', authMiddleware, async (_req: Request, res: Response) => {
     try {
         const categories = await prisma.category.findMany({
             where: { isActive: true },
@@ -2066,7 +2094,19 @@ app.delete('/categories/:id', authMiddleware, requireRole(['HOST']), async (req:
 });
 
 // Service Categories endpoints
-app.get('/service-categories', authMiddleware, async (_req: Request, res: Response) => {
+app.get('/service-categories', async (_req: Request, res: Response) => {
+    try {
+        const categories = await prisma.serviceCategory.findMany({
+            where: { isActive: true },
+            orderBy: { name: 'asc' }
+        });
+        res.json(categories);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.get('/service-categories/protected', authMiddleware, async (_req: Request, res: Response) => {
     try {
         const categories = await prisma.serviceCategory.findMany({
             where: { isActive: true },
@@ -2409,7 +2449,268 @@ app.post('/carry-in-services/bulk-delete', authMiddleware, async (req: Request, 
     }
 });
 
-// WebSocket setup
+// Share link endpoints
+app.post('/share/create-link', authMiddleware, async (req: Request, res: Response) => {
+    try {
+        // Create JWT token with 24 hour expiry and unique ID
+        const token = jwt.sign(
+            { 
+                type: 'share-link',
+                id: crypto.randomUUID(), // Unique ID ensures no duplicates
+                createdAt: Date.now(),
+                exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+            }, 
+            JWT_SECRET
+        );
+        
+        const shareUrl = `${process.env.FRONTEND_ORIGIN || 'http://localhost:5173'}/share/${token}`;
+        
+        res.json({ 
+            success: true, 
+            shareUrl,
+            linkId: token,
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+        });
+    } catch (err: any) {
+        console.error('Create share link error:', err);
+        res.status(500).json({ error: 'Failed to create share link' });
+    }
+});
+
+app.get('/share/:linkId', async (req: Request, res: Response) => {
+    const { linkId } = req.params;
+    
+    if (!linkId) {
+        return res.status(400).json({ error: 'Link ID is required' });
+    }
+    
+    try {
+        // Check if token was already used
+        if (usedShareTokens.has(linkId)) {
+            return res.status(404).json({ error: 'Share link has already been used' });
+        }
+        
+        // Verify JWT token
+        const decoded = jwt.verify(linkId, JWT_SECRET) as any;
+        
+        if (decoded.type !== 'share-link') {
+            return res.status(404).json({ error: 'Invalid share link' });
+        }
+        
+        res.json({ 
+            success: true, 
+            valid: true,
+            createdAt: new Date(decoded.createdAt).toISOString(),
+            expiresAt: new Date(decoded.exp * 1000).toISOString()
+        });
+    } catch (err: any) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(404).json({ error: 'Share link has expired' });
+        }
+        if (err.name === 'JsonWebTokenError') {
+            return res.status(404).json({ error: 'Invalid share link' });
+        }
+        console.error('Validate share link error:', err);
+        res.status(500).json({ error: 'Failed to validate share link' });
+    }
+});
+
+app.post('/share/:linkId/submit', async (req: Request, res: Response) => {
+    const { linkId } = req.params;
+    const { customerName, phone, email, address, problem, category } = req.body as {
+        customerName: string;
+        phone: string;
+        email?: string;
+        address: string;
+        problem: string;
+        category: string;
+    };
+    
+    if (!linkId) {
+        return res.status(400).json({ error: 'Link ID is required' });
+    }
+    
+    if (!customerName || !phone || !address || !problem || !category) {
+        return res.status(400).json({ error: 'Customer name, phone, address, problem, and category are required' });
+    }
+    
+    try {
+        // Check if token was already used
+        if (usedShareTokens.has(linkId)) {
+            return res.status(404).json({ error: 'Share link has already been used' });
+        }
+        
+        // Verify JWT token
+        const decoded = jwt.verify(linkId, JWT_SECRET) as any;
+        
+        if (decoded.type !== 'share-link') {
+            return res.status(404).json({ error: 'Invalid share link' });
+        }
+        
+        // Mark token as used
+        usedShareTokens.add(linkId);
+        
+        // Create customer if doesn't exist
+        let customer = null;
+        if (phone) {
+            customer = await prisma.customer.findUnique({ where: { phone } });
+            
+            if (!customer) {
+                customer = await prisma.customer.create({
+                    data: {
+                        name: customerName,
+                        phone,
+                        email: email || null,
+                        address: address || null,
+                        outsideCalls: 0,
+                        carryInServices: 0,
+                        totalInteractions: 0
+                    }
+                });
+            }
+        }
+        
+        // Create the call
+        const [call] = await prisma.$transaction([
+            prisma.call.create({
+                data: {
+                    customerName,
+                    phone,
+                    email: email || null,
+                    address: address,
+                    problem,
+                    category,
+                    status: 'PENDING',
+                    createdBy: 'Share Link',
+                    customerId: customer?.id || null,
+                }
+            }),
+            customer ? prisma.customer.update({
+                where: { id: customer.id },
+                data: {
+                    outsideCalls: { increment: 1 },
+                    totalInteractions: { increment: 1 },
+                    lastCallDate: new Date(),
+                    lastActivityDate: new Date()
+                }
+            }) : prisma.$queryRaw`SELECT 1`
+        ]);
+        
+        // Emit real-time update
+        emitToAll('call_created', call);
+        
+        res.status(201).json({ 
+            success: true, 
+            call,
+            message: 'Call submitted successfully' 
+        });
+    } catch (err: any) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(404).json({ error: 'Share link has expired' });
+        }
+        if (err.name === 'JsonWebTokenError') {
+            return res.status(404).json({ error: 'Invalid share link' });
+        }
+        console.error('Submit share link call error:', err);
+        res.status(500).json({ error: 'Failed to submit call' });
+    }
+});
+
+app.post('/share/:linkId/submit-service', async (req: Request, res: Response) => {
+    const { linkId } = req.params;
+    const { customerName, phone, email, address, category, serviceDescription } = req.body as {
+        customerName: string;
+        phone: string;
+        email?: string;
+        address: string;
+        category: string;
+        serviceDescription?: string;
+    };
+    
+    if (!linkId) {
+        return res.status(400).json({ error: 'Link ID is required' });
+    }
+    
+    if (!customerName || !phone || !address || !category) {
+        return res.status(400).json({ error: 'Customer name, phone, address, and category are required' });
+    }
+    
+    try {
+        // Check if token was already used
+        if (usedShareTokens.has(linkId)) {
+            return res.status(404).json({ error: 'Share link has already been used' });
+        }
+        
+        // Verify JWT token
+        const decoded = jwt.verify(linkId, JWT_SECRET) as any;
+        
+        if (decoded.type !== 'share-link') {
+            return res.status(404).json({ error: 'Invalid share link' });
+        }
+        
+        // Mark token as used
+        usedShareTokens.add(linkId);
+        
+        // Create customer if doesn't exist
+        let customer = await prisma.customer.findUnique({ where: { phone } });
+        if (!customer) {
+            customer = await prisma.customer.create({
+                data: { 
+                    name: customerName, 
+                    phone, 
+                    email: email || null, 
+                    address: address || null,
+                    outsideCalls: 0,
+                    carryInServices: 0,
+                    totalInteractions: 0
+                }
+            });
+        }
+        
+        // Create the service
+        const [service] = await prisma.$transaction([
+            prisma.carryInService.create({
+                data: {
+                    customerName,
+                    phone,
+                    email: email || null,
+                    address: address,
+                    category,
+                    serviceDescription: serviceDescription || null,
+                    customerId: customer.id,
+                    createdBy: 'Share Link'
+                }
+            }),
+            prisma.customer.update({
+                where: { id: customer.id },
+                data: {
+                    carryInServices: { increment: 1 },
+                    totalInteractions: { increment: 1 },
+                    lastServiceDate: new Date(),
+                    lastActivityDate: new Date()
+                }
+            })
+        ]);
+        
+        // Emit real-time update
+        emitToAll('service_created', service);
+        
+        res.status(201).json({ 
+            success: true, 
+            service,
+            message: 'Service submitted successfully' 
+        });
+    } catch (err: any) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(404).json({ error: 'Share link has expired' });
+        }
+        if (err.name === 'JsonWebTokenError') {
+            return res.status(404).json({ error: 'Invalid share link' });
+        }
+        console.error('Submit share link service error:', err);
+        res.status(500).json({ error: 'Failed to submit service' });
+    }
+});
 io.on('connection', (socket) => {
     socket.on('register', (userId: number) => {
         userSockets.set(userId, socket.id);

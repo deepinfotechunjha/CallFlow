@@ -34,7 +34,7 @@ const useCategoryStore = create((set, get) => ({
     }
     
     try {
-      const response = await apiClient.get('/categories');
+      const response = await apiClient.get('/categories/protected');
       set({ categories: response.data });
       return response.data;
     } catch (error) {
