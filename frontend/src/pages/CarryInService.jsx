@@ -6,6 +6,7 @@ import useSocket from '../hooks/useSocket';
 import useClickOutside from '../hooks/useClickOutside';
 import ExportModal from '../components/ExportModal';
 import BulkDeleteModal from '../components/BulkDeleteModal';
+import ShareServiceModal from '../components/ShareServiceModal';
 import { exportCarryInServicesToExcel, exportDeletedServicesToExcel } from '../utils/excelExport';
 import toast from 'react-hot-toast';
 
@@ -13,12 +14,15 @@ const CarryInService = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [showShareServiceModal, setShowShareServiceModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [selectedServices, setSelectedServices] = useState([]);
   const [filter, setFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL_CATEGORIES');
   const [statusFilter, setStatusFilter] = useState('ALL_STATUS');
+  const [userFilterType, setUserFilterType] = useState('ALL_USERS');
+  const [selectedUser, setSelectedUser] = useState('ALL');
   const [dateFilter, setDateFilter] = useState({ type: '', start: '', end: '' });
   const [appliedDateFilter, setAppliedDateFilter] = useState({ type: '', start: '', end: '' });
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
@@ -186,6 +190,13 @@ const CarryInService = () => {
     // Category dropdown filter
     if (categoryFilter !== 'ALL_CATEGORIES' && service.category !== categoryFilter) return false;
     
+    // User-based filter
+    if (userFilterType !== 'ALL_USERS' && selectedUser !== 'ALL') {
+      if (userFilterType === 'CREATED_BY' && service.createdBy !== selectedUser) return false;
+      if (userFilterType === 'COMPLETED_BY' && service.completedBy !== selectedUser) return false;
+      if (userFilterType === 'DELIVERED_BY' && service.deliveredBy !== selectedUser) return false;
+    }
+    
     // Date range filter
     if (appliedDateFilter.type && appliedDateFilter.start && appliedDateFilter.end) {
       const serviceDate = service[appliedDateFilter.type];
@@ -246,6 +257,25 @@ const CarryInService = () => {
   };
 
   const counts = getFilterCounts();
+
+  // Get unique users for filtering
+  const getUniqueUsers = () => {
+    const allUsers = new Set();
+    services.forEach(service => {
+      if (service.createdBy && service.createdBy !== 'Share Link') {
+        allUsers.add(service.createdBy);
+      }
+      if (service.completedBy && service.completedBy !== 'Share Link') {
+        allUsers.add(service.completedBy);
+      }
+      if (service.deliveredBy && service.deliveredBy !== 'Share Link') {
+        allUsers.add(service.deliveredBy);
+      }
+    });
+    return Array.from(allUsers).sort();
+  };
+  
+  const uniqueUsers = getUniqueUsers();
 
   const deliveredServices = filteredServices.filter(s => s.status === 'COMPLETED_AND_COLLECTED');
   const isAllSelected = deliveredServices.length > 0 && selectedServices.length === deliveredServices.length;
@@ -343,6 +373,12 @@ const CarryInService = () => {
               {isExporting ? '⏳ Exporting...' : '📊 Export'}
             </button>
           )}
+          <button
+            onClick={() => setShowShareServiceModal(true)}
+            className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-purple-700 hover:to-purple-800 font-medium text-sm sm:text-base whitespace-nowrap shadow-sm transition-all flex items-center gap-2"
+          >
+            🔗 Share
+          </button>
           <button
             onClick={() => setShowAddForm(true)}
             className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium text-sm sm:text-base whitespace-nowrap shadow-sm transition-all"
@@ -509,12 +545,41 @@ const CarryInService = () => {
             ))}
           </select>
           
-          {(searchQuery || categoryFilter !== 'ALL_CATEGORIES' || statusFilter !== 'ALL_STATUS' || appliedDateFilter.type) && (
+          <select
+            value={userFilterType}
+            onChange={(e) => {
+              setUserFilterType(e.target.value);
+              setSelectedUser('ALL');
+            }}
+            className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors min-w-[120px]"
+          >
+            <option value="ALL_USERS">All Users</option>
+            <option value="CREATED_BY">Created By</option>
+            <option value="COMPLETED_BY">Completed By</option>
+            <option value="DELIVERED_BY">Delivered By</option>
+          </select>
+          
+          {userFilterType !== 'ALL_USERS' && (
+            <select
+              value={selectedUser}
+              onChange={(e) => setSelectedUser(e.target.value)}
+              className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors min-w-[120px]"
+            >
+              <option value="ALL">All</option>
+              {uniqueUsers.map((user, index) => (
+                <option key={index} value={user}>{user}</option>
+              ))}
+            </select>
+          )}
+          
+          {(searchQuery || categoryFilter !== 'ALL_CATEGORIES' || statusFilter !== 'ALL_STATUS' || appliedDateFilter.type || userFilterType !== 'ALL_USERS') && (
             <button
               onClick={() => {
                 setSearchQuery('');
                 setCategoryFilter('ALL_CATEGORIES');
                 setStatusFilter('ALL_STATUS');
+                setUserFilterType('ALL_USERS');
+                setSelectedUser('ALL');
                 clearDateFilter();
               }}
               className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
@@ -1119,6 +1184,12 @@ const CarryInService = () => {
         </div>
       )}
 
+      {showShareServiceModal && (
+        <ShareServiceModal
+          isOpen={showShareServiceModal}
+          onClose={() => setShowShareServiceModal(false)}
+        />
+      )}
       {showExportModal && (
         <ExportModal
           isOpen={showExportModal}
