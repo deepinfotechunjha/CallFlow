@@ -432,7 +432,7 @@ const UserManagement = () => {
     <div className="max-w-6xl mx-auto p-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">Engineer Management 👥</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">Role Management 👥</h1>
           <p className="text-gray-600">Manage team members and their roles</p>
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
@@ -453,8 +453,8 @@ const UserManagement = () => {
         </div>
       </div>
 
-      {/* Users Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Users Table - Desktop */}
+      <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
             <span>👥</span> Team Members
@@ -476,7 +476,7 @@ const UserManagement = () => {
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Role
                 </th>
-                <th className="hidden md:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="hidden lg:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Created At
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -508,7 +508,7 @@ const UserManagement = () => {
                       {u.role}
                     </span>
                   </td>
-                  <td className="hidden md:table-cell px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                  <td className="hidden lg:table-cell px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
                     {new Date(u.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm">
@@ -537,6 +537,69 @@ const UserManagement = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Users Cards - Mobile */}
+      <div className="md:hidden space-y-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-4">
+            <span>👥</span> Team Members
+          </h2>
+        </div>
+        {users.map((u) => (
+          <div key={u.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">👤</span>
+                <div>
+                  <h3 className="font-semibold text-gray-900">{u.username}</h3>
+                  <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full border mt-1 ${
+                    u.role === 'HOST' ? 'bg-purple-100 text-purple-800 border-purple-200' :
+                    u.role === 'ADMIN' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                    'bg-green-100 text-green-800 border-green-200'
+                  }`}>
+                    {u.role}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>📧</span>
+                <span>{u.email || 'N/A'}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>📱</span>
+                <span>{u.phone || 'N/A'}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>📅</span>
+                <span>{new Date(u.createdAt).toLocaleDateString()}</span>
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleEdit(u)}
+                className="flex-1 bg-blue-500 text-white py-2 rounded-lg text-sm hover:bg-blue-600 transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => handleDelete(u)}
+                disabled={isDeleting[u.id]}
+                className={`flex-1 py-2 rounded-lg text-sm transition-colors ${
+                  isDeleting[u.id]
+                    ? 'bg-red-400 text-white cursor-not-allowed'
+                    : 'bg-red-500 text-white hover:bg-red-600'
+                }`}
+              >
+                {isDeleting[u.id] ? 'Pending...' : 'Remove'}
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Add User Modal */}
