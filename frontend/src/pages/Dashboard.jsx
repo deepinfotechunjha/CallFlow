@@ -26,6 +26,8 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL_STATUS');
   const [categoryFilter, setCategoryFilter] = useState('ALL_CATEGORIES');
+  const [userFilterType, setUserFilterType] = useState('ALL_USERS');
+  const [selectedUser, setSelectedUser] = useState('ALL');
   
   const { calls, fetchCalls, bulkDeleteCalls } = useCallStore();
   const { users, fetchUsers } = useAuthStore();
@@ -97,6 +99,13 @@ const Dashboard = () => {
     // Category dropdown filter
     if (categoryFilter !== 'ALL_CATEGORIES' && call.category !== categoryFilter) return false;
     
+    // User-based filter
+    if (userFilterType !== 'ALL_USERS' && selectedUser !== 'ALL') {
+      if (userFilterType === 'CREATED_BY' && call.createdBy !== selectedUser) return false;
+      if (userFilterType === 'ASSIGNED_BY' && call.assignedBy !== selectedUser) return false;
+      if (userFilterType === 'COMPLETED_BY' && call.completedBy !== selectedUser) return false;
+    }
+    
     // Date range filter
     if (appliedDateFilter.type && appliedDateFilter.start && appliedDateFilter.end) {
       const callDate = call[appliedDateFilter.type];
@@ -142,6 +151,25 @@ const Dashboard = () => {
   };
 
   const uniqueCategories = categories.map(c => c.name);
+  
+  // Get unique users for filtering
+  const getUniqueUsers = () => {
+    const allUsers = new Set();
+    calls.forEach(call => {
+      if (call.createdBy && call.createdBy !== 'Share Link') {
+        allUsers.add(call.createdBy);
+      }
+      if (call.assignedBy && call.assignedBy !== 'Share Link') {
+        allUsers.add(call.assignedBy);
+      }
+      if (call.completedBy && call.completedBy !== 'Share Link') {
+        allUsers.add(call.completedBy);
+      }
+    });
+    return Array.from(allUsers).sort();
+  };
+  
+  const uniqueUsers = getUniqueUsers();
 
   const todaysCalls = calls.filter(call => {
     const today = new Date().toDateString();
@@ -426,12 +454,41 @@ const Dashboard = () => {
             ))}
           </select>
           
-          {(searchQuery || statusFilter !== 'ALL_STATUS' || categoryFilter !== 'ALL_CATEGORIES') && (
+          <select
+            value={userFilterType}
+            onChange={(e) => {
+              setUserFilterType(e.target.value);
+              setSelectedUser('ALL');
+            }}
+            className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors min-w-[120px]"
+          >
+            <option value="ALL_USERS">All Users</option>
+            <option value="CREATED_BY">Created By</option>
+            <option value="ASSIGNED_BY">Assigned By</option>
+            <option value="COMPLETED_BY">Completed By</option>
+          </select>
+          
+          {userFilterType !== 'ALL_USERS' && (
+            <select
+              value={selectedUser}
+              onChange={(e) => setSelectedUser(e.target.value)}
+              className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors min-w-[120px]"
+            >
+              <option value="ALL">All</option>
+              {uniqueUsers.map((user, index) => (
+                <option key={index} value={user}>{user}</option>
+              ))}
+            </select>
+          )}
+          
+          {(searchQuery || statusFilter !== 'ALL_STATUS' || categoryFilter !== 'ALL_CATEGORIES' || userFilterType !== 'ALL_USERS') && (
             <button
               onClick={() => {
                 setSearchQuery('');
                 setStatusFilter('ALL_STATUS');
                 setCategoryFilter('ALL_CATEGORIES');
+                setUserFilterType('ALL_USERS');
+                setSelectedUser('ALL');
               }}
               className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
             >
