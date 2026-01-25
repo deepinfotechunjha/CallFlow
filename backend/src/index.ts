@@ -516,7 +516,8 @@ app.post("/auth/verify-secret", authMiddleware, async (req: Request, res: Respon
             return res.status(404).json({ error: 'User not found' });
         }
         
-        if (dbUser.secretPassword !== secretPassword) {
+        const isValidSecret = await bcrypt.compare(secretPassword, dbUser.secretPassword);
+        if (!isValidSecret) {
             return res.status(401).json({ error: 'Invalid secret password' });
         }
         
@@ -910,7 +911,7 @@ app.post('/auth/reset-password', authMiddleware, async (req: Request, res: Respo
         // Update user secret password
         await prisma.user.update({
             where: { id: user.id },
-            data: { secretPassword: newPassword }
+            data: { secretPassword: await bcrypt.hash(newPassword, 10) }
         });
         
         // Mark OTP as used and delete from cache
@@ -948,12 +949,10 @@ app.post("/users", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), async
     
     try {
         const hashed = await bcrypt.hash(password, 10);
-        const finalSecretPassword = role === 'HOST' ? (secretPassword || 'DEFAULTSECRET') : 'DEFAULTSECRET';
-
-        // const FinalHashedSecretPass = await bcrypt.hash(finalSecretPassword,10);
+        const hashedSecretPassword = await bcrypt.hash(finalSecretPassword, 10);
         
         const user = await prisma.user.create({ 
-            data: { username, password: hashed, email, phone, role, secretPassword: finalSecretPassword } 
+            data: { username, password: hashed, email, phone, role, secretPassword: hashedSecretPassword } 
         });
         
         const userResponse = { 
@@ -1014,9 +1013,9 @@ app.put("/users/:id", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), as
             updateData.role = role;
             
             if (role === 'HOST' && currentUser.role !== 'HOST') {
-                updateData.secretPassword = secretPassword;
+                updateData.secretPassword = await bcrypt.hash(secretPassword, 10);
             } else if (role !== 'HOST' && currentUser.role === 'HOST') {
-                updateData.secretPassword = 'DEFAULTSECRET';
+                updateData.secretPassword = await bcrypt.hash('DEFAULTSECRET', 10);
             }
         }
         
@@ -1669,7 +1668,12 @@ app.post('/calls/bulk-delete', authMiddleware, requireRole(['HOST']), async (req
             select: { secretPassword: true, username: true, email: true }
         });
         
-        if (!dbUser || dbUser.secretPassword !== secretPassword) {
+        if (!dbUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        const isValidSecret = await bcrypt.compare(secretPassword, dbUser.secretPassword);
+        if (!isValidSecret) {
             return res.status(401).json({ error: 'Invalid secret password' });
         }
         
@@ -2226,7 +2230,12 @@ app.post('/carry-in-services/bulk-delete', authMiddleware, async (req: Request, 
             select: { secretPassword: true, username: true, email: true }
         });
         
-        if (!dbUser || dbUser.secretPassword !== secretPassword) {
+        if (!dbUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        const isValidSecret = await bcrypt.compare(secretPassword, dbUser.secretPassword);
+        if (!isValidSecret) {
             return res.status(401).json({ error: 'Invalid secret password' });
         }
         
