@@ -141,8 +141,8 @@ const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret';
 // In-memory OTP cache
 const otpCache = new Map();
 
-// In-memory share links cache
-const shareLinks = new Map();
+// In-memory used share tokens cache (for one-time use)
+const usedShareTokens = new Set();
 
 // Helper function to clean expired OTPs
 function cleanExpiredOTPs() {
@@ -154,22 +154,20 @@ function cleanExpiredOTPs() {
   }
 }
 
-// Helper function to clean expired share links
-function cleanExpiredShareLinks() {
-  const now = Date.now();
-  const twentyFourHours = 24 * 60 * 60 * 1000;
-  for (const [linkId, timestamp] of shareLinks.entries()) {
-    if (now - timestamp > twentyFourHours) {
-      shareLinks.delete(linkId);
-    }
+// Helper function to clean expired used tokens
+function cleanExpiredUsedTokens() {
+  // Clear all used tokens older than 24 hours (they would be expired anyway)
+  // Since we can't track individual token expiry in Set, we clear all periodically
+  if (usedShareTokens.size > 1000) {
+    usedShareTokens.clear();
   }
 }
 
 // Clean expired OTPs every minute
 setInterval(cleanExpiredOTPs, 60 * 1000);
 
-// Clean expired share links every hour
-setInterval(cleanExpiredShareLinks, 60 * 60 * 1000);
+// Clean expired used tokens every hour
+setInterval(cleanExpiredUsedTokens, 60 * 60 * 1000);
 
 // Email configuration
 const emailTransporter = nodemailer.createTransport({
@@ -343,7 +341,7 @@ setInterval(async () => {
 setInterval(() => {
     cleanupOldNotifications();
     cleanExpiredOTPs();
-    cleanExpiredShareLinks();
+    cleanExpiredUsedTokens();
 }, 60 * 60 * 1000);
 
 // WebSocket connection handling
@@ -2400,18 +2398,24 @@ app.post('/carry-in-services/bulk-delete', authMiddleware, async (req: Request, 
 // Share link endpoints
 app.post('/share/create-link', authMiddleware, async (req: Request, res: Response) => {
     try {
-        const linkId = crypto.randomUUID();
-        const timestamp = Date.now();
+        // Create JWT token with 24 hour expiry and unique ID
+        const token = jwt.sign(
+            { 
+                type: 'share-link',
+                id: crypto.randomUUID(), // Unique ID ensures no duplicates
+                createdAt: Date.now(),
+                exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+            }, 
+            JWT_SECRET
+        );
         
-        shareLinks.set(linkId, timestamp);
-        
-        const shareUrl = `${process.env.FRONTEND_ORIGIN || 'http://localhost:5173'}/share/${linkId}`;
+        const shareUrl = `${process.env.FRONTEND_ORIGIN || 'http://localhost:5173'}/share/${token}`;
         
         res.json({ 
             success: true, 
             shareUrl,
-            linkId,
-            expiresAt: new Date(timestamp + 24 * 60 * 60 * 1000).toISOString()
+            linkId: token,
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
         });
     } catch (err: any) {
         console.error('Create share link error:', err);
@@ -2427,27 +2431,31 @@ app.get('/share/:linkId', async (req: Request, res: Response) => {
     }
     
     try {
-        const timestamp = shareLinks.get(linkId);
-        
-        if (!timestamp) {
-            return res.status(404).json({ error: 'Share link not found or expired' });
+        // Check if token was already used
+        if (usedShareTokens.has(linkId)) {
+            return res.status(404).json({ error: 'Share link has already been used' });
         }
         
-        const now = Date.now();
-        const twentyFourHours = 24 * 60 * 60 * 1000;
+        // Verify JWT token
+        const decoded = jwt.verify(linkId, JWT_SECRET) as any;
         
-        if (now - timestamp > twentyFourHours) {
-            shareLinks.delete(linkId);
-            return res.status(404).json({ error: 'Share link has expired' });
+        if (decoded.type !== 'share-link') {
+            return res.status(404).json({ error: 'Invalid share link' });
         }
         
         res.json({ 
             success: true, 
             valid: true,
-            createdAt: new Date(timestamp).toISOString(),
-            expiresAt: new Date(timestamp + twentyFourHours).toISOString()
+            createdAt: new Date(decoded.createdAt).toISOString(),
+            expiresAt: new Date(decoded.exp * 1000).toISOString()
         });
     } catch (err: any) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(404).json({ error: 'Share link has expired' });
+        }
+        if (err.name === 'JsonWebTokenError') {
+            return res.status(404).json({ error: 'Invalid share link' });
+        }
         console.error('Validate share link error:', err);
         res.status(500).json({ error: 'Failed to validate share link' });
     }
@@ -2473,19 +2481,20 @@ app.post('/share/:linkId/submit', async (req: Request, res: Response) => {
     }
     
     try {
-        const timestamp = shareLinks.get(linkId);
-        
-        if (!timestamp) {
-            return res.status(404).json({ error: 'Share link not found or expired' });
+        // Check if token was already used
+        if (usedShareTokens.has(linkId)) {
+            return res.status(404).json({ error: 'Share link has already been used' });
         }
         
-        const now = Date.now();
-        const twentyFourHours = 24 * 60 * 60 * 1000;
+        // Verify JWT token
+        const decoded = jwt.verify(linkId, JWT_SECRET) as any;
         
-        if (now - timestamp > twentyFourHours) {
-            shareLinks.delete(linkId);
-            return res.status(404).json({ error: 'Share link has expired' });
+        if (decoded.type !== 'share-link') {
+            return res.status(404).json({ error: 'Invalid share link' });
         }
+        
+        // Mark token as used
+        usedShareTokens.add(linkId);
         
         // Create customer if doesn't exist
         let customer = null;
@@ -2533,9 +2542,6 @@ app.post('/share/:linkId/submit', async (req: Request, res: Response) => {
             }) : prisma.$queryRaw`SELECT 1`
         ]);
         
-        // Delete the share link after successful use
-        shareLinks.delete(linkId);
-        
         // Emit real-time update
         emitToAll('call_created', call);
         
@@ -2545,6 +2551,12 @@ app.post('/share/:linkId/submit', async (req: Request, res: Response) => {
             message: 'Call submitted successfully' 
         });
     } catch (err: any) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(404).json({ error: 'Share link has expired' });
+        }
+        if (err.name === 'JsonWebTokenError') {
+            return res.status(404).json({ error: 'Invalid share link' });
+        }
         console.error('Submit share link call error:', err);
         res.status(500).json({ error: 'Failed to submit call' });
     }
@@ -2570,19 +2582,20 @@ app.post('/share/:linkId/submit-service', async (req: Request, res: Response) =>
     }
     
     try {
-        const timestamp = shareLinks.get(linkId);
-        
-        if (!timestamp) {
-            return res.status(404).json({ error: 'Share link not found or expired' });
+        // Check if token was already used
+        if (usedShareTokens.has(linkId)) {
+            return res.status(404).json({ error: 'Share link has already been used' });
         }
         
-        const now = Date.now();
-        const twentyFourHours = 24 * 60 * 60 * 1000;
+        // Verify JWT token
+        const decoded = jwt.verify(linkId, JWT_SECRET) as any;
         
-        if (now - timestamp > twentyFourHours) {
-            shareLinks.delete(linkId);
-            return res.status(404).json({ error: 'Share link has expired' });
+        if (decoded.type !== 'share-link') {
+            return res.status(404).json({ error: 'Invalid share link' });
         }
+        
+        // Mark token as used
+        usedShareTokens.add(linkId);
         
         // Create customer if doesn't exist
         let customer = await prisma.customer.findUnique({ where: { phone } });
@@ -2625,9 +2638,6 @@ app.post('/share/:linkId/submit-service', async (req: Request, res: Response) =>
             })
         ]);
         
-        // Delete the share link after successful use
-        shareLinks.delete(linkId);
-        
         // Emit real-time update
         emitToAll('service_created', service);
         
@@ -2637,6 +2647,12 @@ app.post('/share/:linkId/submit-service', async (req: Request, res: Response) =>
             message: 'Service submitted successfully' 
         });
     } catch (err: any) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(404).json({ error: 'Share link has expired' });
+        }
+        if (err.name === 'JsonWebTokenError') {
+            return res.status(404).json({ error: 'Invalid share link' });
+        }
         console.error('Submit share link service error:', err);
         res.status(500).json({ error: 'Failed to submit service' });
     }
