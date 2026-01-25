@@ -8,6 +8,7 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
   const [showAssign, setShowAssign] = useState({});
   const [showEdit, setShowEdit] = useState({});
   const [showComplete, setShowComplete] = useState({});
+  const [isActionModalOpen, setIsActionModalOpen] = useState({});
   const [selectedWorker, setSelectedWorker] = useState({});
   const [remark, setRemark] = useState({});
   const [engineerRemark, setEngineerRemark] = useState({});
@@ -98,6 +99,7 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
         setShowAssign(prev => ({ ...prev, [callId]: false }));
         setSelectedWorker(prev => ({ ...prev, [callId]: '' }));
         setEngineerRemark(prev => ({ ...prev, [callId]: '' }));
+        setIsActionModalOpen(prev => ({ ...prev, [callId]: false }));
       } catch (error) {
         // Error handling is done in assignCall
       } finally {
@@ -115,6 +117,7 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
       await completeCall(callId, remark[callId] || '');
       setShowComplete(prev => ({ ...prev, [callId]: false }));
       setRemark(prev => ({ ...prev, [callId]: '' }));
+      setIsActionModalOpen(prev => ({ ...prev, [callId]: false }));
     } catch (error) {
       // Error handling is done in completeCall
     } finally {
@@ -142,6 +145,7 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
       
       await updateCall(callId, allData);
       setShowEdit(prev => ({ ...prev, [callId]: false }));
+      setIsActionModalOpen(prev => ({ ...prev, [callId]: false }));
     } catch (error) {
       // Error handling is done in updateCall
     } finally {
@@ -222,7 +226,7 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                 <React.Fragment key={call.id}>
                   <tr className={`hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-200 cursor-pointer ${
                     index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
-                  }`} onClick={() => setSelectedCall(call)}>
+                  }`} onClick={() => !isActionModalOpen[call.id] && setSelectedCall(call)}>
                     <td className="px-1 py-3 border-r border-gray-200">
                       <div className="flex items-center justify-center w-5 h-5 bg-blue-500 text-white font-bold rounded-full text-xs">
                         {index + 1}
@@ -327,7 +331,10 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                       <div className="flex flex-col gap-1">
                         {canEdit && (
                           <button
-                            onClick={() => openEditModal(call)}
+                            onClick={() => {
+                              setIsActionModalOpen(prev => ({ ...prev, [call.id]: true }));
+                              openEditModal(call);
+                            }}
                             className="bg-orange-500 text-white px-1 py-1 rounded text-xs hover:bg-orange-600 transition-colors font-semibold"
                           >
                             Edit
@@ -335,7 +342,10 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                         )}
                         {canAssign && call.status !== 'COMPLETED' && (
                           <button
-                            onClick={() => setShowAssign(prev => ({ ...prev, [call.id]: true }))}
+                            onClick={() => {
+                              setIsActionModalOpen(prev => ({ ...prev, [call.id]: true }));
+                              setShowAssign(prev => ({ ...prev, [call.id]: true }));
+                            }}
                             className="bg-blue-500 text-white px-1 py-1 rounded text-xs hover:bg-blue-600 transition-colors font-semibold"
                           >
                             {call.assignedTo ? 'Reassign' : 'Assign'}
@@ -343,7 +353,10 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                         )}
                         {canComplete && call.status !== 'COMPLETED' && (
                           <button
-                            onClick={() => setShowComplete(prev => ({ ...prev, [call.id]: true }))}
+                            onClick={() => {
+                              setIsActionModalOpen(prev => ({ ...prev, [call.id]: true }));
+                              setShowComplete(prev => ({ ...prev, [call.id]: true }));
+                            }}
                             className="bg-green-500 text-white px-1 py-1 rounded text-xs hover:bg-green-600 transition-colors font-semibold"
                           >
                             Complete
@@ -472,7 +485,10 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                   </button>
                   <button
                     type="button"
-                    onClick={() => setShowEdit(prev => ({ ...prev, [callId]: false }))}
+                    onClick={() => {
+                      setShowEdit(prev => ({ ...prev, [callId]: false }));
+                      setIsActionModalOpen(prev => ({ ...prev, [callId]: false }));
+                    }}
                     className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
                   >
                     Cancel
@@ -542,6 +558,7 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                     setShowAssign(prev => ({ ...prev, [callId]: false }));
                     setSelectedWorker(prev => ({ ...prev, [callId]: '' }));
                     setEngineerRemark(prev => ({ ...prev, [callId]: '' }));
+                    setIsActionModalOpen(prev => ({ ...prev, [callId]: false }));
                   }}
                   className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
                 >
@@ -592,6 +609,7 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                   onClick={() => {
                     setShowComplete(prev => ({ ...prev, [callId]: false }));
                     setRemark(prev => ({ ...prev, [callId]: '' }));
+                    setIsActionModalOpen(prev => ({ ...prev, [callId]: false }));
                   }}
                   className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
                 >

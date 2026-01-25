@@ -9,6 +9,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
   const [showEdit, setShowEdit] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState('');
   const [remark, setRemark] = useState('');
   const [engineerRemark, setEngineerRemark] = useState('');
@@ -82,6 +83,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
       setShowAssign(false);
       setSelectedWorker('');
       setEngineerRemark('');
+      setIsActionModalOpen(false);
     } catch (error) {
       // Error handling is done in assignCall
     } finally {
@@ -99,6 +101,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
       await completeCall(call.id, remark);
       setShowComplete(false);
       setRemark('');
+      setIsActionModalOpen(false);
     } catch (error) {
       // Error handling is done in completeCall
     } finally {
@@ -133,6 +136,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
       
       await updateCall(call.id, allData);
       setShowEdit(false);
+      setIsActionModalOpen(false);
     } catch (error) {
       // Error handling is done in updateCall
     } finally {
@@ -172,7 +176,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
   return (
     <div 
       className="bg-white rounded-lg shadow-md p-3 sm:p-4 border-l-4 border-blue-500 cursor-pointer hover:shadow-lg transition-shadow"
-      onClick={() => setShowDetails(true)}
+      onClick={() => !isActionModalOpen && setShowDetails(true)}
     >
       {showCheckboxes && call.status === 'COMPLETED' && (
         <div className="flex justify-end mb-2">
@@ -252,6 +256,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
           <button
             onClick={(e) => {
               e.stopPropagation();
+              setIsActionModalOpen(true);
               handleEditOpen();
             }}
             className="px-3 py-1 bg-orange-600 text-white text-sm rounded hover:bg-orange-700 min-w-[60px]"
@@ -264,6 +269,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
           <button
             onClick={(e) => {
               e.stopPropagation();
+              setIsActionModalOpen(true);
               setShowAssign(true);
             }}
             className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 min-w-[80px]"
@@ -276,6 +282,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
           <button
             onClick={(e) => {
               e.stopPropagation();
+              setIsActionModalOpen(true);
               handleCompleteClick();
             }}
             className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 min-w-[100px]"
@@ -337,6 +344,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
                   setShowAssign(false);
                   setSelectedWorker('');
                   setEngineerRemark('');
+                  setIsActionModalOpen(false);
                 }}
                 className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
               >
@@ -443,6 +451,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowEdit(false);
+                    setIsActionModalOpen(false);
                   }}
                   className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
                 >
@@ -489,6 +498,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
                 onClick={() => {
                   setShowComplete(false);
                   setRemark('');
+                  setIsActionModalOpen(false);
                 }}
                 className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
               >
