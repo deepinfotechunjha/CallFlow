@@ -10,6 +10,7 @@
     "db:push": "npx prisma db push --accept-data-loss",
     "db:deploy": "npx prisma migrate deploy",
     "seed": "node scripts/seed.js",
+    "seed-host": "node scripts/seedHost.js",
     "postinstall": "npx prisma generate"
   },
   "keywords": [],
