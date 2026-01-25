@@ -30,6 +30,12 @@ const useCallStore = create((set, get) => ({
     }));
   },
   
+  handleCustomerUpdated: (customer) => {
+    set(state => ({
+      customers: state.customers.map(c => c.id === customer.id ? customer : c)
+    }));
+  },
+  
   addCall: async (callData) => {
     try {
       const response = await apiClient.post('/calls', callData);
@@ -69,6 +75,21 @@ const useCallStore = create((set, get) => ({
     } catch (error) {
       console.error('Failed to fetch customers:', error);
       toast.error('Failed to fetch customers');
+    }
+  },
+
+  updateCustomer: async (customerId, updates) => {
+    try {
+      const response = await apiClient.put(`/customers/${customerId}`, updates);
+      set(state => ({
+        customers: state.customers.map(c => c.id === customerId ? response.data : c)
+      }));
+      toast.success('Customer updated successfully');
+      return response.data;
+    } catch (error) {
+      const message = error.response?.data?.error || 'Failed to update customer';
+      toast.error(message);
+      throw error;
     }
   },
 

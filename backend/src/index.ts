@@ -1511,6 +1511,44 @@ app.get('/customers/directory', authMiddleware, async (_req: Request, res: Respo
     }
 });
 
+app.put('/customers/:id', authMiddleware, requireRole(['HOST', 'ADMIN']), async (req: Request, res: Response) => {
+    const customerId = parseInt(req.params.id || '');
+    const { name, phone, email, address } = req.body as {
+        name?: string;
+        phone?: string;
+        email?: string;
+        address?: string;
+    };
+    
+    if (isNaN(customerId)) {
+        return res.status(400).json({ error: 'Invalid customer ID' });
+    }
+    
+    try {
+        const updateData: any = {};
+        if (name !== undefined) updateData.name = name;
+        if (phone !== undefined) updateData.phone = phone;
+        if (email !== undefined) updateData.email = email || null;
+        if (address !== undefined) updateData.address = address || null;
+        
+        const customer = await prisma.customer.update({
+            where: { id: customerId },
+            data: updateData
+        });
+        
+        emitToAll('customer_updated', customer);
+        res.json(customer);
+    } catch (err: any) {
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'Phone number already exists' });
+        }
+        if (err.code === 'P2025') {
+            return res.status(404).json({ error: 'Customer not found' });
+        }
+        res.status(500).json({ error: String(err) });
+    }
+});
+
 // Analytics endpoints
 app.get('/analytics/engineers', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
     const days = req.query.days as string;

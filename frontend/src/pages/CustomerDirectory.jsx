@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import apiClient from '../api/apiClient';
 import useAuthStore from '../store/authStore';
 import CustomerDetailsModal from '../components/CustomerDetailsModal';
+import EditCustomerModal from '../components/EditCustomerModal';
 import ExportModal from '../components/ExportModal';
 
 const CustomerDirectory = () => {
@@ -15,6 +16,7 @@ const CustomerDirectory = () => {
   const [appliedDateRange, setAppliedDateRange] = useState({ type: '', start: '', end: '' });
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const filterDateType = 'lastActivityDate';
   const { user } = useAuthStore();
@@ -51,6 +53,17 @@ const CustomerDirectory = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedCustomer(null);
+  };
+
+  const handleEditCustomer = (customer) => {
+    setSelectedCustomer(customer);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedCustomer(null);
+    fetchCustomers(); // Refresh data
   };
 
   const handleExport = async (exportType, password, activityDays) => {
@@ -434,12 +447,17 @@ const CustomerDirectory = () => {
                     Last Activity {getSortIcon('lastActivityDate')}
                   </div>
                 </th>
+                {(user?.role === 'HOST' || user?.role === 'ADMIN') && (
+                  <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {filteredCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="px-6 py-12 text-center">
+                  <td colSpan={user?.role === 'HOST' || user?.role === 'ADMIN' ? "10" : "9"} className="px-6 py-12 text-center">
                     <div className="text-gray-400 text-4xl mb-4">👥</div>
                     <p className="text-lg font-medium text-gray-500 mb-2">No customers found</p>
                     <p className="text-sm text-gray-400">Try adjusting your search or filters</p>
@@ -447,11 +465,11 @@ const CustomerDirectory = () => {
                 </tr>
               ) : (
                 filteredCustomers.map((customer, index) => (
-                  <tr key={customer.id} className="hover:bg-blue-50 transition-colors cursor-pointer" onClick={() => handleCustomerClick(customer)}>
+                  <tr key={customer.id} className="hover:bg-blue-50 transition-colors">
                     <td className="px-4 py-4 text-sm font-medium text-gray-500">
                       {index + 1}
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-4 cursor-pointer" onClick={() => handleCustomerClick(customer)}>
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-semibold text-sm">
@@ -468,13 +486,13 @@ const CustomerDirectory = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-4 cursor-pointer" onClick={() => handleCustomerClick(customer)}>
                       <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
                         <span className="text-green-500">📞</span>
                         {customer.phone}
                       </div>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-4 cursor-pointer" onClick={() => handleCustomerClick(customer)}>
                       <div className="text-sm text-gray-600 max-w-xs">
                         {customer.address ? (
                           <div className="flex items-start gap-2">
@@ -521,6 +539,19 @@ const CustomerDirectory = () => {
                         <span className="text-gray-400 italic">Never</span>
                       )}
                     </td>
+                    {(user?.role === 'HOST' || user?.role === 'ADMIN') && (
+                      <td className="px-4 py-4 text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditCustomer(customer);
+                          }}
+                          className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          ✏️ Edit
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
@@ -567,6 +598,17 @@ const CustomerDirectory = () => {
                     {getCustomerStatus(customer)}
                   </span>
                 </div>
+                {(user?.role === 'HOST' || user?.role === 'ADMIN') && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditCustomer(customer);
+                    }}
+                    className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    ✏️ Edit
+                  </button>
+                )}
                 
                 {/* Contact Info */}
                 <div className="space-y-2">
@@ -647,6 +689,13 @@ const CustomerDirectory = () => {
         customer={selectedCustomer}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+      />
+
+      {/* Edit Customer Modal */}
+      <EditCustomerModal 
+        customer={selectedCustomer}
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
       />
 
       {/* Export Modal */}
