@@ -2199,6 +2199,53 @@ app.post('/carry-in-services', authMiddleware, async (req: Request, res: Respons
     }
 });
 
+app.put('/carry-in-services/:id', authMiddleware, requireRole(['HOST', 'ADMIN']), async (req: Request, res: Response) => {
+    const serviceId = parseInt(req.params.id || '');
+    if (isNaN(serviceId)) {
+        return res.status(400).json({ error: 'Invalid service ID' });
+    }
+
+    try {
+        const existingService = await prisma.carryInService.findUnique({ where: { id: serviceId } });
+        if (!existingService) {
+            return res.status(404).json({ error: 'Service not found' });
+        }
+        if (existingService.status !== 'PENDING') {
+            return res.status(400).json({ error: 'Cannot edit completed services' });
+        }
+
+        const { customerName, phone, email, address, category, serviceDescription } = req.body as {
+            customerName: string;
+            phone: string;
+            email?: string;
+            address?: string;
+            category: string;
+            serviceDescription?: string;
+        };
+
+        if (!customerName || !phone || !address || !category) {
+            return res.status(400).json({ error: 'Customer name, phone, address, and category are required' });
+        }
+
+        const service = await prisma.carryInService.update({
+            where: { id: serviceId },
+            data: {
+                customerName,
+                phone,
+                email: email || null,
+                address: address || null,
+                category,
+                serviceDescription: serviceDescription || null
+            }
+        });
+        
+        emitToAll('service_updated', service);
+        res.json(service);
+    } catch (error: any) {
+        res.status(500).json({ error: 'Failed to update service' });
+    }
+});
+
 app.post('/carry-in-services/:id/complete', authMiddleware, async (req: Request, res: Response) => {
     const serviceId = parseInt(req.params.id || '');
     const { completeRemark } = req.body as { completeRemark?: string };

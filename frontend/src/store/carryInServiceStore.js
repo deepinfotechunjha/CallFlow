@@ -47,6 +47,17 @@ const useCarryInServiceStore = create((set, get) => ({
     }
   },
 
+  updateService: async (serviceId, serviceData) => {
+    try {
+      const response = await apiClient.put(`/carry-in-services/${serviceId}`, serviceData);
+      toast.success('Service updated successfully');
+      return response.data;
+    } catch (error) {
+      toast.error('Failed to update service');
+      throw error;
+    }
+  },
+
   completeService: async (serviceId, completeRemark) => {
     try {
       const response = await apiClient.post(`/carry-in-services/${serviceId}/complete`, { completeRemark });
