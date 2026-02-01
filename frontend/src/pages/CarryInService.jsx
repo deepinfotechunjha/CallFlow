@@ -37,14 +37,17 @@ const CarryInService = () => {
   const [customerFound, setCustomerFound] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(null);
   const [showDeliverConfirm, setShowDeliverConfirm] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(null);
   const [completeRemark, setCompleteRemark] = useState('');
   const [deliverRemark, setDeliverRemark] = useState('');
+  const [editFormData, setEditFormData] = useState({});
   const [selectedService, setSelectedService] = useState(null);
   const [isCompleting, setIsCompleting] = useState(false);
   const [isDelivering, setIsDelivering] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const { services, fetchServices, addService, completeService, deliverService, findCustomerByPhone, bulkDeleteServices } = useCarryInServiceStore();
+  const { services, fetchServices, addService, updateService, completeService, deliverService, findCustomerByPhone, bulkDeleteServices } = useCarryInServiceStore();
   const { serviceCategories, fetchServiceCategories } = useServiceCategoryStore();
   const { user, token } = useAuthStore();
   
@@ -66,6 +69,12 @@ const CarryInService = () => {
     if (!isDelivering) {
       setShowDeliverConfirm(null);
       setDeliverRemark('');
+    }
+  });
+  const editModalRef = useClickOutside(() => {
+    if (!isUpdating) {
+      setShowEditModal(null);
+      setEditFormData({});
     }
   });
   const detailModalRef = useClickOutside(() => setSelectedService(null));
@@ -149,6 +158,33 @@ const CarryInService = () => {
     } catch (error) {
       console.error('Error delivering service:', error);
       setIsDelivering(false);
+    }
+  };
+
+  const openEditModal = (service) => {
+    setEditFormData({
+      customerName: service.customerName || '',
+      phone: service.phone || '',
+      email: service.email || '',
+      address: service.address || '',
+      category: service.category || '',
+      serviceDescription: service.serviceDescription || ''
+    });
+    setShowEditModal(service.id);
+  };
+
+  const handleEditSave = async (serviceId) => {
+    if (isUpdating) return;
+    setIsUpdating(true);
+    
+    try {
+      await updateService(serviceId, editFormData);
+      setShowEditModal(null);
+      setEditFormData({});
+    } catch (error) {
+      console.error('Error updating service:', error);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -696,6 +732,14 @@ const CarryInService = () => {
                     </div>
 
                     <div className="flex gap-2 pt-2">
+                      {(['HOST', 'ADMIN'].includes(user?.role)) && service.status === 'PENDING' && (
+                        <button
+                          onClick={() => openEditModal(service)}
+                          className="bg-orange-600 text-white px-3 py-2 rounded-lg text-xs font-medium hover:bg-orange-700 transition-colors flex-1 sm:flex-none"
+                        >
+                          Edit
+                        </button>
+                      )}
                       {service.status === 'PENDING' && (
                         <button
                           onClick={() => setShowCompleteConfirm(service.id)}
@@ -741,36 +785,36 @@ const CarryInService = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
                       Sr.No
                     </th>
                     {user?.role === 'HOST' && (
-                      <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-8 min-w-8">
+                      <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
                         ✓
                       </th>
                     )}
-                    <th onClick={() => handleSort('customer')} className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-40">
+                    <th onClick={() => handleSort('customer')} className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-48">
                       Customer {getSortIcon('customer')}
                     </th>
-                    <th onClick={() => handleSort('phone')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-28">
+                    <th onClick={() => handleSort('phone')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-32">
                       Phone {getSortIcon('phone')}
                     </th>
-                    <th onClick={() => handleSort('category')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-24">
+                    <th onClick={() => handleSort('category')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-28">
                       Category {getSortIcon('category')}
                     </th>
-                    <th onClick={() => handleSort('description')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-32">
+                    <th onClick={() => handleSort('description')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-40">
                       Description {getSortIcon('description')}
                     </th>
-                    <th onClick={() => handleSort('status')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-32">
+                    <th onClick={() => handleSort('status')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-28">
                       Status {getSortIcon('status')}
                     </th>
-                    <th onClick={() => handleSort('date')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-20">
+                    <th onClick={() => handleSort('date')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-32">
                       Date & Time {getSortIcon('date')}
                     </th>
-                    <th onClick={() => handleSort('users')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 min-w-24">
+                    <th onClick={() => handleSort('users')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24">
                       Users {getSortIcon('users')}
                     </th>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-20">
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                       Actions
                     </th>
                   </tr>
@@ -778,11 +822,11 @@ const CarryInService = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredServices.map((service, index) => (
                     <tr key={service.id} onClick={() => setSelectedService(service)} className="cursor-pointer hover:bg-gray-50 transition-colors">
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-500 w-16">
                         {index + 1}
                       </td>
                       {user?.role === 'HOST' && (
-                        <td className="px-1 py-3 border-r border-gray-200 text-center" onClick={(e) => e.stopPropagation()}>
+                        <td className="px-1 py-3 border-r border-gray-200 text-center w-12" onClick={(e) => e.stopPropagation()}>
                           {service.status === 'COMPLETED_AND_COLLECTED' ? (
                             <input
                               type="checkbox"
@@ -795,7 +839,7 @@ const CarryInService = () => {
                           )}
                         </td>
                       )}
-                      <td className="px-2 py-3">
+                      <td className="px-2 py-3 w-48">
                         <div className="flex items-center gap-2">
                           <span className="text-lg">👤</span>
                           <div className="min-w-0">
@@ -804,42 +848,50 @@ const CarryInService = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 w-32">
                         <div className="flex items-center gap-1">
                           <span className="text-gray-400">📞</span>
                           <span className="truncate">{service.phone}</span>
                         </div>
                       </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 w-28">
                         <div className="truncate" title={service.category}>{service.category}</div>
                       </td>
-                      <td className="px-2 py-3 text-sm text-gray-500">
+                      <td className="px-2 py-3 text-sm text-gray-500 w-40">
                         <div className="text-xs text-gray-900 bg-yellow-50 p-1 rounded leading-tight" style={{maxHeight: '60px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical'}} title={service.serviceDescription}>
                           {service.serviceDescription || '-'}
                         </div>
                       </td>
-                      <td className="px-2 py-3 whitespace-nowrap">
+                      <td className="px-2 py-3 whitespace-nowrap w-28">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(service.status)}`}>
                           {service.status === 'PENDING' ? 'Pending' :
                            service.status === 'COMPLETED_NOT_COLLECTED' ? 'Completed' :
                            'Delivered'}
                         </span>
                       </td>
-                      <td className="px-1 py-3 border-r border-gray-200">
+                      <td className="px-1 py-3 border-r border-gray-200 w-32">
                         <div className="bg-gray-100 p-1 rounded space-y-1">
                           <div className="text-xs font-medium text-gray-900">{new Date(service.createdAt).toLocaleDateString()}</div>
                           <div className="text-xs text-gray-600">{new Date(service.createdAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', hour12: true})}</div>
                         </div>
                       </td>
-                      <td className="px-2 py-3 text-xs text-gray-500">
+                      <td className="px-2 py-3 text-xs text-gray-500 w-24">
                         <div className="space-y-1">
                           <div className="truncate" title={`Created: ${service.createdBy || 'N/A'}`}>C: {service.createdBy || 'N/A'}</div>
                           {service.completedBy && <div className="truncate" title={`Completed: ${service.completedBy}`}>✓: {service.completedBy}</div>}
                           {service.deliveredBy && <div className="truncate" title={`Delivered: ${service.deliveredBy}`}>D: {service.deliveredBy}</div>}
                         </div>
                       </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm font-medium" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-2 py-3 whitespace-nowrap text-sm font-medium w-32" onClick={(e) => e.stopPropagation()}>
                         <div className="flex gap-1">
+                          {(['HOST', 'ADMIN'].includes(user?.role)) && service.status === 'PENDING' && (
+                            <button
+                              onClick={() => openEditModal(service)}
+                              className="bg-orange-600 text-white px-2 py-1 rounded text-xs hover:bg-orange-700 transition-colors"
+                            >
+                              Edit
+                            </button>
+                          )}
                           {service.status === 'PENDING' && (
                             <button
                               onClick={() => setShowCompleteConfirm(service.id)}
@@ -963,6 +1015,125 @@ const CarryInService = () => {
                   type="button"
                   onClick={() => setShowAddForm(false)}
                   disabled={isSubmitting}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 text-sm disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Service Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div ref={editModalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg sm:text-xl font-bold">Edit Service</h2>
+              <button 
+                onClick={() => {
+                  setShowEditModal(null);
+                  setEditFormData({});
+                }} 
+                className="text-gray-500 hover:text-gray-700 text-xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              handleEditSave(showEditModal);
+            }} className="space-y-4">
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1">Customer Name *</label>
+                <input
+                  type="text"
+                  value={editFormData.customerName || ''}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, customerName: e.target.value }))}
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-orange-500 text-sm"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1">Phone Number *</label>
+                <input
+                  type="tel"
+                  value={editFormData.phone || ''}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-orange-500 text-sm"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1">Email</label>
+                <input
+                  type="email"
+                  value={editFormData.email || ''}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-orange-500 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1">Address *</label>
+                <textarea
+                  value={editFormData.address || ''}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, address: e.target.value }))}
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-orange-500 text-sm"
+                  rows="2"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1">Category *</label>
+                <select
+                  value={editFormData.category || ''}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, category: e.target.value }))}
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-orange-500 text-sm"
+                  required
+                >
+                  <option value="">Select Category</option>
+                  {serviceCategories.map(cat => (
+                    <option key={cat.id} value={cat.name}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1">Service Description</label>
+                <textarea
+                  value={editFormData.serviceDescription || ''}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, serviceDescription: e.target.value }))}
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-orange-500 text-sm"
+                  rows="3"
+                  placeholder="Additional details about the service..."
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2 pt-4">
+                <button
+                  type="submit"
+                  disabled={isUpdating}
+                  className={`flex-1 py-2 rounded font-medium text-sm ${
+                    isUpdating
+                      ? 'bg-orange-400 text-white cursor-not-allowed'
+                      : 'bg-orange-600 text-white hover:bg-orange-700'
+                  }`}
+                >
+                  {isUpdating ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(null);
+                    setEditFormData({});
+                  }}
+                  disabled={isUpdating}
                   className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 text-sm disabled:opacity-50"
                 >
                   Cancel
