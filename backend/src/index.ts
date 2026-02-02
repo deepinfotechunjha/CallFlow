@@ -1310,7 +1310,7 @@ app.post('/calls/:id/assign', authMiddleware, requireRole(['HOST', 'ADMIN']), as
             assignedTo: assignee,
             assignedAt: new Date(),
             assignedBy: req.user?.username || 'system',
-            status: 'ASSIGNED',
+            status: existingCall.status === 'VISITED' ? 'VISITED' : 'ASSIGNED',
             engineerRemark: engineerRemark || null
         };
 
@@ -1429,7 +1429,7 @@ app.post('/calls/check-duplicate', authMiddleware, async (req: Request, res: Res
             where: {
                 phone,
                 category,
-                status: { in: ['PENDING', 'ASSIGNED'] }
+                status: { in: ['PENDING', 'ASSIGNED', 'VISITED'] }
             },
             select: {
                 id: true,
@@ -1500,10 +1500,18 @@ app.put('/calls/:id/increment', authMiddleware, async (req: Request, res: Respon
             
             // Create notifications for unique users
             if (notificationUsers.size > 0) {
+                const isVisitedCall = !!call.visitedRemark;
+                const visitCount = isVisitedCall ? call.visitedRemark.split('\n').length : 0;
+                
+                const notificationType = isVisitedCall ? 'VISITED_DUPLICATE_CALL' : 'DUPLICATE_CALL';
+                const message = isVisitedCall 
+                    ? `${call.customerName} (${call.phone}) - Visited call repeated (${call.category}) - ${visitCount} visits`
+                    : `${call.customerName} (${call.phone}) - Repeat call (${call.category})`;
+                
                 const notifications = Array.from(notificationUsers).map(userId => ({
                     userId: userId as string,
-                    message: `${call.customerName} (${call.phone}) - Repeat call (${call.category})`,
-                    type: 'DUPLICATE_CALL',
+                    message,
+                    type: notificationType,
                     callId: call.id
                 }));
                 

@@ -202,7 +202,7 @@ const NotificationBell = () => {
                 <div
                   key={notification.id}
                   className={`p-2 sm:p-3 border-b hover:bg-gray-50 ${
-                    !notification.isRead ? 'bg-blue-50' : ''
+                    !notification.isRead && notification.type !== 'VISITED_DUPLICATE_CALL' ? 'bg-blue-50' : ''
                   } ${selectedNotifications.has(notification.id) ? 'bg-yellow-50' : ''}`}
                 >
                   <div className="flex items-start gap-2">
@@ -221,7 +221,11 @@ const NotificationBell = () => {
                         }
                       }}
                     >
-                      <p className={`text-xs sm:text-sm break-words ${!notification.isRead ? 'font-medium' : ''}`}>
+                      <p className={`text-xs sm:text-sm break-words ${
+                        !notification.isRead ? 'font-medium' : ''
+                      } ${
+                        notification.type === 'VISITED_DUPLICATE_CALL' ? 'text-purple-800 font-bold' : ''
+                      }`}>
                         {notification.message}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
@@ -229,7 +233,9 @@ const NotificationBell = () => {
                       </p>
                     </div>
                     {!notification.isRead && (
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-1 flex-shrink-0"></div>
+                      <div className={`w-2 h-2 rounded-full mt-1 flex-shrink-0 ${
+                        notification.type === 'VISITED_DUPLICATE_CALL' ? 'bg-purple-500' : 'bg-blue-500'
+                      }`}></div>
                     )}
                   </div>
                 </div>

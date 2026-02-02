@@ -127,9 +127,18 @@ const AddCallForm = ({ onClose }) => {
   const handleUpdateExisting = async () => {
     try {
       await apiClient.put(`/calls/${duplicateCall.id}/increment`);
-      toast.success('Existing call updated - marked as called again');
+      const isVisited = duplicateCall.status === 'VISITED';
+      const message = isVisited 
+        ? 'Existing visited call updated - marked as called again'
+        : 'Existing call updated - marked as called again';
+      toast.success(message);
       setShowDuplicateModal(false);
       onClose();
+      // Force refresh the calls to ensure UI shows updated callCount
+      setTimeout(() => {
+        const { fetchCalls } = useCallStore.getState();
+        fetchCalls();
+      }, 500);
     } catch (error) {
       toast.error('Failed to update existing call');
     }
