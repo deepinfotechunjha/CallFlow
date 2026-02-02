@@ -66,15 +66,15 @@ const Dashboard = () => {
     let tabMatch = true;
     if (filter === 'ALL') tabMatch = true;
     else if (filter === 'MY_CALLS') tabMatch = call.createdBy === user?.username;
-    else if (filter === 'MY_TASKS') tabMatch = call.createdBy === user?.username || call.assignedTo === user?.username;
+    else if (filter === 'MY_TASKS') tabMatch = call.assignedTo === user?.username;
     else if (filter === 'MY_CREATED') tabMatch = call.createdBy === user?.username;
     else if (filter === 'ASSIGNED_TO_ME') tabMatch = call.assignedTo === user?.username;
     else if (filter === 'ASSIGNED_AND_PENDING') tabMatch = call.assignedTo && call.status !== 'COMPLETED';
     else if (filter === 'PENDING') {
-      tabMatch = isEngineerRole ? (isMyCall && call.status !== 'COMPLETED') : (!call.assignedTo && call.status !== 'COMPLETED');
+      tabMatch = isEngineerRole ? (call.assignedTo === user?.username && call.status !== 'COMPLETED') : (!call.assignedTo && call.status !== 'COMPLETED');
     }
     else if (filter === 'COMPLETED') {
-      tabMatch = isEngineerRole ? (isMyCall && call.status === 'COMPLETED') : (call.status === 'COMPLETED');
+      tabMatch = isEngineerRole ? (call.assignedTo === user?.username && call.status === 'COMPLETED') : (call.status === 'COMPLETED');
     }
     if (!tabMatch) return false;
     
@@ -180,9 +180,7 @@ const Dashboard = () => {
   // Calculate totals based on user role (same logic as backend)
   const getTotalCalls = () => {
     if (user?.role === 'ENGINEER') {
-      return calls.filter(call => 
-        call.createdBy === user?.username || call.assignedTo === user?.username
-      ).length;
+      return calls.filter(call => call.assignedTo === user?.username).length;
     }
     return calls.length;
   };
@@ -194,10 +192,10 @@ const Dashboard = () => {
     
     if (user?.role === 'ENGINEER') {
       return calls.filter(call => {
-        const isMyCall = call.createdBy === user?.username || call.assignedTo === user?.username;
+        const isAssignedToMe = call.assignedTo === user?.username;
         const callDate = new Date(call.createdAt);
         const isToday = callDate >= startOfDay && callDate < endOfDay;
-        return isMyCall && isToday;
+        return isAssignedToMe && isToday;
       }).length;
     }
     
@@ -210,9 +208,9 @@ const Dashboard = () => {
   const getPendingCalls = () => {
     if (user?.role === 'ENGINEER') {
       return calls.filter(call => {
-        const isMyCall = call.createdBy === user?.username || call.assignedTo === user?.username;
+        const isAssignedToMe = call.assignedTo === user?.username;
         const isPending = call.status === 'PENDING' || call.status === 'ASSIGNED' || call.status === 'VISITED';
-        return isMyCall && isPending;
+        return isAssignedToMe && isPending;
       }).length;
     }
     return calls.filter(c => c.status === 'PENDING' || c.status === 'ASSIGNED' || c.status === 'VISITED').length;
@@ -221,9 +219,9 @@ const Dashboard = () => {
   const getCompletedCalls = () => {
     if (user?.role === 'ENGINEER') {
       return calls.filter(call => {
-        const isMyCall = call.createdBy === user?.username || call.assignedTo === user?.username;
+        const isAssignedToMe = call.assignedTo === user?.username;
         const isCompleted = call.status === 'COMPLETED';
-        return isMyCall && isCompleted;
+        return isAssignedToMe && isCompleted;
       }).length;
     }
     return calls.filter(c => c.status === 'COMPLETED').length;
