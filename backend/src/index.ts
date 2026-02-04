@@ -1310,7 +1310,7 @@ app.post('/calls/:id/assign', authMiddleware, requireRole(['HOST', 'ADMIN']), as
             assignedTo: assignee,
             assignedAt: new Date(),
             assignedBy: req.user?.username || 'system',
-            status: 'ASSIGNED',
+            status: existingCall.status === 'VISITED' ? 'VISITED' : 'ASSIGNED',
             engineerRemark: engineerRemark || null
         };
 
@@ -1362,6 +1362,60 @@ app.post('/calls/:id/complete', authMiddleware, async (req: Request, res: Respon
     }
 });
 
+app.post('/calls/:id/visited', authMiddleware, async (req: Request, res: Response) => {
+    const callId = parseInt(req.params.id || '');
+    const { visitedRemark } = req.body as { visitedRemark: string };
+    const user = req.user;
+    
+    if (!visitedRemark || !visitedRemark.trim()) {
+        return res.status(400).json({ error: 'Visited remark is required' });
+    }
+    
+    try {
+        const call = await prisma.call.findUnique({ where: { id: callId } });
+        if (!call) {
+            return res.status(404).json({ error: 'Call not found' });
+        }
+        
+        // Check permissions: assigned engineer OR HOST/ADMIN
+        const canMarkVisited = call.assignedTo === user?.username || ['HOST', 'ADMIN'].includes(user?.role || '');
+        if (!canMarkVisited) {
+            return res.status(403).json({ error: 'Cannot mark this call as visited' });
+        }
+        
+        // Format new visit entry with timestamp and username
+        const timestamp = new Date().toLocaleString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+        const newVisitEntry = `${user?.username} (${timestamp}): ${visitedRemark.trim()}`;
+        
+        // Append to existing visited remarks or create new
+        const updatedVisitedRemark = call.visitedRemark 
+            ? `${call.visitedRemark}\n${newVisitEntry}`
+            : newVisitEntry;
+        
+        const updatedCall = await prisma.call.update({
+            where: { id: callId },
+            data: {
+                status: 'VISITED',
+                visitedRemark: updatedVisitedRemark,
+                visitedBy: user?.username || 'system',
+                visitedAt: new Date()
+            },
+            include: { customer: true }
+        });
+        
+        emitToAll('call_visited', updatedCall);
+        res.json(updatedCall);
+    } catch (err: any) {
+        res.status(500).json({ error: 'Failed to mark call as visited' });
+    }
+});
+
 // Check for duplicate calls
 app.post('/calls/check-duplicate', authMiddleware, async (req: Request, res: Response) => {
     const { phone, category } = req.body as { phone: string; category: string };
@@ -1375,7 +1429,7 @@ app.post('/calls/check-duplicate', authMiddleware, async (req: Request, res: Res
             where: {
                 phone,
                 category,
-                status: { in: ['PENDING', 'ASSIGNED'] }
+                status: { in: ['PENDING', 'ASSIGNED', 'VISITED'] }
             },
             select: {
                 id: true,
@@ -1446,10 +1500,18 @@ app.put('/calls/:id/increment', authMiddleware, async (req: Request, res: Respon
             
             // Create notifications for unique users
             if (notificationUsers.size > 0) {
+                const isVisitedCall = !!call.visitedRemark;
+                const visitCount = isVisitedCall ? call.visitedRemark.split('\n').length : 0;
+                
+                const notificationType = isVisitedCall ? 'VISITED_DUPLICATE_CALL' : 'DUPLICATE_CALL';
+                const message = isVisitedCall 
+                    ? `${call.customerName} (${call.phone}) - Visited call repeated (${call.category}) - ${visitCount} visits`
+                    : `${call.customerName} (${call.phone}) - Repeat call (${call.category})`;
+                
                 const notifications = Array.from(notificationUsers).map(userId => ({
                     userId: userId as string,
-                    message: `${call.customerName} (${call.phone}) - Repeat call (${call.category})`,
-                    type: 'DUPLICATE_CALL',
+                    message,
+                    type: notificationType,
                     callId: call.id
                 }));
                 
