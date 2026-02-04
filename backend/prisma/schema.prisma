@@ -8,16 +8,16 @@ datasource db {
 }
 
 model User {
-  id                      Int                      @id @default(autoincrement())
-  username                String                   @unique
-  password                String
-  email                   String                   @unique
-  phone                   String                   @unique
-  createdAt               DateTime                 @default(now())
-  role                    String
-  secretPassword          String                   @default("DEFAULTSECRET")
-  deletionHistory         DeletionHistory[]
-  serviceDeletionHistory  ServiceDeletionHistory[]
+  id                     Int                      @id @default(autoincrement())
+  username               String                   @unique
+  password               String
+  email                  String                   @unique
+  phone                  String                   @unique
+  createdAt              DateTime                 @default(now())
+  role                   String
+  secretPassword         String                   @default("DEFAULTSECRET")
+  deletionHistory        DeletionHistory[]
+  serviceDeletionHistory ServiceDeletionHistory[]
 }
 
 model Call {
@@ -41,6 +41,9 @@ model Call {
   assignedBy     String?
   callCount      Int       @default(1)
   lastCalledAt   DateTime  @default(now())
+  visitedRemark  String?
+  visitedBy      String?
+  visitedAt      DateTime?
   customer       Customer? @relation(fields: [customerId], references: [id])
 
   @@index([assignedTo])
@@ -49,15 +52,15 @@ model Call {
 }
 
 model Customer {
-  id                Int       @id @default(autoincrement())
+  id                Int              @id @default(autoincrement())
   name              String
-  phone             String    @unique
+  phone             String           @unique
   email             String?
   address           String?
-  createdAt         DateTime  @default(now())
-  outsideCalls      Int       @default(0)
-  carryInServices   Int       @default(0)
-  totalInteractions Int       @default(0)
+  createdAt         DateTime         @default(now())
+  outsideCalls      Int              @default(0)
+  carryInServices   Int              @default(0)
+  totalInteractions Int              @default(0)
   lastCallDate      DateTime?
   lastServiceDate   DateTime?
   lastActivityDate  DateTime?
@@ -92,8 +95,6 @@ model ServiceCategory {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
-
 
 model CarryInService {
   id                 Int       @id @default(autoincrement())

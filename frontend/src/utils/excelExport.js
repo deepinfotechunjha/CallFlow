@@ -19,16 +19,20 @@ export const exportCallsToExcel = async (calls) => {
       { header: 'Problem', key: 'problem', width: 40 },
       { header: 'Category', key: 'category', width: 15 },
       { header: 'Status', key: 'status', width: 12 },
+      { header: 'Visited Status', key: 'visitedStatus', width: 15 },
       { header: 'Assigned To', key: 'assignedTo', width: 15 },
       { header: 'Created By', key: 'createdBy', width: 15 },
       { header: 'Assigned By', key: 'assignedBy', width: 15 },
       { header: 'Completed By', key: 'completedBy', width: 15 },
+      { header: 'Visited By', key: 'visitedBy', width: 15 },
       { header: 'Engineer Remark', key: 'engineerRemark', width: 30 },
       { header: 'Completion Remark', key: 'remark', width: 30 },
+      { header: 'Visited Remark', key: 'visitedRemark', width: 40 },
       { header: 'Call Count', key: 'callCount', width: 12 },
       { header: 'Created At', key: 'createdAt', width: 20 },
       { header: 'Assigned At', key: 'assignedAt', width: 20 },
       { header: 'Completed At', key: 'completedAt', width: 20 },
+      { header: 'Visited At', key: 'visitedAt', width: 20 },
       { header: 'Last Called At', key: 'lastCalledAt', width: 20 }
     ];
 
@@ -43,16 +47,20 @@ export const exportCallsToExcel = async (calls) => {
         problem: call.problem || '',
         category: call.category || '',
         status: call.status || '',
+        visitedStatus: call.status === 'VISITED' ? 'Yes' : 'No',
         assignedTo: call.assignedTo || 'Unassigned',
         createdBy: call.createdBy || '',
         assignedBy: call.assignedBy || '',
         completedBy: call.completedBy || '',
+        visitedBy: call.visitedBy || '',
         engineerRemark: call.engineerRemark || '',
         remark: call.remark || '',
+        visitedRemark: call.visitedRemark || '',
         callCount: call.callCount || 1,
         createdAt: call.createdAt ? new Date(call.createdAt).toLocaleString() : '',
         assignedAt: call.assignedAt ? new Date(call.assignedAt).toLocaleString() : '',
         completedAt: call.completedAt ? new Date(call.completedAt).toLocaleString() : '',
+        visitedAt: call.visitedAt ? new Date(call.visitedAt).toLocaleString() : '',
         lastCalledAt: call.lastCalledAt ? new Date(call.lastCalledAt).toLocaleString() : ''
       });
     });
