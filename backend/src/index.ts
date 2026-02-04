@@ -1501,7 +1501,7 @@ app.put('/calls/:id/increment', authMiddleware, async (req: Request, res: Respon
             // Create notifications for unique users
             if (notificationUsers.size > 0) {
                 const isVisitedCall = !!call.visitedRemark;
-                const visitCount = isVisitedCall ? call.visitedRemark.split('\n').length : 0;
+                const visitCount = isVisitedCall ? call.visitedRemark?.split('\n').length : 0;
                 
                 const notificationType = isVisitedCall ? 'VISITED_DUPLICATE_CALL' : 'DUPLICATE_CALL';
                 const message = isVisitedCall 
