@@ -55,6 +55,22 @@ const useDCStore = create((set, get) => ({
       }));
     }
   },
+
+  handleCallsBulkDeleted: (data) => {
+    set((state) => ({
+      dcCalls: state.dcCalls.filter((call) => !data.deletedIds.includes(call.id)),
+    }));
+  },
+
+  handleCustomerUpdated: (customer) => {
+    set((state) => ({
+      dcCalls: state.dcCalls.map((call) =>
+        call.phone === customer.phone
+          ? { ...call, customerName: customer.name, email: customer.email, address: customer.address }
+          : call
+      ),
+    }));
+  },
 }));
 
 export default useDCStore;
