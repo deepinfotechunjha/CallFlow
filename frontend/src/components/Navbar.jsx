@@ -70,6 +70,22 @@ const Navbar = () => {
                 )}
               </Link>
               
+              {(user?.role === 'HOST' || user?.role === 'ADMIN') && (
+                <Link
+                  to="/dc"
+                  className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                    isActive('/dc') 
+                      ? 'text-blue-600 font-semibold' 
+                      : 'text-gray-700 hover:text-blue-600'
+                  }`}
+                >
+                  DC
+                  {isActive('/dc') && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
+                  )}
+                </Link>
+              )}
+              
               {user?.role === 'HOST' && (
                 <>
                   <Link
@@ -186,6 +202,16 @@ const Navbar = () => {
               >
                 CarryInService
               </Link>
+              
+              {(user?.role === 'HOST' || user?.role === 'ADMIN') && (
+                <Link
+                  to="/dc"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  DC
+                </Link>
+              )}
               
               {user?.role === 'HOST' && (
                 <>

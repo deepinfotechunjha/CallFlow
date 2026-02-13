@@ -177,6 +177,18 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
     setShowEdit(prev => ({ ...prev, [call.id]: true }));
   };
 
+  const getDCText = (call) => {
+    if (!call.dcRequired) return '[NO DC]';
+    if (call.dcStatus === 'COMPLETED') return '[DC✓]';
+    return '[DC]';
+  };
+
+  const getDCColor = (call) => {
+    if (!call.dcRequired) return 'text-gray-500';
+    if (call.dcStatus === 'COMPLETED') return 'text-green-600';
+    return 'text-blue-600';
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'PENDING': return 'bg-yellow-100 text-yellow-800';
@@ -729,11 +741,18 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Status</label>
                   <div className="mt-1">
-                    {getStatusTags(selectedCall).map((tag, index) => (
-                      <span key={index} className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full mr-2 ${tag.color}`}>
-                        {tag.label}
-                      </span>
-                    ))}
+                    <div className="flex items-center gap-2">
+                      {getStatusTags(selectedCall).map((tag, index) => (
+                        <span key={index} className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${tag.color}`}>
+                          {tag.label}
+                        </span>
+                      ))}
+                      {selectedCall.status === 'COMPLETED' && (
+                        <span className={`text-sm font-medium ${getDCColor(selectedCall)}`}>
+                          {getDCText(selectedCall)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

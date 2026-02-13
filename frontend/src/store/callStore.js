@@ -120,10 +120,12 @@ const useCallStore = create((set, get) => ({
     }
   },
 
-  completeCall: async (callId, remark) => {
+  completeCall: async (callId, remark, dcRequired = false, dcRemark = '') => {
     try {
       const response = await apiClient.post(`/calls/${callId}/complete`, {
-        remark
+        remark,
+        dcRequired,
+        dcRemark
       });
       toast.success('Call completed successfully');
       return response.data;
