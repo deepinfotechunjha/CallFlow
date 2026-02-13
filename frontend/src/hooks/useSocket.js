@@ -75,12 +75,24 @@ const useSocket = () => {
         useCallStore.getState().handleCallAssigned(call);
       });
 
-      socket.on('call_completed', (call) => {
+      socket.on('call_completed', async(call) => {
         useCallStore.getState().handleCallCompleted(call);
+        // Also update DC store if call requires DC
+        if (call.dcRequired) {
+          const dcStore = await import('../store/dcStore');
+          dcStore.default.getState().handleCallCompleted(call);
+        }
       });
 
       socket.on('call_visited', (call) => {
         useCallStore.getState().handleCallVisited(call);
+      });
+
+      socket.on('dc_completed', async(call) => {
+        useCallStore.getState().handleCallUpdate(call);
+        // Also update DC store if it exists
+        const dcStore = await import('../store/dcStore');
+        dcStore.default.getState().handleDCCompleted(call);
       });
 
       socket.on('calls_bulk_deleted', (data) => {

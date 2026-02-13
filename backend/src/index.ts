@@ -1329,7 +1329,12 @@ app.post('/calls/:id/assign', authMiddleware, requireRole(['HOST', 'ADMIN']), as
 
 app.post('/calls/:id/complete', authMiddleware, async (req: Request, res: Response) => {
     const callId = parseInt(req.params.id || '');
-    const { remark, engineerRemark } = req.body as { remark?: string; engineerRemark?: string };
+    const { remark, engineerRemark, dcRequired, dcRemark } = req.body as { 
+        remark?: string; 
+        engineerRemark?: string;
+        dcRequired?: boolean;
+        dcRemark?: string;
+    };
     const user = req.user;
     
     try {
@@ -1343,15 +1348,20 @@ app.post('/calls/:id/complete', authMiddleware, async (req: Request, res: Respon
             return res.status(403).json({ error: 'Cannot complete this call' });
         }
         
+        const updateData: any = {
+            status: 'COMPLETED',
+            completedBy: user?.username || 'system',
+            completedAt: new Date(),
+            remark: remark || null,
+            engineerRemark: engineerRemark !== undefined ? engineerRemark : call.engineerRemark,
+            dcRequired: dcRequired === true,
+            dcRemark: dcRequired === true ? (dcRemark || null) : null,
+            dcStatus: dcRequired === true ? 'PENDING' : null
+        };
+        
         const updatedCall = await prisma.call.update({
             where: { id: callId },
-            data: {
-                status: 'COMPLETED',
-                completedBy: user?.username || 'system',
-                completedAt: new Date(),
-                remark: remark || null,
-                engineerRemark: engineerRemark !== undefined ? engineerRemark : call.engineerRemark
-            },
+            data: updateData,
             include: { customer: true }
         });
         
@@ -1413,6 +1423,64 @@ app.post('/calls/:id/visited', authMiddleware, async (req: Request, res: Respons
         res.json(updatedCall);
     } catch (err: any) {
         res.status(500).json({ error: 'Failed to mark call as visited' });
+    }
+});
+
+// DC endpoints
+app.get('/calls/dc', authMiddleware, requireRole(['HOST', 'ADMIN']), async (req: Request, res: Response) => {
+    const { status } = req.query as { status?: string };
+    
+    try {
+        const whereClause: any = { dcRequired: true };
+        
+        if (status === 'pending') {
+            whereClause.dcStatus = 'PENDING';
+        } else if (status === 'completed') {
+            whereClause.dcStatus = 'COMPLETED';
+        }
+        
+        const dcCalls = await prisma.call.findMany({
+            where: whereClause,
+            orderBy: { completedAt: 'desc' }
+        });
+        
+        res.json(dcCalls);
+    } catch (err: any) {
+        res.status(500).json({ error: 'Failed to fetch DC calls' });
+    }
+});
+
+app.post('/calls/:id/complete-dc', authMiddleware, requireRole(['HOST', 'ADMIN']), async (req: Request, res: Response) => {
+    const callId = parseInt(req.params.id || '');
+    const user = req.user;
+    
+    try {
+        const call = await prisma.call.findUnique({ where: { id: callId } });
+        if (!call) {
+            return res.status(404).json({ error: 'Call not found' });
+        }
+        
+        if (!call.dcRequired) {
+            return res.status(400).json({ error: 'This call does not require DC' });
+        }
+        
+        if (call.dcStatus === 'COMPLETED') {
+            return res.status(400).json({ error: 'DC already completed' });
+        }
+        
+        const updatedCall = await prisma.call.update({
+            where: { id: callId },
+            data: {
+                dcStatus: 'COMPLETED',
+                dcCompletedBy: user?.username || 'system',
+                dcCompletedAt: new Date()
+            }
+        });
+        
+        emitToAll('dc_completed', updatedCall);
+        res.json(updatedCall);
+    } catch (err: any) {
+        res.status(500).json({ error: 'Failed to complete DC' });
     }
 });
 
@@ -1501,7 +1569,7 @@ app.put('/calls/:id/increment', authMiddleware, async (req: Request, res: Respon
             // Create notifications for unique users
             if (notificationUsers.size > 0) {
                 const isVisitedCall = !!call.visitedRemark;
-                const visitCount = isVisitedCall ? call.visitedRemark.split('\n').length : 0;
+                const visitCount = isVisitedCall ? call.visitedRemark?.split('\n').length : 0;
                 
                 const notificationType = isVisitedCall ? 'VISITED_DUPLICATE_CALL' : 'DUPLICATE_CALL';
                 const message = isVisitedCall 
@@ -1781,11 +1849,15 @@ app.post('/calls/bulk-delete', authMiddleware, requireRole(['HOST']), async (req
             return res.status(401).json({ error: 'Invalid secret password' });
         }
         
-        // Fetch calls to delete (only COMPLETED)
+        // Fetch calls to delete (only COMPLETED and either NO DC or DC COMPLETED)
         const callsToDelete = await prisma.call.findMany({
             where: { 
                 id: { in: callIds },
-                status: 'COMPLETED'
+                status: 'COMPLETED',
+                OR: [
+                    { dcRequired: false },
+                    { dcRequired: true, dcStatus: 'COMPLETED' }
+                ]
             }
         });
         
