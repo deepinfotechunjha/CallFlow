@@ -172,13 +172,13 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
   const getDCText = (call) => {
     if (!call.dcRequired) return '[NO DC]';
     if (call.dcStatus === 'COMPLETED') return '[DC✓]';
-    return '[DC]';
+    return '[DC⏳]';
   };
 
   const getDCColor = (call) => {
     if (!call.dcRequired) return 'text-gray-500';
     if (call.dcStatus === 'COMPLETED') return 'text-green-600';
-    return 'text-blue-600';
+    return 'text-orange-600';
   };
 
   const getStatusColor = (status) => {
@@ -205,6 +205,15 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
       tags.push({ label: 'VISITED', color: 'bg-purple-100 text-purple-800' });
     } else if (call.status === 'COMPLETED') {
       tags.push({ label: 'COMPLETED', color: 'bg-green-100 text-green-800' });
+      
+      // Add DC status badge for completed calls
+      if (call.dcRequired) {
+        if (call.dcStatus === 'COMPLETED') {
+          tags.push({ label: 'DC✓', color: 'bg-green-100 text-green-800' });
+        } else {
+          tags.push({ label: 'DC⏳', color: 'bg-orange-100 text-orange-800' });
+        }
+      }
     }
     
     return tags;
@@ -216,7 +225,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
       onClick={() => !isActionModalOpen && setShowDetails(true)}
     >
       {showCheckboxes && call.status === 'COMPLETED' && (
-        <div className="flex justify-end mb-2">
+        <div className="flex justify-end mb-2" onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox"
             checked={selectedCalls.includes(call.id)}

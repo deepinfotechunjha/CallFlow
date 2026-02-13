@@ -173,11 +173,8 @@ setInterval(cleanExpiredUsedTokens, 60 * 60 * 1000);
 const emailTransporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    type: 'OAuth2',
     user: process.env.EMAIL_USER,
-    clientId: process.env.GMAIL_CLIENT_ID,
-    clientSecret: process.env.GMAIL_CLIENT_SECRET,
-    refreshToken: process.env.GMAIL_REFRESH_TOKEN
+    pass: process.env.EMAIL_PASS
   },
   connectionTimeout: 10000,
   greetingTimeout: 10000,
@@ -1862,7 +1859,7 @@ app.post('/calls/bulk-delete', authMiddleware, requireRole(['HOST']), async (req
         });
         
         if (callsToDelete.length === 0) {
-            return res.status(400).json({ error: 'No completed calls found to delete' });
+            return res.status(400).json({ error: 'Some selected calls require DC completion and cannot be deleted' });
         }
         
         // Delete calls and create history record in transaction
@@ -1921,7 +1918,7 @@ app.post('/calls/bulk-delete', authMiddleware, requireRole(['HOST']), async (req
                 deletedBy: user!.username,
                 deletedAt: new Date(),
                 count: callsToDelete.length,
-                callIds: callsToDelete.map(c => c.id)
+                deletedIds: callsToDelete.map(c => c.id)
             });
             
             // Send emails
