@@ -10,6 +10,7 @@ import EngineerAnalytics from './pages/EngineerAnalytics';
 import CategorySettings from './pages/CategorySettings';
 import CustomerDirectory from './pages/CustomerDirectory';
 import CarryInService from './pages/CarryInService';
+import DCPage from './pages/DCPage';
 import AdminLogin from './pages/AdminLogin';
 import AdminUserManagement from './pages/AdminUserManagement';
 import PublicCallForm from './pages/PublicCallForm';
@@ -61,6 +62,7 @@ function App() {
           <Route path="/analytics" element={<ProtectedRoute allowedRoles={['HOST']}><EngineerAnalytics /></ProtectedRoute>} />
           <Route path="/customers" element={<ProtectedRoute allowedRoles={['HOST']}><CustomerDirectory /></ProtectedRoute>} />
           <Route path="/carry-in-service" element={<ProtectedRoute><CarryInService /></ProtectedRoute>} />
+          <Route path="/dc" element={<ProtectedRoute allowedRoles={['HOST', 'ADMIN']}><DCPage /></ProtectedRoute>} />
           <Route path="/settings/categories" element={<ProtectedRoute allowedRoles={['HOST']}><CategorySettings /></ProtectedRoute>} />
         </Routes>
       </main>

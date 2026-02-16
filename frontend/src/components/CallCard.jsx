@@ -8,6 +8,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
   const [showAssign, setShowAssign] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
+  const [showDCSelection, setShowDCSelection] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [completeAction, setCompleteAction] = useState('complete');
@@ -15,6 +16,8 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
   const [remark, setRemark] = useState('');
   const [visitedRemark, setVisitedRemark] = useState('');
   const [engineerRemark, setEngineerRemark] = useState('');
+  const [dcRequired, setDcRequired] = useState(false);
+  const [dcRemark, setDcRemark] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
@@ -101,13 +104,23 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
     
     try {
       if (completeAction === 'complete') {
-        await completeCall(call.id, remark);
+        if (!showDCSelection) {
+          // Show DC selection modal first
+          setShowDCSelection(true);
+          setIsCompleting(false);
+          return;
+        }
+        // Complete with DC selection
+        await completeCall(call.id, remark, dcRequired, dcRemark);
       } else {
         await visitCall(call.id, visitedRemark);
       }
       setShowComplete(false);
+      setShowDCSelection(false);
       setRemark('');
       setVisitedRemark('');
+      setDcRequired(false);
+      setDcRemark('');
       setCompleteAction('complete');
       setIsActionModalOpen(false);
     } catch (error) {
@@ -156,6 +169,18 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
     setShowEdit(true);
   };
 
+  const getDCText = (call) => {
+    if (!call.dcRequired) return '[NO DC]';
+    if (call.dcStatus === 'COMPLETED') return '[DC✓]';
+    return '[DC⏳]';
+  };
+
+  const getDCColor = (call) => {
+    if (!call.dcRequired) return 'text-gray-500';
+    if (call.dcStatus === 'COMPLETED') return 'text-green-600';
+    return 'text-orange-600';
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'PENDING': return 'bg-yellow-100 text-yellow-800';
@@ -180,6 +205,15 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
       tags.push({ label: 'VISITED', color: 'bg-purple-100 text-purple-800' });
     } else if (call.status === 'COMPLETED') {
       tags.push({ label: 'COMPLETED', color: 'bg-green-100 text-green-800' });
+      
+      // Add DC status badge for completed calls
+      if (call.dcRequired) {
+        if (call.dcStatus === 'COMPLETED') {
+          tags.push({ label: 'DC✓', color: 'bg-green-100 text-green-800' });
+        } else {
+          tags.push({ label: 'DC⏳', color: 'bg-orange-100 text-orange-800' });
+        }
+      }
     }
     
     return tags;
@@ -191,7 +225,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
       onClick={() => !isActionModalOpen && setShowDetails(true)}
     >
       {showCheckboxes && call.status === 'COMPLETED' && (
-        <div className="flex justify-end mb-2">
+        <div className="flex justify-end mb-2" onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox"
             checked={selectedCalls.includes(call.id)}
@@ -482,7 +516,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
         </div>
       )}
 
-      {showComplete && (
+      {showComplete && !showDCSelection && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={(e) => handleModalBackdropClick(e, 'complete')}>
           <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Complete Call</h2>
@@ -540,7 +574,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
                     : 'bg-purple-600 text-white hover:bg-purple-700'
                 }`}
               >
-                {isCompleting ? 'Processing...' : (completeAction === 'complete' ? 'Complete' : 'Mark as Visited')}
+                {isCompleting ? 'Processing...' : (completeAction === 'complete' ? 'Next' : 'Mark as Visited')}
               </button>
               <button
                 onClick={() => {
@@ -553,6 +587,80 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
                 className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showComplete && showDCSelection && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">DC Selection</h2>
+            <p className="text-gray-600 mb-4">Do you need to create a physical paper for this call?</p>
+            
+            <div className="mb-4">
+              <div className="flex gap-4 mb-4">
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="radio"
+                    name="dcSelection"
+                    value="dc"
+                    checked={dcRequired === true}
+                    onChange={() => setDcRequired(true)}
+                    className="mr-2"
+                  />
+                  DC (Physical Paper)
+                </label>
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="radio"
+                    name="dcSelection"
+                    value="nodc"
+                    checked={dcRequired === false}
+                    onChange={() => setDcRequired(false)}
+                    className="mr-2"
+                  />
+                  NO DC
+                </label>
+              </div>
+            </div>
+            
+            {dcRequired && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">DC Remark (optional)</label>
+                <textarea
+                  value={dcRemark}
+                  onChange={(e) => setDcRemark(e.target.value)}
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  rows="3"
+                  placeholder="Add items or notes for physical paper..."
+                />
+              </div>
+            )}
+            
+            <div className="flex gap-2">
+              <button
+                onClick={handleComplete}
+                disabled={isCompleting}
+                className={`flex-1 py-2 rounded font-medium ${
+                  isCompleting
+                    ? 'bg-green-400 text-white cursor-not-allowed'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
+              >
+                {isCompleting ? 'Processing...' : 'Complete'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowDCSelection(false);
+                  setDcRequired(false);
+                  setDcRemark('');
+                }}
+                disabled={isCompleting}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
+              >
+                Back
               </button>
             </div>
           </div>
@@ -607,9 +715,16 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <div className="p-3">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(call.status)}`}>
-                    {call.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(call.status)}`}>
+                      {call.status}
+                    </span>
+                    {call.status === 'COMPLETED' && (
+                      <span className={`text-sm font-medium ${getDCColor(call)}`}>
+                        {getDCText(call)}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <div>

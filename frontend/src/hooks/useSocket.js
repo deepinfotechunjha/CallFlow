@@ -5,6 +5,7 @@ import useCallStore from '../store/callStore';
 import useCarryInServiceStore from '../store/carryInServiceStore';
 import useCategoryStore from '../store/categoryStore';
 import useServiceCategoryStore from '../store/serviceCategoryStore';
+import useDCStore from '../store/dcStore';
 
 let socket = null;
 
@@ -77,18 +78,28 @@ const useSocket = () => {
 
       socket.on('call_completed', (call) => {
         useCallStore.getState().handleCallCompleted(call);
+        if (call.dcRequired) {
+          useDCStore.getState().handleCallCompleted(call);
+        }
       });
 
       socket.on('call_visited', (call) => {
         useCallStore.getState().handleCallVisited(call);
       });
 
+      socket.on('dc_completed', (call) => {
+        useCallStore.getState().handleCallUpdate(call);
+        useDCStore.getState().handleDCCompleted(call);
+      });
+
       socket.on('calls_bulk_deleted', (data) => {
         useCallStore.getState().handleCallsBulkDeleted(data);
+        useDCStore.getState().handleCallsBulkDeleted(data);
       });
 
       socket.on('customer_updated', (customer) => {
         useCallStore.getState().handleCustomerUpdated(customer);
+        useDCStore.getState().handleCustomerUpdated(customer);
       });
 
       socket.on('services_bulk_deleted', (data) => {
