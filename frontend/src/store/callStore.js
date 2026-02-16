@@ -27,7 +27,7 @@ const useCallStore = create((set, get) => ({
   handleCallsBulkDeleted: (data) => {
     console.log('Handling bulk delete:', data);
     set(state => ({
-      calls: state.calls.filter(c => !data.callIds?.includes(c.id))
+      calls: state.calls.filter(c => !data.deletedIds?.includes(c.id))
     }));
   },
   
@@ -120,10 +120,12 @@ const useCallStore = create((set, get) => ({
     }
   },
 
-  completeCall: async (callId, remark) => {
+  completeCall: async (callId, remark, dcRequired = false, dcRemark = '') => {
     try {
       const response = await apiClient.post(`/calls/${callId}/complete`, {
-        remark
+        remark,
+        dcRequired,
+        dcRemark
       });
       toast.success('Call completed successfully');
       return response.data;
@@ -153,8 +155,9 @@ const useCallStore = create((set, get) => ({
         secretPassword
       });
       
-      // Immediately update the UI by removing deleted calls
-      get().handleCallsBulkDeleted({ callIds });
+      // Use actual deleted IDs from response, not the requested IDs
+      const actuallyDeletedIds = response.data.callsData?.map(c => c.id) || [];
+      get().handleCallsBulkDeleted({ deletedIds: actuallyDeletedIds });
       
       toast.success(`Successfully deleted ${response.data.deletedCount} calls`);
       return response.data;

@@ -44,11 +44,17 @@ model Call {
   visitedRemark  String?
   visitedBy      String?
   visitedAt      DateTime?
+  dcRequired     Boolean   @default(false)
+  dcRemark       String?
+  dcStatus       String?
+  dcCompletedBy  String?
+  dcCompletedAt  DateTime?
   customer       Customer? @relation(fields: [customerId], references: [id])
 
   @@index([assignedTo])
   @@index([createdBy])
   @@index([phone, category, status])
+  @@index([dcRequired, dcStatus])
 }
 
 model Customer {

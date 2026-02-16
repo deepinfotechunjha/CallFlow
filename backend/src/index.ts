@@ -173,11 +173,8 @@ setInterval(cleanExpiredUsedTokens, 60 * 60 * 1000);
 const emailTransporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    type: 'OAuth2',
     user: process.env.EMAIL_USER,
-    clientId: process.env.GMAIL_CLIENT_ID,
-    clientSecret: process.env.GMAIL_CLIENT_SECRET,
-    refreshToken: process.env.GMAIL_REFRESH_TOKEN
+    pass: process.env.EMAIL_PASS
   },
   connectionTimeout: 10000,
   greetingTimeout: 10000,
@@ -1329,7 +1326,12 @@ app.post('/calls/:id/assign', authMiddleware, requireRole(['HOST', 'ADMIN']), as
 
 app.post('/calls/:id/complete', authMiddleware, async (req: Request, res: Response) => {
     const callId = parseInt(req.params.id || '');
-    const { remark, engineerRemark } = req.body as { remark?: string; engineerRemark?: string };
+    const { remark, engineerRemark, dcRequired, dcRemark } = req.body as { 
+        remark?: string; 
+        engineerRemark?: string;
+        dcRequired?: boolean;
+        dcRemark?: string;
+    };
     const user = req.user;
     
     try {
@@ -1343,15 +1345,20 @@ app.post('/calls/:id/complete', authMiddleware, async (req: Request, res: Respon
             return res.status(403).json({ error: 'Cannot complete this call' });
         }
         
+        const updateData: any = {
+            status: 'COMPLETED',
+            completedBy: user?.username || 'system',
+            completedAt: new Date(),
+            remark: remark || null,
+            engineerRemark: engineerRemark !== undefined ? engineerRemark : call.engineerRemark,
+            dcRequired: dcRequired === true,
+            dcRemark: dcRequired === true ? (dcRemark || null) : null,
+            dcStatus: dcRequired === true ? 'PENDING' : null
+        };
+        
         const updatedCall = await prisma.call.update({
             where: { id: callId },
-            data: {
-                status: 'COMPLETED',
-                completedBy: user?.username || 'system',
-                completedAt: new Date(),
-                remark: remark || null,
-                engineerRemark: engineerRemark !== undefined ? engineerRemark : call.engineerRemark
-            },
+            data: updateData,
             include: { customer: true }
         });
         
@@ -1413,6 +1420,64 @@ app.post('/calls/:id/visited', authMiddleware, async (req: Request, res: Respons
         res.json(updatedCall);
     } catch (err: any) {
         res.status(500).json({ error: 'Failed to mark call as visited' });
+    }
+});
+
+// DC endpoints
+app.get('/calls/dc', authMiddleware, requireRole(['HOST', 'ADMIN']), async (req: Request, res: Response) => {
+    const { status } = req.query as { status?: string };
+    
+    try {
+        const whereClause: any = { dcRequired: true };
+        
+        if (status === 'pending') {
+            whereClause.dcStatus = 'PENDING';
+        } else if (status === 'completed') {
+            whereClause.dcStatus = 'COMPLETED';
+        }
+        
+        const dcCalls = await prisma.call.findMany({
+            where: whereClause,
+            orderBy: { completedAt: 'desc' }
+        });
+        
+        res.json(dcCalls);
+    } catch (err: any) {
+        res.status(500).json({ error: 'Failed to fetch DC calls' });
+    }
+});
+
+app.post('/calls/:id/complete-dc', authMiddleware, requireRole(['HOST', 'ADMIN']), async (req: Request, res: Response) => {
+    const callId = parseInt(req.params.id || '');
+    const user = req.user;
+    
+    try {
+        const call = await prisma.call.findUnique({ where: { id: callId } });
+        if (!call) {
+            return res.status(404).json({ error: 'Call not found' });
+        }
+        
+        if (!call.dcRequired) {
+            return res.status(400).json({ error: 'This call does not require DC' });
+        }
+        
+        if (call.dcStatus === 'COMPLETED') {
+            return res.status(400).json({ error: 'DC already completed' });
+        }
+        
+        const updatedCall = await prisma.call.update({
+            where: { id: callId },
+            data: {
+                dcStatus: 'COMPLETED',
+                dcCompletedBy: user?.username || 'system',
+                dcCompletedAt: new Date()
+            }
+        });
+        
+        emitToAll('dc_completed', updatedCall);
+        res.json(updatedCall);
+    } catch (err: any) {
+        res.status(500).json({ error: 'Failed to complete DC' });
     }
 });
 
@@ -1781,16 +1846,20 @@ app.post('/calls/bulk-delete', authMiddleware, requireRole(['HOST']), async (req
             return res.status(401).json({ error: 'Invalid secret password' });
         }
         
-        // Fetch calls to delete (only COMPLETED)
+        // Fetch calls to delete (only COMPLETED and either NO DC or DC COMPLETED)
         const callsToDelete = await prisma.call.findMany({
             where: { 
                 id: { in: callIds },
-                status: 'COMPLETED'
+                status: 'COMPLETED',
+                OR: [
+                    { dcRequired: false },
+                    { dcRequired: true, dcStatus: 'COMPLETED' }
+                ]
             }
         });
         
         if (callsToDelete.length === 0) {
-            return res.status(400).json({ error: 'No completed calls found to delete' });
+            return res.status(400).json({ error: 'Some selected calls require DC completion and cannot be deleted' });
         }
         
         // Delete calls and create history record in transaction
@@ -1849,7 +1918,7 @@ app.post('/calls/bulk-delete', authMiddleware, requireRole(['HOST']), async (req
                 deletedBy: user!.username,
                 deletedAt: new Date(),
                 count: callsToDelete.length,
-                callIds: callsToDelete.map(c => c.id)
+                deletedIds: callsToDelete.map(c => c.id)
             });
             
             // Send emails
