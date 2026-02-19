@@ -271,7 +271,7 @@ const Dashboard = () => {
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">Welcome Back! 👋</h1>
           <p className="text-gray-600">Hello <span className="font-semibold text-blue-600">{user?.username}</span>, here's your call management overview</p>
         </div>
-        <div className="flex gap-3 w-full sm:w-auto">
+        <div className={`flex gap-3 w-full sm:w-auto ${selectedCalls.length > 0 ? 'flex-wrap' : ''}`}>
           {user?.role === 'HOST' && selectedCalls.length > 0 && (
             <button
               onClick={() => setShowBulkDeleteModal(true)}
