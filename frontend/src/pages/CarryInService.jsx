@@ -387,7 +387,7 @@ const CarryInService = () => {
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">Carry-In Service 🔧</h1>
           <p className="text-gray-600">Manage device repairs and service requests</p>
         </div>
-        <div className="flex gap-3 w-full sm:w-auto">
+        <div className={`flex gap-3 w-full sm:w-auto ${selectedServices.length > 0 ? 'flex-wrap' : ''}`}>
           {user?.role === 'HOST' && selectedServices.length > 0 && (
             <button
               onClick={() => setShowBulkDeleteModal(true)}
