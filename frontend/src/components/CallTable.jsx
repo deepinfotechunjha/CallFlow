@@ -136,7 +136,7 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
       setShowDCSelection(prev => ({ ...prev, [callId]: false }));
       setRemark(prev => ({ ...prev, [callId]: '' }));
       setVisitedRemark(prev => ({ ...prev, [callId]: '' }));
-      setDcRequired(prev => ({ ...prev, [callId]: false }));
+      setDcRequired(prev => ({ ...prev, [callId]: true }));
       setDcRemark(prev => ({ ...prev, [callId]: '' }));
       setCompleteAction(prev => ({ ...prev, [callId]: 'complete' }));
       setIsActionModalOpen(prev => ({ ...prev, [callId]: false }));
@@ -721,7 +721,7 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
           <div key={`dc-${callId}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
               <h2 className="text-xl font-bold mb-4">DC Selection</h2>
-              <p className="text-gray-600 mb-4">Do you need to create a physical paper for this call?</p>
+              <p className="text-gray-600 mb-4">Do you need Delivery Charges for this call?</p>
               
               <div className="mb-4">
                 <div className="flex gap-4 mb-4">
@@ -730,11 +730,11 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                       type="radio"
                       name={`dcSelection-${callId}`}
                       value="dc"
-                      checked={dcRequired[callId] === true}
+                      checked={dcRequired[callId] === true || dcRequired[callId] === undefined}
                       onChange={() => setDcRequired(prev => ({ ...prev, [callId]: true }))}
                       className="mr-2"
                     />
-                    DC (Physical Paper)
+                    DC (Delivery Charges)
                   </label>
                   <label className="flex items-center cursor-pointer">
                     <input
@@ -758,7 +758,7 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                     onChange={(e) => setDcRemark(prev => ({ ...prev, [callId]: e.target.value }))}
                     className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
                     rows="3"
-                    placeholder="Add items or notes for physical paper..."
+                    placeholder="Add items or notes for delivery charges..."
                   />
                 </div>
               )}
@@ -778,7 +778,7 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                 <button
                   onClick={() => {
                     setShowDCSelection(prev => ({ ...prev, [callId]: false }));
-                    setDcRequired(prev => ({ ...prev, [callId]: false }));
+                    setDcRequired(prev => ({ ...prev, [callId]: true }));
                     setDcRemark(prev => ({ ...prev, [callId]: '' }));
                   }}
                   disabled={isCompleting[callId]}
