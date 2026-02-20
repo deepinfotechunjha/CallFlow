@@ -16,7 +16,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
   const [remark, setRemark] = useState('');
   const [visitedRemark, setVisitedRemark] = useState('');
   const [engineerRemark, setEngineerRemark] = useState('');
-  const [dcRequired, setDcRequired] = useState(false);
+  const [dcRequired, setDcRequired] = useState(true);
   const [dcRemark, setDcRemark] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
@@ -597,7 +597,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">DC Selection</h2>
-            <p className="text-gray-600 mb-4">Do you need to create a physical paper for this call?</p>
+            <p className="text-gray-600 mb-4">Do you need Delivery Charges for this call?</p>
             
             <div className="mb-4">
               <div className="flex gap-4 mb-4">
@@ -606,11 +606,11 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
                     type="radio"
                     name="dcSelection"
                     value="dc"
-                    checked={dcRequired === true}
+                    checked={dcRequired === true || dcRequired === undefined}
                     onChange={() => setDcRequired(true)}
                     className="mr-2"
                   />
-                  DC (Physical Paper)
+                  DC (Delivery Charges)
                 </label>
                 <label className="flex items-center cursor-pointer">
                   <input
@@ -634,7 +634,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
                   onChange={(e) => setDcRemark(e.target.value)}
                   className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
                   rows="3"
-                  placeholder="Add items or notes for physical paper..."
+                  placeholder="Add items or notes for delivery charges..."
                 />
               </div>
             )}
@@ -654,7 +654,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
               <button
                 onClick={() => {
                   setShowDCSelection(false);
-                  setDcRequired(false);
+                  setDcRequired(true);
                   setDcRemark('');
                 }}
                 disabled={isCompleting}
