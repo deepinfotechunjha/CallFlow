@@ -6,6 +6,7 @@ import useCarryInServiceStore from '../store/carryInServiceStore';
 import useCategoryStore from '../store/categoryStore';
 import useServiceCategoryStore from '../store/serviceCategoryStore';
 import useDCStore from '../store/dcStore';
+import useSalesStore from '../store/salesStore';
 
 let socket = null;
 
@@ -147,6 +148,15 @@ const useSocket = () => {
         window.dispatchEvent(new CustomEvent('notification_update', { 
           detail: notification 
         }));
+      });
+
+      // Sales Executive events
+      socket.on('sales_entry_created', (entry) => {
+        useSalesStore.getState().handleSalesEntryCreated(entry);
+      });
+
+      socket.on('sales_log_created', (data) => {
+        useSalesStore.getState().handleSalesLogCreated(data);
       });
     }
 

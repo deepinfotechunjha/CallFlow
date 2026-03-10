@@ -982,8 +982,8 @@ app.post("/users", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), async
         return res.status(400).json({ error: "username, password, email, phone, and role are required" });
     }
     
-    if (!['HOST', 'ADMIN', 'ENGINEER'].includes(role)) {
-        return res.status(400).json({ error: "Invalid role. Must be HOST, ADMIN, or ENGINEER" });
+    if (!['HOST', 'ADMIN', 'ENGINEER', 'SALES_EXECUTIVE'].includes(role)) {
+        return res.status(400).json({ error: "Invalid role. Must be HOST, ADMIN, ENGINEER, or SALES_EXECUTIVE" });
     }
     
     try {
@@ -1048,7 +1048,7 @@ app.put("/users/:id", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), as
             updateData.password = await bcrypt.hash(password, 10);
         }
         
-        if (role && ['HOST', 'ADMIN', 'ENGINEER'].includes(role)) {
+        if (role && ['HOST', 'ADMIN', 'ENGINEER', 'SALES_EXECUTIVE'].includes(role)) {
             updateData.role = role;
             
             if (role === 'HOST' && currentUser.role !== 'HOST') {
@@ -2835,6 +2835,139 @@ app.post('/share/:linkId/submit-service', async (req: Request, res: Response) =>
         res.status(500).json({ error: 'Failed to submit service' });
     }
 });
+// Sales Executive endpoints
+app.get('/sales-entries', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
+    try {
+        const entries = await prisma.$queryRaw`
+            SELECT 
+                se.*,
+                COUNT(CASE WHEN sl."logType" = 'VISIT' THEN 1 END)::int as "visitCount",
+                COUNT(CASE WHEN sl."logType" = 'CALL' THEN 1 END)::int as "callCount"
+            FROM "SalesEntry" se
+            LEFT JOIN "SalesLog" sl ON se.id = sl."salesEntryId"
+            GROUP BY se.id
+            ORDER BY se."createdAt" DESC
+        `;
+        res.json(entries);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.get('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
+    const entryId = parseInt(req.params.id || '');
+    try {
+        const entry = await prisma.salesEntry.findUnique({
+            where: { id: entryId },
+            include: {
+                logs: {
+                    orderBy: { loggedAt: 'desc' }
+                }
+            }
+        });
+        if (!entry) return res.status(404).json({ error: 'Entry not found' });
+        res.json(entry);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/sales-entries', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
+    const { firmName, gstNo, contactPerson1Name, contactPerson1Number, contactPerson2Name, contactPerson2Number, accountContactName, accountContactNumber, address, landmark, area, city, pincode, email } = req.body;
+    
+    if (!firmName || !gstNo || !contactPerson1Name || !contactPerson1Number || !address || !city || !pincode) {
+        return res.status(400).json({ error: 'Required fields missing' });
+    }
+    
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    if (!gstRegex.test(gstNo)) {
+        return res.status(400).json({ error: 'Invalid GST number format' });
+    }
+    
+    try {
+        const entry = await prisma.salesEntry.create({
+            data: {
+                firmName,
+                gstNo: gstNo.toUpperCase(),
+                contactPerson1Name,
+                contactPerson1Number,
+                contactPerson2Name,
+                contactPerson2Number,
+                accountContactName,
+                accountContactNumber,
+                address,
+                landmark,
+                area,
+                city,
+                pincode,
+                email,
+                createdBy: req.user!.username,
+                createdById: req.user!.id
+            }
+        });
+        emitToAll('sales_entry_created', entry);
+        res.status(201).json(entry);
+    } catch (err: any) {
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'Firm name already exists' });
+        }
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/sales-entries/:id/visit', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
+    const entryId = parseInt(req.params.id || '');
+    const { remark } = req.body;
+    
+    try {
+        const entry = await prisma.salesEntry.findUnique({ where: { id: entryId } });
+        if (!entry) return res.status(404).json({ error: 'Entry not found' });
+        
+        const log = await prisma.salesLog.create({
+            data: {
+                salesEntryId: entryId,
+                logType: 'VISIT',
+                remark,
+                loggedBy: req.user!.username,
+                loggedById: req.user!.id
+            }
+        });
+        emitToAll('sales_log_created', { salesEntryId: entryId, log });
+        res.status(201).json(log);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/sales-entries/:id/call', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
+    const entryId = parseInt(req.params.id || '');
+    const { callType, remark } = req.body;
+    
+    if (!callType || !['RECEIVED', 'OUTGOING'].includes(callType)) {
+        return res.status(400).json({ error: 'Valid call type required (RECEIVED or OUTGOING)' });
+    }
+    
+    try {
+        const entry = await prisma.salesEntry.findUnique({ where: { id: entryId } });
+        if (!entry) return res.status(404).json({ error: 'Entry not found' });
+        
+        const log = await prisma.salesLog.create({
+            data: {
+                salesEntryId: entryId,
+                logType: 'CALL',
+                callType,
+                remark,
+                loggedBy: req.user!.username,
+                loggedById: req.user!.id
+            }
+        });
+        emitToAll('sales_log_created', { salesEntryId: entryId, log });
+        res.status(201).json(log);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
 io.on('connection', (socket) => {
     socket.on('register', (userId: number) => {
         userSockets.set(userId, socket.id);

@@ -1,9 +1,10 @@
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useEffect } from 'react';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
+import SalesDashboard from './pages/SalesDashboard';
 import UserManagement from './pages/UserManagement';
 import Profile from './pages/Profile';
 import EngineerAnalytics from './pages/EngineerAnalytics';
@@ -56,7 +57,12 @@ function App() {
           <Route path="/share-service/:linkId" element={<PublicServiceForm />} />
           <Route path="/secreturl" element={<AdminLogin />} />
           <Route path="/secreturl/manage" element={<AdminUserManagement />} />
-          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/" element={
+            <ProtectedRoute>
+              {user?.role === 'SALES_EXECUTIVE' ? <Navigate to="/sales-dashboard" replace /> : <Dashboard />}
+            </ProtectedRoute>
+          } />
+          <Route path="/sales-dashboard" element={<ProtectedRoute allowedRoles={['HOST', 'SALES_EXECUTIVE']}><SalesDashboard /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute allowedRoles={['HOST']}><UserManagement /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute allowedRoles={['HOST']}><EngineerAnalytics /></ProtectedRoute>} />

@@ -18,6 +18,8 @@ model User {
   secretPassword         String                   @default("DEFAULTSECRET")
   deletionHistory        DeletionHistory[]
   serviceDeletionHistory ServiceDeletionHistory[]
+  salesEntries           SalesEntry[]
+  salesLogs              SalesLog[]
 }
 
 model Call {
@@ -162,4 +164,53 @@ model ServiceDeletionHistory {
 
   @@index([deletedBy])
   @@index([deletedAt])
+}
+
+model SalesEntry {
+  id                      Int        @id @default(autoincrement())
+  firmName                String     @unique @db.VarChar(255)
+  gstNo                   String     @db.VarChar(15)
+  contactPerson1Name      String     @db.VarChar(100)
+  contactPerson1Number    String     @db.VarChar(15)
+  contactPerson2Name      String?    @db.VarChar(100)
+  contactPerson2Number    String?    @db.VarChar(15)
+  accountContactName      String?    @db.VarChar(100)
+  accountContactNumber    String?    @db.VarChar(15)
+  address                 String     @db.VarChar(500)
+  landmark                String?    @db.VarChar(200)
+  area                    String?    @db.VarChar(100)
+  city                    String     @db.VarChar(100)
+  pincode                 String     @db.VarChar(6)
+  email                   String?    @db.VarChar(255)
+  createdBy               String     @db.VarChar(50)
+  createdById             Int
+  createdAt               DateTime   @default(now()) @db.Timestamptz
+  updatedAt               DateTime   @updatedAt @db.Timestamptz
+  logs                    SalesLog[]
+  creator                 User       @relation(fields: [createdById], references: [id])
+
+  @@index([firmName])
+  @@index([city])
+  @@index([gstNo])
+  @@index([createdBy])
+  @@index([createdAt])
+  @@index([contactPerson1Number])
+}
+
+model SalesLog {
+  id              Int        @id @default(autoincrement())
+  salesEntryId    Int
+  logType         String     @db.VarChar(10)
+  callType        String?    @db.VarChar(10)
+  remark          String?    @db.Text
+  loggedBy        String     @db.VarChar(50)
+  loggedById      Int
+  loggedAt        DateTime   @default(now()) @db.Timestamptz
+  salesEntry      SalesEntry @relation(fields: [salesEntryId], references: [id], onDelete: Cascade)
+  logger          User       @relation(fields: [loggedById], references: [id])
+
+  @@index([salesEntryId, loggedAt(sort: Desc)])
+  @@index([logType])
+  @@index([loggedBy])
+  @@index([loggedAt(sort: Desc)])
 }
