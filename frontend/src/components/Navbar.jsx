@@ -42,33 +42,53 @@ const Navbar = () => {
             </Link>
             
             <div className="hidden lg:flex space-x-1 xl:space-x-4">
-              <Link
-                to="/"
-                className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium transition-all duration-300 ${
-                  isActive('/') 
-                    ? 'text-blue-600 font-semibold' 
-                    : 'text-gray-700 hover:text-blue-600'
-                }`}
-              >
-                Dashboard
-                {isActive('/') && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
-                )}
-              </Link>
+              {user?.role !== 'SALES_EXECUTIVE' && (
+                <Link
+                  to="/"
+                  className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium transition-all duration-300 ${
+                    isActive('/') 
+                      ? 'text-blue-600 font-semibold' 
+                      : 'text-gray-700 hover:text-blue-600'
+                  }`}
+                >
+                  Dashboard
+                  {isActive('/') && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
+                  )}
+                </Link>
+              )}
               
-              <Link
-                to="/carry-in-service"
-                className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                  isActive('/carry-in-service') 
-                    ? 'text-blue-600 font-semibold' 
-                    : 'text-gray-700 hover:text-blue-600'
-                }`}
-              >
-                CarryInService
-                {isActive('/carry-in-service') && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
-                )}
-              </Link>
+              {(user?.role === 'HOST' || user?.role === 'SALES_EXECUTIVE') && (
+                <Link
+                  to="/sales-dashboard"
+                  className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                    isActive('/sales-dashboard') 
+                      ? 'text-blue-600 font-semibold' 
+                      : 'text-gray-700 hover:text-blue-600'
+                  }`}
+                >
+                  Sales Dashboard
+                  {isActive('/sales-dashboard') && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
+                  )}
+                </Link>
+              )}
+              
+              {user?.role !== 'SALES_EXECUTIVE' && (
+                <Link
+                  to="/carry-in-service"
+                  className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                    isActive('/carry-in-service') 
+                      ? 'text-blue-600 font-semibold' 
+                      : 'text-gray-700 hover:text-blue-600'
+                  }`}
+                >
+                  CarryInService
+                  {isActive('/carry-in-service') && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
+                  )}
+                </Link>
+              )}
               
               {(user?.role === 'HOST' || user?.role === 'ADMIN') && (
                 <Link
@@ -179,13 +199,25 @@ const Navbar = () => {
         {showMobileMenu && (
           <div className="lg:hidden border-t border-gray-200 py-2">
             <div className="flex flex-col space-y-1">
-              <Link
-                to="/"
-                onClick={() => setShowMobileMenu(false)}
-                className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                Dashboard
-              </Link>
+              {user?.role !== 'SALES_EXECUTIVE' && (
+                <Link
+                  to="/"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Dashboard
+                </Link>
+              )}
+              
+              {(user?.role === 'HOST' || user?.role === 'SALES_EXECUTIVE') && (
+                <Link
+                  to="/sales-dashboard"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Sales Dashboard
+                </Link>
+              )}
               
               <Link
                 to="/profile"
@@ -195,13 +227,15 @@ const Navbar = () => {
                 Profile
               </Link>
               
-              <Link
-                to="/carry-in-service"
-                onClick={() => setShowMobileMenu(false)}
-                className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                CarryInService
-              </Link>
+              {user?.role !== 'SALES_EXECUTIVE' && (
+                <Link
+                  to="/carry-in-service"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  CarryInService
+                </Link>
+              )}
               
               {(user?.role === 'HOST' || user?.role === 'ADMIN') && (
                 <Link

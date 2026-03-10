@@ -675,6 +675,7 @@ const UserManagement = () => {
                   <option value="ENGINEER">Engineer</option>
                   {canCreateAdmin && <option value="ADMIN">Admin</option>}
                   {user?.role === 'HOST' && <option value="HOST">Host</option>}
+                  {user?.role === 'HOST' && <option value="SALES_EXECUTIVE">Sales Executive</option>}
                 </select>
               </div>
 
@@ -793,6 +794,7 @@ const UserManagement = () => {
                   <option value="ENGINEER">Engineer</option>
                   <option value="ADMIN">Admin</option>
                   <option value="HOST">Host</option>
+                  {user?.role === 'HOST' && <option value="SALES_EXECUTIVE">Sales Executive</option>}
                 </select>
               </div>
 
