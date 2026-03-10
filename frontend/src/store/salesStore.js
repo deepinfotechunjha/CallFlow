@@ -12,6 +12,12 @@ const useSalesStore = create((set, get) => ({
     }));
   },
 
+  handleSalesEntryUpdated: (entry) => {
+    set(state => ({
+      entries: state.entries.map(e => e.id === entry.id ? { ...e, ...entry } : e)
+    }));
+  },
+
   handleSalesLogCreated: (data) => {
     set(state => ({
       entries: state.entries.map(entry => {
@@ -46,6 +52,18 @@ const useSalesStore = create((set, get) => ({
       return response.data;
     } catch (error) {
       const message = error.response?.data?.error || 'Failed to add entry';
+      toast.error(message);
+      throw error;
+    }
+  },
+
+  updateEntry: async (entryId, entryData) => {
+    try {
+      const response = await apiClient.put(`/sales-entries/${entryId}`, entryData);
+      toast.success('Entry updated successfully');
+      return response.data;
+    } catch (error) {
+      const message = error.response?.data?.error || 'Failed to update entry';
       toast.error(message);
       throw error;
     }

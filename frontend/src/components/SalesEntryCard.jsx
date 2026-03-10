@@ -1,6 +1,10 @@
 import React from 'react';
+import useAuthStore from '../store/authStore';
 
-const SalesEntryCard = ({ entry, onVisitClick, onCallClick, onDetailsClick }) => {
+const SalesEntryCard = ({ entry, onVisitClick, onCallClick, onDetailsClick, onEditClick }) => {
+  const { user } = useAuthStore();
+  const canEdit = user?.role === 'HOST' || user?.role === 'SALES_EXECUTIVE';
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
       <button
@@ -29,6 +33,14 @@ const SalesEntryCard = ({ entry, onVisitClick, onCallClick, onDetailsClick }) =>
         >
           📞 Call
         </button>
+        {canEdit && (
+          <button
+            onClick={() => onEditClick(entry)}
+            className="flex-1 px-3 py-2 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 text-sm font-medium"
+          >
+            ✏️
+          </button>
+        )}
       </div>
     </div>
   );
