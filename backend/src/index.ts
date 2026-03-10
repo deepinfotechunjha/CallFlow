@@ -2968,6 +2968,53 @@ app.post('/sales-entries/:id/call', authMiddleware, requireRole(['HOST', 'SALES_
     }
 });
 
+app.put('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
+    const entryId = parseInt(req.params.id || '');
+    const { firmName, gstNo, contactPerson1Name, contactPerson1Number, contactPerson2Name, contactPerson2Number, accountContactName, accountContactNumber, address, landmark, area, city, pincode, email } = req.body;
+    
+    try {
+        const updateData: any = {};
+        if (firmName) updateData.firmName = firmName;
+        if (gstNo) updateData.gstNo = gstNo.toUpperCase();
+        if (contactPerson1Name) updateData.contactPerson1Name = contactPerson1Name;
+        if (contactPerson1Number) updateData.contactPerson1Number = contactPerson1Number;
+        if (contactPerson2Name !== undefined) updateData.contactPerson2Name = contactPerson2Name;
+        if (contactPerson2Number !== undefined) updateData.contactPerson2Number = contactPerson2Number;
+        if (accountContactName !== undefined) updateData.accountContactName = accountContactName;
+        if (accountContactNumber !== undefined) updateData.accountContactNumber = accountContactNumber;
+        if (address) updateData.address = address;
+        if (landmark !== undefined) updateData.landmark = landmark;
+        if (area !== undefined) updateData.area = area;
+        if (city) updateData.city = city;
+        if (pincode) updateData.pincode = pincode;
+        if (email !== undefined) updateData.email = email;
+        
+        const entry = await prisma.salesEntry.update({
+            where: { id: entryId },
+            data: updateData
+        });
+        
+        const [entryWithCounts] = await prisma.$queryRaw`
+            SELECT 
+                se.*,
+                COUNT(CASE WHEN sl."logType" = 'VISIT' THEN 1 END)::int as "visitCount",
+                COUNT(CASE WHEN sl."logType" = 'CALL' THEN 1 END)::int as "callCount"
+            FROM "SalesEntry" se
+            LEFT JOIN "SalesLog" sl ON se.id = sl."salesEntryId"
+            WHERE se.id = ${entryId}
+            GROUP BY se.id
+        `;
+        
+        emitToAll('sales_entry_updated', entryWithCounts);
+        res.json(entryWithCounts);
+    } catch (err: any) {
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'Firm name already exists' });
+        }
+        res.status(500).json({ error: String(err) });
+    }
+});
+
 io.on('connection', (socket) => {
     socket.on('register', (userId: number) => {
         userSockets.set(userId, socket.id);

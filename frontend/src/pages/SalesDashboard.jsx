@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import useSalesStore from '../store/salesStore';
 import useAuthStore from '../store/authStore';
 import AddSalesEntryForm from '../components/AddSalesEntryForm';
+import EditSalesEntryForm from '../components/EditSalesEntryForm';
 import SalesEntryTable from '../components/SalesEntryTable';
 import SalesEntryCard from '../components/SalesEntryCard';
 import VisitLogModal from '../components/VisitLogModal';
@@ -10,6 +11,7 @@ import SalesEntryDetailsModal from '../components/SalesEntryDetailsModal';
 
 const SalesDashboard = () => {
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [showVisitModal, setShowVisitModal] = useState(false);
   const [showCallModal, setShowCallModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -60,6 +62,11 @@ const SalesDashboard = () => {
   const handleDetailsClick = (entry) => {
     setSelectedEntry(entry);
     setShowDetailsModal(true);
+  };
+
+  const handleEditClick = (entry) => {
+    setSelectedEntry(entry);
+    setShowEditForm(true);
   };
 
   return (
@@ -182,6 +189,7 @@ const SalesDashboard = () => {
             onVisitClick={handleVisitClick}
             onCallClick={handleCallClick}
             onDetailsClick={handleDetailsClick}
+            onEditClick={handleEditClick}
           />
         )}
       </div>
@@ -206,6 +214,7 @@ const SalesDashboard = () => {
                 onVisitClick={handleVisitClick}
                 onCallClick={handleCallClick}
                 onDetailsClick={handleDetailsClick}
+                onEditClick={handleEditClick}
               />
             ))
           )}
@@ -213,6 +222,15 @@ const SalesDashboard = () => {
       </div>
 
       {showAddForm && <AddSalesEntryForm onClose={() => setShowAddForm(false)} />}
+      {showEditForm && selectedEntry && (
+        <EditSalesEntryForm
+          entry={selectedEntry}
+          onClose={() => {
+            setShowEditForm(false);
+            setSelectedEntry(null);
+          }}
+        />
+      )}
       {showVisitModal && selectedEntry && (
         <VisitLogModal
           entry={selectedEntry}

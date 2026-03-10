@@ -1,6 +1,10 @@
 import React from 'react';
+import useAuthStore from '../store/authStore';
 
-const SalesEntryTable = ({ entries, onVisitClick, onCallClick, onDetailsClick }) => {
+const SalesEntryTable = ({ entries, onVisitClick, onCallClick, onDetailsClick, onEditClick }) => {
+  const { user } = useAuthStore();
+  const canEdit = user?.role === 'HOST' || user?.role === 'SALES_EXECUTIVE';
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       <div className="overflow-x-auto">
@@ -51,6 +55,15 @@ const SalesEntryTable = ({ entries, onVisitClick, onCallClick, onDetailsClick })
                     >
                       📞 Call
                     </button>
+                    {canEdit && (
+                      <button
+                        onClick={() => onEditClick(entry)}
+                        className="px-3 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 text-sm font-medium"
+                        title="Edit Entry"
+                      >
+                        ✏️ Edit
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

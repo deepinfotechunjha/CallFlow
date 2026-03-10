@@ -155,6 +155,10 @@ const useSocket = () => {
         useSalesStore.getState().handleSalesEntryCreated(entry);
       });
 
+      socket.on('sales_entry_updated', (entry) => {
+        useSalesStore.getState().handleSalesEntryUpdated(entry);
+      });
+
       socket.on('sales_log_created', (data) => {
         useSalesStore.getState().handleSalesLogCreated(data);
       });
