@@ -39,13 +39,13 @@ const SalesDashboard = () => {
 
   const uniqueOptions = getUniqueOptions();
   const filteredOptions = uniqueOptions.filter(option => 
-    option.toLowerCase().includes(searchQuery.toLowerCase())
+    option.toLowerCase().startsWith(searchQuery.toLowerCase())
   );
 
   const filteredEntries = entries.filter(entry => {
     if (searchQuery.trim()) {
       const value = entry[filterField];
-      if (!value || !value.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      if (!value || !value.toLowerCase().startsWith(searchQuery.toLowerCase())) return false;
     }
     if (cityFilter !== 'ALL' && entry.city !== cityFilter) return false;
     return true;
