@@ -18,6 +18,8 @@ const SalesDashboard = () => {
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [cityFilter, setCityFilter] = useState('ALL');
+  const [filterField, setFilterField] = useState('firmName');
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const { user } = useAuthStore();
   const { entries, fetchEntries, loading } = useSalesStore();
@@ -26,15 +28,24 @@ const SalesDashboard = () => {
     fetchEntries();
   }, [fetchEntries]);
 
+  const getUniqueOptions = () => {
+    const options = new Set();
+    entries.forEach(entry => {
+      const value = entry[filterField];
+      if (value) options.add(value);
+    });
+    return Array.from(options).sort();
+  };
+
+  const uniqueOptions = getUniqueOptions();
+  const filteredOptions = uniqueOptions.filter(option => 
+    option.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const filteredEntries = entries.filter(entry => {
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      const matchesSearch = 
-        (entry.firmName || '').toLowerCase().includes(query) ||
-        (entry.city || '').toLowerCase().includes(query) ||
-        (entry.contactPerson1Name || '').toLowerCase().includes(query) ||
-        (entry.contactPerson1Number || '').toLowerCase().includes(query);
-      if (!matchesSearch) return false;
+      const value = entry[filterField];
+      if (!value || !value.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     }
     if (cityFilter !== 'ALL' && entry.city !== cityFilter) return false;
     return true;
@@ -130,13 +141,31 @@ const SalesDashboard = () => {
           <span>🔍</span> Search & Filters
         </h2>
         <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={filterField}
+            onChange={(e) => {
+              setFilterField(e.target.value);
+              setSearchQuery('');
+            }}
+            className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors min-w-[160px]"
+          >
+            <option value="firmName">Firm Name</option>
+            <option value="contactPerson1Name">Contact 1 Name</option>
+            <option value="contactPerson1Number">Contact 1 Number</option>
+            <option value="contactPerson2Name">Contact 2 Name</option>
+            <option value="contactPerson2Number">Contact 2 Number</option>
+            <option value="accountContactName">Account Name</option>
+            <option value="accountContactNumber">Account Number</option>
+          </select>
           <div className="relative flex-1 min-w-[200px]">
             <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">🔍</span>
             <input
               type="text"
-              placeholder="Search by firm, city, contact..."
+              placeholder={`Search by ${filterField === 'firmName' ? 'firm name' : filterField === 'contactPerson1Name' ? 'contact 1 name' : filterField === 'contactPerson1Number' ? 'contact 1 number' : filterField === 'contactPerson2Name' ? 'contact 2 name' : filterField === 'contactPerson2Number' ? 'contact 2 number' : filterField === 'accountContactName' ? 'account name' : 'account number'}...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
               className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
             />
             {searchQuery && (
@@ -146,6 +175,22 @@ const SalesDashboard = () => {
               >
                 ×
               </button>
+            )}
+            {showDropdown && filteredOptions.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {filteredOptions.map((option, index) => (
+                  <div
+                    key={index}
+                    onClick={() => {
+                      setSearchQuery(option);
+                      setShowDropdown(false);
+                    }}
+                    className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm text-gray-700 border-b border-gray-100 last:border-b-0"
+                  >
+                    {option}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
           <select
