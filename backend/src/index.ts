@@ -3107,7 +3107,7 @@ app.post('/sales-entries', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE
 
 app.post('/sales-entries/:id/visit', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
     const entryId = parseInt(req.params.id || '');
-    const { remark } = req.body;
+    const { remark, latitude, longitude, locationAccuracy } = req.body;
     
     try {
         const entry = await prisma.salesEntry.findUnique({ where: { id: entryId } });
@@ -3118,6 +3118,9 @@ app.post('/sales-entries/:id/visit', authMiddleware, requireRole(['HOST', 'SALES
                 salesEntryId: entryId,
                 logType: 'VISIT',
                 remark,
+                latitude: latitude || null,
+                longitude: longitude || null,
+                locationAccuracy: locationAccuracy || null,
                 loggedBy: req.user!.username,
                 loggedById: req.user!.id
             }
