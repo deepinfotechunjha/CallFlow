@@ -8,6 +8,7 @@ import SalesEntryCard from '../components/SalesEntryCard';
 import VisitLogModal from '../components/VisitLogModal';
 import CallLogModal from '../components/CallLogModal';
 import SalesEntryDetailsModal from '../components/SalesEntryDetailsModal';
+import SalesShareModal from '../components/SalesShareModal';
 
 const SalesDashboard = () => {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -15,6 +16,7 @@ const SalesDashboard = () => {
   const [showVisitModal, setShowVisitModal] = useState(false);
   const [showCallModal, setShowCallModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [cityFilter, setCityFilter] = useState('ALL');
@@ -87,12 +89,20 @@ const SalesDashboard = () => {
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">Sales Dashboard 📊</h1>
           <p className="text-gray-600">Hello <span className="font-semibold text-blue-600">{user?.username}</span>, manage your firm entries</p>
         </div>
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium text-sm sm:text-base whitespace-nowrap shadow-sm transition-all"
-        >
-          + Add Entry
-        </button>
+        <div className="flex gap-3 w-full sm:w-auto">
+          <button
+            onClick={() => setShowShareModal(true)}
+            className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-purple-700 hover:to-purple-800 font-medium text-sm sm:text-base whitespace-nowrap shadow-sm transition-all flex items-center gap-2"
+          >
+            🔗 Share
+          </button>
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium text-sm sm:text-base whitespace-nowrap shadow-sm transition-all"
+          >
+            + Add Entry
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -301,6 +311,12 @@ const SalesDashboard = () => {
             setShowDetailsModal(false);
             setSelectedEntry(null);
           }}
+        />
+      )}
+      {showShareModal && (
+        <SalesShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
         />
       )}
     </div>

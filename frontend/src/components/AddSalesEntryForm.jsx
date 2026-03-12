@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import useSalesStore from '../store/salesStore';
 import useClickOutside from '../hooks/useClickOutside';
+import { getAllCities, addCustomCity } from '../utils/cities';
 
 const AddSalesEntryForm = ({ onClose }) => {
   const [formData, setFormData] = useState({
@@ -20,8 +21,33 @@ const AddSalesEntryForm = ({ onClose }) => {
     email: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showOtherCity, setShowOtherCity] = useState(false);
+  const [customCityInput, setCustomCityInput] = useState('');
+  const [cities, setCities] = useState(getAllCities());
   const { addEntry } = useSalesStore();
   const modalRef = useClickOutside(onClose);
+
+  const handleCityChange = (e) => {
+    const value = e.target.value;
+    if (value === 'OTHER') {
+      setShowOtherCity(true);
+      setFormData(prev => ({ ...prev, city: '' }));
+    } else {
+      setShowOtherCity(false);
+      setFormData(prev => ({ ...prev, city: value }));
+    }
+  };
+
+  const handleAddCustomCity = () => {
+    const trimmedCity = customCityInput.trim();
+    if (trimmedCity) {
+      addCustomCity(trimmedCity);
+      setCities(getAllCities());
+      setFormData(prev => ({ ...prev, city: trimmedCity }));
+      setCustomCityInput('');
+      setShowOtherCity(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -177,13 +203,44 @@ const AddSalesEntryForm = ({ onClose }) => {
 
             <div>
               <label className="block text-xs sm:text-sm font-medium mb-1">City *</label>
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
-                required
-              />
+              {showOtherCity ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customCityInput}
+                    onChange={(e) => setCustomCityInput(e.target.value)}
+                    className="flex-1 p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                    placeholder="Enter city name"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCustomCity}
+                    className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
+                  >
+                    Add
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowOtherCity(false)}
+                    className="px-3 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-sm"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <select
+                  value={formData.city}
+                  onChange={handleCityChange}
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                  required
+                >
+                  <option value="">Select City</option>
+                  {cities.map((city, index) => (
+                    <option key={index} value={city}>{city}</option>
+                  ))}
+                  <option value="OTHER">Other</option>
+                </select>
+              )}
             </div>
 
             <div>

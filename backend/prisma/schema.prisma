@@ -17,9 +17,9 @@ model User {
   role                   String
   secretPassword         String                   @default("DEFAULTSECRET")
   deletionHistory        DeletionHistory[]
-  serviceDeletionHistory ServiceDeletionHistory[]
   salesEntries           SalesEntry[]
   salesLogs              SalesLog[]
+  serviceDeletionHistory ServiceDeletionHistory[]
 }
 
 model Call {
@@ -43,14 +43,14 @@ model Call {
   assignedBy     String?
   callCount      Int       @default(1)
   lastCalledAt   DateTime  @default(now())
-  visitedRemark  String?
-  visitedBy      String?
   visitedAt      DateTime?
-  dcRequired     Boolean   @default(false)
-  dcRemark       String?
-  dcStatus       String?
-  dcCompletedBy  String?
+  visitedBy      String?
+  visitedRemark  String?
   dcCompletedAt  DateTime?
+  dcCompletedBy  String?
+  dcRemark       String?
+  dcRequired     Boolean   @default(false)
+  dcStatus       String?
   customer       Customer? @relation(fields: [customerId], references: [id])
 
   @@index([assignedTo])
@@ -167,27 +167,31 @@ model ServiceDeletionHistory {
 }
 
 model SalesEntry {
-  id                      Int        @id @default(autoincrement())
-  firmName                String     @unique @db.VarChar(255)
-  gstNo                   String     @db.VarChar(15)
-  contactPerson1Name      String     @db.VarChar(100)
-  contactPerson1Number    String     @db.VarChar(15)
-  contactPerson2Name      String?    @db.VarChar(100)
-  contactPerson2Number    String?    @db.VarChar(15)
-  accountContactName      String?    @db.VarChar(100)
-  accountContactNumber    String?    @db.VarChar(15)
-  address                 String     @db.VarChar(500)
-  landmark                String?    @db.VarChar(200)
-  area                    String?    @db.VarChar(100)
-  city                    String     @db.VarChar(100)
-  pincode                 String     @db.VarChar(6)
-  email                   String?    @db.VarChar(255)
-  createdBy               String     @db.VarChar(50)
-  createdById             Int
-  createdAt               DateTime   @default(now()) @db.Timestamptz
-  updatedAt               DateTime   @updatedAt @db.Timestamptz
-  logs                    SalesLog[]
-  creator                 User       @relation(fields: [createdById], references: [id])
+  id                   Int        @id @default(autoincrement())
+  firmName             String     @unique @db.VarChar(255)
+  gstNo                String     @db.VarChar(15)
+  contactPerson1Name   String     @db.VarChar(100)
+  contactPerson1Number String     @db.VarChar(15)
+  contactPerson2Name   String?    @db.VarChar(100)
+  contactPerson2Number String?    @db.VarChar(15)
+  accountContactName   String?    @db.VarChar(100)
+  accountContactNumber String?    @db.VarChar(15)
+  address              String     @db.VarChar(500)
+  landmark             String?    @db.VarChar(200)
+  area                 String?    @db.VarChar(100)
+  city                 String     @db.VarChar(100)
+  pincode              String     @db.VarChar(6)
+  email                String?    @db.VarChar(255)
+  createdBy            String     @db.VarChar(50)
+  createdById          Int?
+  createdAt            DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt            DateTime   @updatedAt @db.Timestamptz(6)
+  delayCount           Int        @default(0)
+  delayedBy            String[]   @default([])
+  lastActivityDate     DateTime?  @db.Timestamptz(6)
+  reminderDate         DateTime?  @db.Timestamptz(6)
+  creator              User?      @relation(fields: [createdById], references: [id])
+  logs                 SalesLog[]
 
   @@index([firmName])
   @@index([city])
@@ -195,19 +199,20 @@ model SalesEntry {
   @@index([createdBy])
   @@index([createdAt])
   @@index([contactPerson1Number])
+  @@index([reminderDate])
 }
 
 model SalesLog {
-  id              Int        @id @default(autoincrement())
-  salesEntryId    Int
-  logType         String     @db.VarChar(10)
-  callType        String?    @db.VarChar(10)
-  remark          String?    @db.Text
-  loggedBy        String     @db.VarChar(50)
-  loggedById      Int
-  loggedAt        DateTime   @default(now()) @db.Timestamptz
-  salesEntry      SalesEntry @relation(fields: [salesEntryId], references: [id], onDelete: Cascade)
-  logger          User       @relation(fields: [loggedById], references: [id])
+  id           Int        @id @default(autoincrement())
+  salesEntryId Int
+  logType      String     @db.VarChar(10)
+  callType     String?    @db.VarChar(10)
+  remark       String?
+  loggedBy     String     @db.VarChar(50)
+  loggedById   Int?
+  loggedAt     DateTime   @default(now()) @db.Timestamptz(6)
+  logger       User?      @relation(fields: [loggedById], references: [id])
+  salesEntry   SalesEntry @relation(fields: [salesEntryId], references: [id], onDelete: Cascade)
 
   @@index([salesEntryId, loggedAt(sort: Desc)])
   @@index([logType])
