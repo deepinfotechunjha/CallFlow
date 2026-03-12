@@ -66,7 +66,9 @@ const SalesEntryDetailsModal = ({ entry, onClose }) => {
               <h3 className="font-semibold text-gray-800 mb-3">📅 Activity Timeline</h3>
               {details.logs && details.logs.length > 0 ? (
                 <div className="space-y-3">
-                  {details.logs.map(log => (
+                  {details.logs.map(log => {
+                    console.log('Log data:', log); // Debug log
+                    return (
                     <div key={log.id} className="bg-gray-50 p-3 rounded-lg border-l-4 border-blue-500">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -79,10 +81,31 @@ const SalesEntryDetailsModal = ({ entry, onClose }) => {
                           {log.remark && (
                             <p className="text-sm text-gray-700 mt-2 italic">"{log.remark}"</p>
                           )}
+                          
+                          {/* Debug info */}
+                          <div className="text-xs text-gray-400 mt-1">
+                            Lat: {log.latitude || 'null'} | Long: {log.longitude || 'null'}
+                          </div>
+                          
+                          {log.logType === 'VISIT' && log.latitude && log.longitude && (
+                            <div className="mt-2">
+                              <a
+                                href={`https://www.google.com/maps?q=${log.latitude},${log.longitude}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200"
+                              >
+                                📍 View Location
+                                {log.locationAccuracy && (
+                                  <span className="text-gray-600">(±{Math.round(log.locationAccuracy)}m)</span>
+                                )}
+                              </a>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
               ) : (
                 <p className="text-gray-500 text-center py-4">No activity logs yet</p>

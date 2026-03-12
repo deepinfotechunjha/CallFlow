@@ -69,9 +69,15 @@ const useSalesStore = create((set, get) => ({
     }
   },
 
-  logVisit: async (entryId, remark) => {
+  logVisit: async (entryId, remark, location) => {
     try {
-      const response = await apiClient.post(`/sales-entries/${entryId}/visit`, { remark });
+      const payload = { remark };
+      if (location) {
+        payload.latitude = location.latitude;
+        payload.longitude = location.longitude;
+        payload.locationAccuracy = location.accuracy;
+      }
+      const response = await apiClient.post(`/sales-entries/${entryId}/visit`, payload);
       toast.success('Visit logged successfully');
       return response.data;
     } catch (error) {

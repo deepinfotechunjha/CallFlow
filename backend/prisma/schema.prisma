@@ -203,16 +203,19 @@ model SalesEntry {
 }
 
 model SalesLog {
-  id           Int        @id @default(autoincrement())
-  salesEntryId Int
-  logType      String     @db.VarChar(10)
-  callType     String?    @db.VarChar(10)
-  remark       String?
-  loggedBy     String     @db.VarChar(50)
-  loggedById   Int?
-  loggedAt     DateTime   @default(now()) @db.Timestamptz(6)
-  logger       User?      @relation(fields: [loggedById], references: [id])
-  salesEntry   SalesEntry @relation(fields: [salesEntryId], references: [id], onDelete: Cascade)
+  id               Int        @id @default(autoincrement())
+  salesEntryId     Int
+  logType          String     @db.VarChar(10)
+  callType         String?    @db.VarChar(10)
+  remark           String?
+  loggedBy         String     @db.VarChar(50)
+  loggedById       Int?
+  loggedAt         DateTime   @default(now()) @db.Timestamptz(6)
+  latitude         Float?
+  longitude        Float?
+  locationAccuracy Float?
+  logger           User?      @relation(fields: [loggedById], references: [id])
+  salesEntry       SalesEntry @relation(fields: [salesEntryId], references: [id], onDelete: Cascade)
 
   @@index([salesEntryId, loggedAt(sort: Desc)])
   @@index([logType])
