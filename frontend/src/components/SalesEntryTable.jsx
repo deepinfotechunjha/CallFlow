@@ -1,11 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import useAuthStore from '../store/authStore';
 
 const SalesEntryTable = ({ entries, onVisitClick, onCallClick, onDetailsClick, onEditClick }) => {
   const { user } = useAuthStore();
   const canEdit = user?.role === 'HOST' || user?.role === 'SALES_EXECUTIVE';
+  const [confirmDialog, setConfirmDialog] = useState({ show: false, type: '', number: '' });
+
+  const handleWhatsApp = (number) => {
+    setConfirmDialog({ show: true, type: 'whatsapp', number });
+  };
+
+  const handleCall = (number) => {
+    // Check if device is mobile/tablet
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 1024;
+    
+    if (isMobile) {
+      setConfirmDialog({ show: true, type: 'call', number });
+    } else {
+      setConfirmDialog({ show: true, type: 'call-unavailable', number });
+    }
+  };
+
+  const confirmAction = () => {
+    const { type, number } = confirmDialog;
+    if (type === 'whatsapp') {
+      window.open(`https://wa.me/${number.replace(/[^0-9]/g, '')}`, '_blank');
+    } else if (type === 'call') {
+      window.location.href = `tel:${number}`;
+    }
+    setConfirmDialog({ show: false, type: '', number: '' });
+  };
 
   return (
+    <>
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
@@ -16,6 +43,7 @@ const SalesEntryTable = ({ entries, onVisitClick, onCallClick, onDetailsClick, o
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Contact</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">City</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Logs</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Quick Contact</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
@@ -42,18 +70,36 @@ const SalesEntryTable = ({ entries, onVisitClick, onCallClick, onDetailsClick, o
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
                     <button
+                      onClick={() => handleWhatsApp(entry.contactPerson1Number)}
+                      className="px-3 py-1 bg-green-50 border border-green-200 rounded hover:bg-green-100 text-sm font-medium flex items-center gap-1"
+                      title="WhatsApp"
+                    >
+                      <img src="/whatsapp.png" alt="WhatsApp" className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleCall(entry.contactPerson1Number)}
+                      className="px-3 py-1 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 text-sm font-medium flex items-center gap-1"
+                      title="Call"
+                    >
+                      <img src="/call.png" alt="Call" className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex gap-2">
+                    <button
                       onClick={() => onVisitClick(entry)}
                       className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm font-medium"
                       title="Log Visit"
                     >
-                      👁️ Visit
+                      👁️
                     </button>
                     <button
                       onClick={() => onCallClick(entry)}
                       className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-sm font-medium"
                       title="Log Call"
                     >
-                      📞 Call
+                      📝
                     </button>
                     {canEdit && (
                       <button
@@ -61,7 +107,7 @@ const SalesEntryTable = ({ entries, onVisitClick, onCallClick, onDetailsClick, o
                         className="px-3 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 text-sm font-medium"
                         title="Edit Entry"
                       >
-                        ✏️ Edit
+                        ✏️
                       </button>
                     )}
                   </div>
@@ -72,6 +118,55 @@ const SalesEntryTable = ({ entries, onVisitClick, onCallClick, onDetailsClick, o
         </table>
       </div>
     </div>
+
+    {confirmDialog.show && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-xl">
+          {confirmDialog.type === 'call-unavailable' ? (
+            <>
+              <h3 className="text-lg font-bold text-gray-800 mb-4">
+                📞 Call Feature
+              </h3>
+              <p className="text-gray-600 mb-6">
+                This feature is only available on mobile devices.
+              </p>
+              <button
+                onClick={() => setConfirmDialog({ show: false, type: '', number: '' })}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+              >
+                OK
+              </button>
+            </>
+          ) : (
+            <>
+              <h3 className="text-lg font-bold text-gray-800 mb-4">
+                {confirmDialog.type === 'whatsapp' ? '💬 Open WhatsApp?' : '📞 Make Call?'}
+              </h3>
+              <p className="text-gray-600 mb-6">
+                {confirmDialog.type === 'whatsapp' 
+                  ? `Open WhatsApp chat with ${confirmDialog.number}?`
+                  : `Call ${confirmDialog.number}?`}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmDialog({ show: false, type: '', number: '' })}
+                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmAction}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                >
+                  Confirm
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 
