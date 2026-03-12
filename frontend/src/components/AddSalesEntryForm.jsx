@@ -24,17 +24,26 @@ const AddSalesEntryForm = ({ onClose }) => {
   const [showOtherCity, setShowOtherCity] = useState(false);
   const [customCityInput, setCustomCityInput] = useState('');
   const [cities, setCities] = useState(getAllCities());
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [citySearch, setCitySearch] = useState('');
   const { addEntry } = useSalesStore();
   const modalRef = useClickOutside(onClose);
+  const cityDropdownRef = useClickOutside(() => setShowCityDropdown(false));
 
-  const handleCityChange = (e) => {
-    const value = e.target.value;
-    if (value === 'OTHER') {
+  const filteredCities = cities.filter(city => 
+    city.toLowerCase().includes(citySearch.toLowerCase())
+  );
+
+  const handleCitySelect = (city) => {
+    if (city === 'OTHER') {
       setShowOtherCity(true);
       setFormData(prev => ({ ...prev, city: '' }));
+      setShowCityDropdown(false);
     } else {
       setShowOtherCity(false);
-      setFormData(prev => ({ ...prev, city: value }));
+      setFormData(prev => ({ ...prev, city: city }));
+      setShowCityDropdown(false);
+      setCitySearch('');
     }
   };
 
@@ -204,42 +213,74 @@ const AddSalesEntryForm = ({ onClose }) => {
             <div>
               <label className="block text-xs sm:text-sm font-medium mb-1">City *</label>
               {showOtherCity ? (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={customCityInput}
-                    onChange={(e) => setCustomCityInput(e.target.value)}
-                    className="flex-1 p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
-                    placeholder="Enter city name"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddCustomCity}
-                    className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
-                  >
-                    Add
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowOtherCity(false)}
-                    className="px-3 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-sm"
-                  >
-                    ✕
-                  </button>
+                <div className="space-y-2">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value="Other (Custom City)"
+                      readOnly
+                      onClick={() => setShowOtherCity(false)}
+                      className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer bg-gray-50"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={customCityInput}
+                      onChange={(e) => setCustomCityInput(e.target.value)}
+                      className="flex-1 p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                      placeholder="Enter city name"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCustomCity}
+                      className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
+                    >
+                      Add
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <select
-                  value={formData.city}
-                  onChange={handleCityChange}
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
-                  required
-                >
-                  <option value="">Select City</option>
-                  {cities.map((city, index) => (
-                    <option key={index} value={city}>{city}</option>
-                  ))}
-                  <option value="OTHER">Other</option>
-                </select>
+                <div className="relative" ref={cityDropdownRef}>
+                  <input
+                    type="text"
+                    value={formData.city || citySearch}
+                    onChange={(e) => {
+                      setCitySearch(e.target.value);
+                      setShowCityDropdown(true);
+                    }}
+                    onFocus={() => setShowCityDropdown(true)}
+                    onClick={() => setShowCityDropdown(true)}
+                    placeholder="Select or search city"
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                    required
+                  />
+                  {showCityDropdown && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-hidden">
+                      <div 
+                        onClick={() => handleCitySelect('OTHER')}
+                        className="sticky top-0 px-3 py-2 bg-blue-50 hover:bg-blue-100 cursor-pointer font-medium text-blue-700 border-b-2 border-blue-200 z-10"
+                      >
+                        ✏️ Other (Custom City)
+                      </div>
+                      <div className="overflow-y-auto max-h-52">
+                        {filteredCities.length > 0 ? (
+                          filteredCities.map((city, index) => (
+                            <div
+                              key={index}
+                              onClick={() => handleCitySelect(city)}
+                              className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                            >
+                              {city}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="px-3 py-2 text-gray-500 text-sm">No cities found</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
