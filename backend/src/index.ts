@@ -120,9 +120,9 @@ app.use(cors({
         // Check if origin is in allowed list
         if (allowedOrigins.includes(origin)) return callback(null, true);
         
-        // Allow localhost in development with proper validation
+        // Allow localhost and local network IPs in development
         if (process.env.NODE_ENV !== 'production') {
-            const localhostPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+            const localhostPattern = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?$/;
             if (localhostPattern.test(origin)) {
                 return callback(null, true);
             }
@@ -2822,7 +2822,7 @@ app.post('/share/sales/:linkId/submit', async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Invalid share link' });
         }
         if (err.code === 'P2002') {
-            return res.status(400).json({ error: 'Firm name already exists' });
+            return res.status(400).json({ error: 'GST number is already present' });
         }
         console.error('Submit sales share link error:', err);
         res.status(500).json({ error: 'Failed to submit sales entry' });
@@ -3099,7 +3099,7 @@ app.post('/sales-entries', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE
         res.status(201).json(entry);
     } catch (err: any) {
         if (err.code === 'P2002') {
-            return res.status(400).json({ error: 'Firm name already exists' });
+            return res.status(400).json({ error: 'GST number is already present' });
         }
         res.status(500).json({ error: String(err) });
     }
@@ -3201,7 +3201,7 @@ app.put('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_EXECUT
         res.json(entryWithCounts);
     } catch (err: any) {
         if (err.code === 'P2002') {
-            return res.status(400).json({ error: 'Firm name already exists' });
+            return res.status(400).json({ error: 'GST number is already present' });
         }
         res.status(500).json({ error: String(err) });
     }
