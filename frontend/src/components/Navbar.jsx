@@ -1,13 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import NotificationBell from './NotificationBell';
+import apiClient from '../api/apiClient';
 
 const Navbar = () => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [reminderCount, setReminderCount] = useState(0);
+
+  useEffect(() => {
+    const fetchReminderCount = async () => {
+      if (user?.role === 'HOST' || user?.role === 'SALES_EXECUTIVE') {
+        try {
+          const response = await apiClient.get('/sales-reminders');
+          setReminderCount(response.data.length);
+        } catch (error) {
+          // Silently fail
+        }
+      }
+    };
+    fetchReminderCount();
+    const interval = setInterval(fetchReminderCount, 60000); // Refresh every minute
+    return () => clearInterval(interval);
+  }, [user]);
 
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
@@ -59,19 +77,39 @@ const Navbar = () => {
               )}
               
               {(user?.role === 'HOST' || user?.role === 'SALES_EXECUTIVE') && (
-                <Link
-                  to="/sales-dashboard"
-                  className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                    isActive('/sales-dashboard') 
-                      ? 'text-blue-600 font-semibold' 
-                      : 'text-gray-700 hover:text-blue-600'
-                  }`}
-                >
-                  Sales Dashboard
-                  {isActive('/sales-dashboard') && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
-                  )}
-                </Link>
+                <>
+                  <Link
+                    to="/sales-dashboard"
+                    className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                      isActive('/sales-dashboard') 
+                        ? 'text-blue-600 font-semibold' 
+                        : 'text-gray-700 hover:text-blue-600'
+                    }`}
+                  >
+                    Sales Dashboard
+                    {isActive('/sales-dashboard') && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
+                    )}
+                  </Link>
+                  <Link
+                    to="/reminders"
+                    className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                      isActive('/reminders') 
+                        ? 'text-blue-600 font-semibold' 
+                        : 'text-gray-700 hover:text-blue-600'
+                    }`}
+                  >
+                    Reminders
+                    {reminderCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                        {reminderCount > 9 ? '9+' : reminderCount}
+                      </span>
+                    )}
+                    {isActive('/reminders') && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
+                    )}
+                  </Link>
+                </>
               )}
               
               {user?.role !== 'SALES_EXECUTIVE' && (
@@ -210,13 +248,27 @@ const Navbar = () => {
               )}
               
               {(user?.role === 'HOST' || user?.role === 'SALES_EXECUTIVE') && (
-                <Link
-                  to="/sales-dashboard"
-                  onClick={() => setShowMobileMenu(false)}
-                  className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Sales Dashboard
-                </Link>
+                <>
+                  <Link
+                    to="/sales-dashboard"
+                    onClick={() => setShowMobileMenu(false)}
+                    className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Sales Dashboard
+                  </Link>
+                  <Link
+                    to="/reminders"
+                    onClick={() => setShowMobileMenu(false)}
+                    className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium flex items-center justify-between"
+                  >
+                    <span>Reminders</span>
+                    {reminderCount > 0 && (
+                      <span className="bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center ml-2">
+                        {reminderCount > 9 ? '9+' : reminderCount}
+                      </span>
+                    )}
+                  </Link>
+                </>
               )}
               
               <Link

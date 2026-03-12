@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import SalesDashboard from './pages/SalesDashboard';
+import RemindersPage from './pages/RemindersPage';
 import UserManagement from './pages/UserManagement';
 import Profile from './pages/Profile';
 import EngineerAnalytics from './pages/EngineerAnalytics';
@@ -16,6 +17,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminUserManagement from './pages/AdminUserManagement';
 import PublicCallForm from './pages/PublicCallForm';
 import PublicServiceForm from './pages/PublicServiceForm';
+import PublicSalesForm from './pages/PublicSalesForm';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import useAuthStore from './store/authStore';
@@ -54,6 +56,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/share/:linkId" element={<PublicCallForm />} />
+          <Route path="/share/sales/:linkId" element={<PublicSalesForm />} />
           <Route path="/share-service/:linkId" element={<PublicServiceForm />} />
           <Route path="/secreturl" element={<AdminLogin />} />
           <Route path="/secreturl/manage" element={<AdminUserManagement />} />
@@ -63,6 +66,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/sales-dashboard" element={<ProtectedRoute allowedRoles={['HOST', 'SALES_EXECUTIVE']}><SalesDashboard /></ProtectedRoute>} />
+          <Route path="/reminders" element={<ProtectedRoute allowedRoles={['HOST', 'SALES_EXECUTIVE']}><RemindersPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute allowedRoles={['HOST']}><UserManagement /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute allowedRoles={['HOST']}><EngineerAnalytics /></ProtectedRoute>} />

@@ -2601,6 +2601,33 @@ app.post('/share/create-link', authMiddleware, async (req: Request, res: Respons
     }
 });
 
+app.post('/share/create-sales-link', authMiddleware, async (req: Request, res: Response) => {
+    try {
+        // Create JWT token with 24 hour expiry and unique ID
+        const token = jwt.sign(
+            { 
+                type: 'sales-share-link',
+                id: crypto.randomUUID(), // Unique ID ensures no duplicates
+                createdAt: Date.now(),
+                exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+            }, 
+            JWT_SECRET
+        );
+        
+        const shareUrl = `${process.env.FRONTEND_ORIGIN || 'http://localhost:5173'}/share/sales/${token}`;
+        
+        res.json({ 
+            success: true, 
+            shareUrl,
+            linkId: token,
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+        });
+    } catch (err: any) {
+        console.error('Create sales share link error:', err);
+        res.status(500).json({ error: 'Failed to create sales share link' });
+    }
+});
+
 app.get('/share/:linkId', async (req: Request, res: Response) => {
     const { linkId } = req.params;
     
@@ -2636,6 +2663,169 @@ app.get('/share/:linkId', async (req: Request, res: Response) => {
         }
         console.error('Validate share link error:', err);
         res.status(500).json({ error: 'Failed to validate share link' });
+    }
+});
+
+app.get('/share/sales/:linkId', async (req: Request, res: Response) => {
+    const { linkId } = req.params;
+    
+    if (!linkId) {
+        return res.status(400).json({ error: 'Link ID is required' });
+    }
+    
+    try {
+        // Check if token was already used
+        if (usedShareTokens.has(linkId)) {
+            return res.status(404).json({ error: 'Share link has already been used' });
+        }
+        
+        // Verify JWT token
+        const decoded = jwt.verify(linkId, JWT_SECRET) as any;
+        
+        if (decoded.type !== 'sales-share-link') {
+            return res.status(404).json({ error: 'Invalid sales share link' });
+        }
+        
+        res.json({ 
+            success: true, 
+            valid: true,
+            createdAt: new Date(decoded.createdAt).toISOString(),
+            expiresAt: new Date(decoded.exp * 1000).toISOString()
+        });
+    } catch (err: any) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(404).json({ error: 'Share link has expired' });
+        }
+        if (err.name === 'JsonWebTokenError') {
+            return res.status(404).json({ error: 'Invalid share link' });
+        }
+        console.error('Validate sales share link error:', err);
+        res.status(500).json({ error: 'Failed to validate share link' });
+    }
+});
+
+app.post('/share/sales/:linkId/submit', async (req: Request, res: Response) => {
+    const { linkId } = req.params;
+    const { firmName, gstNo, contactPerson1Name, contactPerson1Number, contactPerson2Name, contactPerson2Number, accountContactName, accountContactNumber, address, landmark, area, city, pincode, email } = req.body;
+    
+    if (!linkId) {
+        return res.status(400).json({ error: 'Link ID is required' });
+    }
+    
+    if (!firmName || !gstNo || !contactPerson1Name || !contactPerson1Number || !address || !city || !pincode) {
+        return res.status(400).json({ error: 'Required fields missing' });
+    }
+    
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    if (!gstRegex.test(gstNo)) {
+        return res.status(400).json({ error: 'Invalid GST number format' });
+    }
+    
+    try {
+        // Check if token was already used
+        if (usedShareTokens.has(linkId)) {
+            return res.status(404).json({ error: 'Share link has already been used' });
+        }
+        
+        // Verify JWT token
+        const decoded = jwt.verify(linkId, JWT_SECRET) as any;
+        
+        if (decoded.type !== 'sales-share-link') {
+            return res.status(404).json({ error: 'Invalid sales share link' });
+        }
+        
+        // Mark token as used
+        usedShareTokens.add(linkId);
+        
+        // Find the first HOST user to assign the entry to
+        const hostUser = await prisma.user.findFirst({
+            where: { role: 'HOST' },
+            select: { id: true }
+        });
+        
+        if (!hostUser) {
+            // Fallback: find any user
+            const anyUser = await prisma.user.findFirst({
+                select: { id: true }
+            });
+            
+            if (!anyUser) {
+                return res.status(500).json({ error: 'No users found in system' });
+            }
+            
+            // Create the sales entry with fallback user
+            const entry = await prisma.salesEntry.create({
+                data: {
+                    firmName,
+                    gstNo: gstNo.toUpperCase(),
+                    contactPerson1Name,
+                    contactPerson1Number,
+                    contactPerson2Name,
+                    contactPerson2Number,
+                    accountContactName,
+                    accountContactNumber,
+                    address,
+                    landmark,
+                    area,
+                    city,
+                    pincode,
+                    email,
+                    createdBy: 'Share Link',
+                    createdById: anyUser.id
+                }
+            });
+            
+            emitToAll('sales_entry_created', entry);
+            
+            return res.status(201).json({ 
+                success: true, 
+                entry,
+                message: 'Sales entry submitted successfully' 
+            });
+        }
+        
+        // Create the sales entry with HOST user
+        const entry = await prisma.salesEntry.create({
+            data: {
+                firmName,
+                gstNo: gstNo.toUpperCase(),
+                contactPerson1Name,
+                contactPerson1Number,
+                contactPerson2Name,
+                contactPerson2Number,
+                accountContactName,
+                accountContactNumber,
+                address,
+                landmark,
+                area,
+                city,
+                pincode,
+                email,
+                createdBy: 'Share Link',
+                createdById: hostUser.id
+            }
+        });
+        
+        // Emit real-time update
+        emitToAll('sales_entry_created', entry);
+        
+        res.status(201).json({ 
+            success: true, 
+            entry,
+            message: 'Sales entry submitted successfully' 
+        });
+    } catch (err: any) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(404).json({ error: 'Share link has expired' });
+        }
+        if (err.name === 'JsonWebTokenError') {
+            return res.status(404).json({ error: 'Invalid share link' });
+        }
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'Firm name already exists' });
+        }
+        console.error('Submit sales share link error:', err);
+        res.status(500).json({ error: 'Failed to submit sales entry' });
     }
 });
 
@@ -2935,6 +3125,7 @@ app.post('/sales-entries/:id/visit', authMiddleware, requireRole(['HOST', 'SALES
         emitToAll('sales_log_created', { salesEntryId: entryId, log });
         res.status(201).json(log);
     } catch (err: any) {
+        console.error('Sales visit log error:', err);
         res.status(500).json({ error: String(err) });
     }
 });
@@ -2964,6 +3155,7 @@ app.post('/sales-entries/:id/call', authMiddleware, requireRole(['HOST', 'SALES_
         emitToAll('sales_log_created', { salesEntryId: entryId, log });
         res.status(201).json(log);
     } catch (err: any) {
+        console.error('Sales call log error:', err);
         res.status(500).json({ error: String(err) });
     }
 });
@@ -3011,6 +3203,97 @@ app.put('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_EXECUT
         if (err.code === 'P2002') {
             return res.status(400).json({ error: 'Firm name already exists' });
         }
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// Reminder endpoints
+app.get('/sales-reminders', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
+    try {
+        const now = new Date();
+        const reminders = await prisma.$queryRaw`
+            SELECT 
+                se.*,
+                COUNT(CASE WHEN sl."logType" = 'VISIT' THEN 1 END)::int as "visitCount",
+                COUNT(CASE WHEN sl."logType" = 'CALL' THEN 1 END)::int as "callCount"
+            FROM "SalesEntry" se
+            LEFT JOIN "SalesLog" sl ON se.id = sl."salesEntryId"
+            WHERE se."reminderDate" IS NOT NULL AND se."reminderDate" <= ${now}
+            GROUP BY se.id
+            ORDER BY se."reminderDate" ASC
+        `;
+        res.json(reminders);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/sales-entries/:id/reminder-action', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
+    const entryId = parseInt(req.params.id || '');
+    const { actionType, remark } = req.body;
+    
+    if (!actionType || !['CALL', 'VISIT'].includes(actionType)) {
+        return res.status(400).json({ error: 'Valid action type required (CALL or VISIT)' });
+    }
+    
+    try {
+        const entry = await prisma.salesEntry.findUnique({ where: { id: entryId } });
+        if (!entry) return res.status(404).json({ error: 'Entry not found' });
+        
+        const now = new Date();
+        const reminderDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000);
+        
+        const log = await prisma.salesLog.create({
+            data: {
+                salesEntryId: entryId,
+                logType: actionType,
+                callType: actionType === 'CALL' ? 'OUTGOING' : undefined,
+                remark,
+                loggedBy: req.user!.username,
+                loggedById: req.user!.id
+            }
+        });
+        
+        await prisma.salesEntry.update({
+            where: { id: entryId },
+            data: {
+                lastActivityDate: now,
+                reminderDate: reminderDate
+            }
+        });
+        
+        emitToAll('sales_log_created', { salesEntryId: entryId, log });
+        res.status(201).json({ log, message: 'Reminder reset to 15 days' });
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/sales-entries/:id/delay', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
+    const entryId = parseInt(req.params.id || '');
+    const { delayDate } = req.body;
+    
+    if (!delayDate) {
+        return res.status(400).json({ error: 'Delay date is required' });
+    }
+    
+    try {
+        const entry = await prisma.salesEntry.findUnique({ where: { id: entryId } });
+        if (!entry) return res.status(404).json({ error: 'Entry not found' });
+        
+        const newDelayedBy = [...(entry.delayedBy || []), req.user!.username];
+        
+        const updatedEntry = await prisma.salesEntry.update({
+            where: { id: entryId },
+            data: {
+                reminderDate: new Date(delayDate),
+                delayCount: entry.delayCount + 1,
+                delayedBy: newDelayedBy
+            }
+        });
+        
+        res.json({ message: 'Reminder delayed successfully', entry: updatedEntry });
+    } catch (err: any) {
         res.status(500).json({ error: String(err) });
     }
 });

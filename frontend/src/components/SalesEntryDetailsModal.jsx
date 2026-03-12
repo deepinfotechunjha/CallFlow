@@ -54,6 +54,14 @@ const SalesEntryDetailsModal = ({ entry, onClose }) => {
               </div>
             </div>
 
+            <div className="bg-blue-50 p-4 rounded-lg mb-6">
+              <h3 className="font-semibold text-gray-800 mb-3">ℹ️ Entry Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                <p><span className="font-medium">Created By:</span> {details.createdBy}</p>
+                <p><span className="font-medium">Created On:</span> {new Date(details.createdAt).toLocaleString()}</p>
+              </div>
+            </div>
+
             <div>
               <h3 className="font-semibold text-gray-800 mb-3">📅 Activity Timeline</h3>
               {details.logs && details.logs.length > 0 ? (
