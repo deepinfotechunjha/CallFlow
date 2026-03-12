@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { getAllCities } from '../utils/cities';
+import useClickOutside from '../hooks/useClickOutside';
 
 const PublicSalesForm = () => {
   const { linkId } = useParams();
@@ -10,7 +11,14 @@ const PublicSalesForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showOtherCity, setShowOtherCity] = useState(false);
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [citySearch, setCitySearch] = useState('');
   const [cities] = useState(getAllCities());
+  const cityDropdownRef = useClickOutside(() => setShowCityDropdown(false));
+
+  const filteredCities = cities.filter(city => 
+    city.toLowerCase().includes(citySearch.toLowerCase())
+  );
   
   const [formData, setFormData] = useState({
     firmName: '',
@@ -119,14 +127,16 @@ const PublicSalesForm = () => {
     }));
   };
 
-  const handleCityChange = (e) => {
-    const value = e.target.value;
-    if (value === 'OTHER') {
+  const handleCitySelect = (city) => {
+    if (city === 'OTHER') {
       setShowOtherCity(true);
       setFormData(prev => ({ ...prev, city: '' }));
+      setShowCityDropdown(false);
     } else {
       setShowOtherCity(false);
-      setFormData(prev => ({ ...prev, city: value }));
+      setFormData(prev => ({ ...prev, city: city }));
+      setShowCityDropdown(false);
+      setCitySearch('');
     }
   };
 
@@ -387,28 +397,65 @@ const PublicSalesForm = () => {
                       City <span className="text-red-500">*</span>
                     </label>
                     {showOtherCity ? (
-                      <input
-                        type="text"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleChange}
-                        required
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                        placeholder="Enter city name"
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          name="city"
+                          value={formData.city}
+                          onChange={handleChange}
+                          required
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                          placeholder="Enter city name"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowOtherCity(false)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     ) : (
-                      <select
-                        value={formData.city}
-                        onChange={handleCityChange}
-                        required
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                      >
-                        <option value="">Select City</option>
-                        {cities.map((city, index) => (
-                          <option key={index} value={city}>{city}</option>
-                        ))}
-                        <option value="OTHER">Other</option>
-                      </select>
+                      <div className="relative" ref={cityDropdownRef}>
+                        <input
+                          type="text"
+                          value={formData.city || citySearch}
+                          onChange={(e) => {
+                            setCitySearch(e.target.value);
+                            setShowCityDropdown(true);
+                          }}
+                          onFocus={() => setShowCityDropdown(true)}
+                          onClick={() => setShowCityDropdown(true)}
+                          placeholder="Select or search city"
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                          required
+                        />
+                        {showCityDropdown && (
+                          <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-hidden">
+                            <div 
+                              onClick={() => handleCitySelect('OTHER')}
+                              className="sticky top-0 px-4 py-3 bg-purple-50 hover:bg-purple-100 cursor-pointer font-medium text-purple-700 border-b-2 border-purple-200 z-10"
+                            >
+                              ✏️ Other (Custom City)
+                            </div>
+                            <div className="overflow-y-auto max-h-52">
+                              {filteredCities.length > 0 ? (
+                                filteredCities.map((city, index) => (
+                                  <div
+                                    key={index}
+                                    onClick={() => handleCitySelect(city)}
+                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                                  >
+                                    {city}
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="px-4 py-2 text-gray-500 text-sm">No cities found</div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

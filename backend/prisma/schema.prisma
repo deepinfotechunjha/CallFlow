@@ -168,8 +168,8 @@ model ServiceDeletionHistory {
 
 model SalesEntry {
   id                   Int        @id @default(autoincrement())
-  firmName             String     @unique @db.VarChar(255)
-  gstNo                String     @db.VarChar(15)
+  firmName             String     @db.VarChar(255)
+  gstNo                String     @unique @db.VarChar(15)
   contactPerson1Name   String     @db.VarChar(100)
   contactPerson1Number String     @db.VarChar(15)
   contactPerson2Name   String?    @db.VarChar(100)
