@@ -247,3 +247,14 @@ model SalesLog {
   @@index([loggedBy])
   @@index([loggedAt(sort: Desc)])
 }
+
+model PublicAccessToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([expiresAt])
+}

@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { PrismaClient } from "@prisma/client";
@@ -166,6 +167,7 @@ const io = new Server(httpServer, {
 });
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.use(cors({
     origin: (origin, callback) => {
@@ -2878,7 +2880,114 @@ app.post('/carry-in-services/bulk-delete', authMiddleware, async (req: Request, 
     }
 });
 
-// Share link endpoints
+// Public API middleware for cookie validation
+function validatePublicAccess(req: Request, res: Response, next: NextFunction) {
+    const token = req.cookies?.publicAccessToken;
+    
+    if (!token) {
+        return res.status(401).json({ error: 'Access token required' });
+    }
+    
+    // Validate token in database
+    prisma.publicAccessToken.findFirst({
+        where: {
+            token,
+            expiresAt: { gt: new Date() },
+            used: false
+        }
+    }).then(tokenRecord => {
+        if (!tokenRecord) {
+            return res.status(401).json({ error: 'Invalid or expired access token' });
+        }
+        next();
+    }).catch(err => {
+        console.error('Token validation error:', err);
+        res.status(500).json({ error: 'Token validation failed' });
+    });
+}
+
+// Public endpoints for sales share form
+app.get('/api/public/cities', validatePublicAccess, async (req: Request, res: Response) => {
+    try {
+        const cities = await prisma.city.findMany({
+            where: { isActive: true },
+            select: { id: true, name: true },
+            orderBy: { name: 'asc' }
+        });
+        
+        res.json(cities);
+    } catch (err: any) {
+        res.status(500).json({ error: 'Failed to fetch cities' });
+    }
+});
+
+app.get('/api/public/areas', validatePublicAccess, async (req: Request, res: Response) => {
+    const { cityId } = req.query as { cityId?: string };
+    
+    try {
+        const whereClause: any = { isActive: true };
+        if (cityId) {
+            whereClause.cityId = parseInt(cityId);
+        }
+        
+        const areas = await prisma.area.findMany({
+            where: whereClause,
+            select: { name: true },
+            orderBy: { name: 'asc' }
+        });
+        
+        const areaList = areas.map(area => area.name);
+        res.json(areaList);
+    } catch (err: any) {
+        res.status(500).json({ error: 'Failed to fetch areas' });
+    }
+});
+
+// Create public access token when share link is accessed
+app.post('/api/public/create-access-token', async (req: Request, res: Response) => {
+    try {
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+        
+        await prisma.publicAccessToken.create({
+            data: {
+                token,
+                expiresAt
+            }
+        });
+        
+        // Set cookie for 1 hour
+        res.cookie('publicAccessToken', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 1000 // 1 hour
+        });
+        
+        res.json({ success: true, expiresAt });
+    } catch (err: any) {
+        res.status(500).json({ error: 'Failed to create access token' });
+    }
+});
+
+// Cleanup expired tokens (run periodically)
+setInterval(async () => {
+    try {
+        const result = await prisma.publicAccessToken.deleteMany({
+            where: {
+                OR: [
+                    { expiresAt: { lt: new Date() } },
+                    { used: true }
+                ]
+            }
+        });
+        if (result.count > 0) {
+            console.log(`Cleaned up ${result.count} expired public access tokens`);
+        }
+    } catch (error) {
+        console.error('Failed to cleanup expired tokens:', error);
+    }
+}, 10 * 60 * 1000); // Every 10 minutes
 app.post('/share/create-link', authMiddleware, async (req: Request, res: Response) => {
     try {
         // Create JWT token with 24 hour expiry and unique ID
@@ -2991,11 +3100,31 @@ app.get('/share/sales/:linkId', async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Invalid sales share link' });
         }
         
+        // Create public access token for city/area data
+        const publicToken = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+        
+        await prisma.publicAccessToken.create({
+            data: {
+                token: publicToken,
+                expiresAt
+            }
+        });
+        
+        // Set cookie for 1 hour
+        res.cookie('publicAccessToken', publicToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 1000 // 1 hour
+        });
+        
         res.json({ 
             success: true, 
             valid: true,
             createdAt: new Date(decoded.createdAt).toISOString(),
-            expiresAt: new Date(decoded.exp * 1000).toISOString()
+            expiresAt: new Date(decoded.exp * 1000).toISOString(),
+            publicAccessExpiresAt: expiresAt.toISOString()
         });
     } catch (err: any) {
         if (err.name === 'TokenExpiredError') {
@@ -3041,6 +3170,16 @@ app.post('/share/sales/:linkId/submit', async (req: Request, res: Response) => {
         
         // Mark token as used
         usedShareTokens.add(linkId);
+        
+        // Mark public access token as used and delete cookie
+        const publicToken = req.cookies?.publicAccessToken;
+        if (publicToken) {
+            await prisma.publicAccessToken.updateMany({
+                where: { token: publicToken },
+                data: { used: true }
+            });
+            res.clearCookie('publicAccessToken');
+        }
         
         // Find the first HOST user to assign the entry to
         const hostUser = await prisma.user.findFirst({

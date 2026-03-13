@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { getAllCities } from '../utils/cities';
 import useClickOutside from '../hooks/useClickOutside';
 
 const PublicSalesForm = () => {
@@ -11,14 +10,62 @@ const PublicSalesForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showOtherCity, setShowOtherCity] = useState(false);
+  const [showOtherArea, setShowOtherArea] = useState(false);
   const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [showAreaDropdown, setShowAreaDropdown] = useState(false);
   const [citySearch, setCitySearch] = useState('');
-  const [cities] = useState(getAllCities());
+  const [areaSearch, setAreaSearch] = useState('');
+  const [selectedCity, setSelectedCity] = useState(null);
+  const [cities, setCities] = useState([]);
+  const [areas, setAreas] = useState([]);
+  const [loadingData, setLoadingData] = useState(false);
   const cityDropdownRef = useClickOutside(() => setShowCityDropdown(false));
+  const areaDropdownRef = useClickOutside(() => setShowAreaDropdown(false));
 
   const filteredCities = cities.filter(city => 
-    city.toLowerCase().includes(citySearch.toLowerCase())
+    city.name.toLowerCase().includes(citySearch.toLowerCase())
   );
+  
+  const filteredAreas = areas.filter(area => 
+    area.toLowerCase().includes(areaSearch.toLowerCase())
+  );
+
+  const handleCitySelect = (city) => {
+    if (city === 'OTHER') {
+      setShowOtherCity(true);
+      setSelectedCity(null);
+      setFormData(prev => ({ ...prev, city: '' }));
+      setShowCityDropdown(false);
+      setAreas([]);
+    } else {
+      setShowOtherCity(false);
+      setSelectedCity(city);
+      setFormData(prev => ({ ...prev, city: city ? city.name : '' }));
+      setShowCityDropdown(false);
+      setCitySearch('');
+      // Load areas for the selected city
+      if (city) {
+        loadAreas(city);
+      } else {
+        setAreas([]);
+      }
+      // Clear area selection when city changes
+      setFormData(prev => ({ ...prev, area: '' }));
+    }
+  };
+
+  const handleAreaSelect = (area) => {
+    if (area === 'OTHER') {
+      setShowOtherArea(true);
+      setFormData(prev => ({ ...prev, area: '' }));
+      setShowAreaDropdown(false);
+    } else {
+      setShowOtherArea(false);
+      setFormData(prev => ({ ...prev, area: area }));
+      setShowAreaDropdown(false);
+      setAreaSearch('');
+    }
+  };
   
   const [formData, setFormData] = useState({
     firmName: '',
@@ -41,13 +88,60 @@ const PublicSalesForm = () => {
     validateLink();
   }, [linkId]);
 
+  const loadCities = async () => {
+    setLoadingData(true);
+    try {
+      const citiesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/public/cities`, {
+        credentials: 'include'
+      });
+
+      if (citiesResponse.ok) {
+        const citiesData = await citiesResponse.json();
+        setCities(citiesData || []);
+      }
+    } catch (error) {
+      console.error('Failed to load cities:', error);
+      toast.error('Failed to load city data');
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const loadAreas = async (city) => {
+    if (!city) {
+      setAreas([]);
+      return;
+    }
+
+    setLoadingData(true);
+    try {
+      const areasResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/public/areas?cityId=${city.id}`, {
+        credentials: 'include'
+      });
+
+      if (areasResponse.ok) {
+        const areasData = await areasResponse.json();
+        setAreas(areasData || []);
+      }
+    } catch (error) {
+      console.error('Failed to load areas:', error);
+      toast.error('Failed to load area data');
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
   const validateLink = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/share/sales/${linkId}`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/share/sales/${linkId}`, {
+        credentials: 'include'
+      });
       const data = await response.json();
 
       if (response.ok && data.success) {
         setIsValidLink(true);
+        // Load cities after successful validation
+        await loadCities();
       } else {
         setIsValidLink(false);
         toast.error(data.error || 'Invalid or expired link');
@@ -100,6 +194,7 @@ const PublicSalesForm = () => {
         headers: {
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(submitData)
       });
 
@@ -125,19 +220,6 @@ const PublicSalesForm = () => {
       ...prev,
       [name]: value
     }));
-  };
-
-  const handleCitySelect = (city) => {
-    if (city === 'OTHER') {
-      setShowOtherCity(true);
-      setFormData(prev => ({ ...prev, city: '' }));
-      setShowCityDropdown(false);
-    } else {
-      setShowOtherCity(false);
-      setFormData(prev => ({ ...prev, city: city }));
-      setShowCityDropdown(false);
-      setCitySearch('');
-    }
   };
 
   if (isValidating) {
@@ -382,14 +464,68 @@ const PublicSalesForm = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Area
                     </label>
-                    <input
-                      type="text"
-                      name="area"
-                      value={formData.area}
-                      onChange={handleChange}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                      placeholder="Enter area (optional)"
-                    />
+                    {showOtherArea ? (
+                      <div className="relative">
+                        <input
+                          type="text"
+                          name="area"
+                          value={formData.area}
+                          onChange={handleChange}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                          placeholder="Enter area name"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowOtherArea(false)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="relative" ref={areaDropdownRef}>
+                        <input
+                          type="text"
+                          value={formData.area || areaSearch}
+                          onChange={(e) => {
+                            setAreaSearch(e.target.value);
+                            setShowAreaDropdown(true);
+                          }}
+                          onFocus={() => setShowAreaDropdown(true)}
+                          onClick={() => setShowAreaDropdown(true)}
+                          placeholder={loadingData ? "Loading areas..." : selectedCity ? "Select or search area" : "Please select a city first"}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                          disabled={loadingData || !selectedCity}
+                        />
+                        {showAreaDropdown && !loadingData && (
+                          <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-hidden">
+                            <div 
+                              onClick={() => handleAreaSelect('OTHER')}
+                              className="sticky top-0 px-4 py-3 bg-purple-50 hover:bg-purple-100 cursor-pointer font-medium text-purple-700 border-b-2 border-purple-200 z-10"
+                            >
+                              ✏️ Other (Custom Area)
+                            </div>
+                            <div className="overflow-y-auto max-h-52">
+                              {filteredAreas.length > 0 ? (
+                                filteredAreas.map((area, index) => (
+                                  <div
+                                    key={index}
+                                    onClick={() => handleAreaSelect(area)}
+                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                                  >
+                                    {area}
+                                  </div>
+                                ))
+                              ) : selectedCity ? (
+                                <div className="px-4 py-2 text-gray-500 text-sm">No areas found for this city</div>
+                              ) : (
+                                <div className="px-4 py-2 text-gray-500 text-sm">Please select a city first</div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -426,11 +562,12 @@ const PublicSalesForm = () => {
                           }}
                           onFocus={() => setShowCityDropdown(true)}
                           onClick={() => setShowCityDropdown(true)}
-                          placeholder="Select or search city"
+                          placeholder={loadingData ? "Loading cities..." : "Select or search city"}
                           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                          disabled={loadingData}
                           required
                         />
-                        {showCityDropdown && (
+                        {showCityDropdown && !loadingData && (
                           <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-hidden">
                             <div 
                               onClick={() => handleCitySelect('OTHER')}
@@ -442,11 +579,11 @@ const PublicSalesForm = () => {
                               {filteredCities.length > 0 ? (
                                 filteredCities.map((city, index) => (
                                   <div
-                                    key={index}
+                                    key={city.id}
                                     onClick={() => handleCitySelect(city)}
                                     className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
                                   >
-                                    {city}
+                                    {city.name}
                                   </div>
                                 ))
                               ) : (
