@@ -127,24 +127,35 @@ const CityAreaSelector = ({
           City {required && '*'}
         </label>
         <div className="relative" ref={cityDropdownRef}>
-          <input
-            type="text"
-            value={selectedCity ? selectedCity.name : citySearch}
-            onChange={(e) => {
-              setCitySearch(e.target.value);
-              setShowCityDropdown(true);
-              if (!e.target.value) {
-                onCityChange(null);
-              }
-            }}
-            onFocus={() => setShowCityDropdown(true)}
-            onClick={() => setShowCityDropdown(true)}
-            placeholder="Select or search city"
-            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
-            required={required}
-            disabled={disabled}
-          />
-          {showCityDropdown && !disabled && (
+          {selectedCity ? (
+            <div className="w-full p-2 border rounded bg-blue-50 flex items-center justify-between text-sm">
+              <span>{selectedCity.name}</span>
+              <button
+                type="button"
+                onClick={() => onCityChange(null)}
+                disabled={disabled}
+                className="text-red-500 hover:text-red-700 font-bold text-lg leading-none disabled:opacity-50"
+              >
+                ×
+              </button>
+            </div>
+          ) : (
+            <input
+              type="text"
+              value={citySearch}
+              onChange={(e) => {
+                setCitySearch(e.target.value);
+                setShowCityDropdown(true);
+              }}
+              onFocus={() => setShowCityDropdown(true)}
+              onClick={() => setShowCityDropdown(true)}
+              placeholder="Select or search city"
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+              required={required}
+              disabled={disabled}
+            />
+          )}
+          {showCityDropdown && !disabled && !selectedCity && (
             <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-hidden">
               <div 
                 onClick={() => handleCitySelect('ADD_NEW')}
@@ -177,26 +188,38 @@ const CityAreaSelector = ({
       {/* Area Selector */}
       <div>
         <label className="block text-xs sm:text-sm font-medium mb-1">
-          Area
+          Area {required && '*'}
         </label>
         <div className="relative" ref={areaDropdownRef}>
-          <input
-            type="text"
-            value={selectedArea ? selectedArea.name : areaSearch}
-            onChange={(e) => {
-              setAreaSearch(e.target.value);
-              setShowAreaDropdown(true);
-              if (!e.target.value) {
-                onAreaChange(null);
-              }
-            }}
-            onFocus={() => setShowAreaDropdown(true)}
-            onClick={() => setShowAreaDropdown(true)}
-            placeholder={selectedCity ? "Select or search area" : "Select city first"}
-            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
-            disabled={disabled || !selectedCity}
-          />
-          {showAreaDropdown && !disabled && selectedCity && (
+          {selectedArea ? (
+            <div className="w-full p-2 border rounded bg-green-50 flex items-center justify-between text-sm">
+              <span>{selectedArea.name}</span>
+              <button
+                type="button"
+                onClick={() => onAreaChange(null)}
+                disabled={disabled}
+                className="text-red-500 hover:text-red-700 font-bold text-lg leading-none disabled:opacity-50"
+              >
+                ×
+              </button>
+            </div>
+          ) : (
+            <input
+              type="text"
+              value={areaSearch}
+              onChange={(e) => {
+                setAreaSearch(e.target.value);
+                setShowAreaDropdown(true);
+              }}
+              onFocus={() => setShowAreaDropdown(true)}
+              onClick={() => setShowAreaDropdown(true)}
+              placeholder={selectedCity ? "Select or search area" : "Select city first"}
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+              disabled={disabled || !selectedCity}
+              required={required}
+            />
+          )}
+          {showAreaDropdown && !disabled && selectedCity && !selectedArea && (
             <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-hidden">
               <div 
                 onClick={() => handleAreaSelect('ADD_NEW')}

@@ -3146,8 +3146,8 @@ app.post('/share/sales/:linkId/submit', async (req: Request, res: Response) => {
         return res.status(400).json({ error: 'Link ID is required' });
     }
     
-    if (!firmName || !gstNo || !contactPerson1Name || !contactPerson1Number || !address || !city || !pincode) {
-        return res.status(400).json({ error: 'Required fields missing' });
+    if (!firmName || !gstNo || !contactPerson1Name || !contactPerson1Number || !address || !area || !city || !pincode) {
+        return res.status(400).json({ error: 'Required fields missing (area is required)' });
     }
     
     const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;

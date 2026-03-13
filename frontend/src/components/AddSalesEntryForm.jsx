@@ -39,6 +39,13 @@ const AddSalesEntryForm = ({ onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
+
+    if (!formData.area) {
+      alert('Area is required');
+      setIsSubmitting(false);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await addEntry(formData);
