@@ -94,17 +94,72 @@ const httpServer = createServer(app);
 
 const allowedOrigins = [
     process.env.FRONTEND_ORIGIN || 'http://localhost:5173',
-    'https://call-manage.netlify.app',
-    'https://deploy-call.netlify.app',
-    'https://deploycall.netlify.app',
-    'https://deepcallflow.netlify.app', // Add your actual Netlify URL
+    'http://localhost:5173',
     'http://localhost:5174',
-    'http://localhost:5175'
+    'http://localhost:5175',
+    'http://localhost:5176',
+    'http://localhost:5177',
+    'http://localhost:5178',
+    'http://localhost:5179',
+    'http://localhost:5180',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'http://localhost:4000',
+    'http://localhost:4001',
+    'http://localhost:8000',
+    'http://localhost:8080',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174',
+    'http://127.0.0.1:5175',
+    'http://127.0.0.1:5176',
+    'http://127.0.0.1:5177',
+    'http://127.0.0.1:5178',
+    'http://127.0.0.1:5179',
+    'http://127.0.0.1:5180',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
+    'http://127.0.0.1:3002',
+    'http://127.0.0.1:4000',
+    'http://127.0.0.1:4001',
+    'http://127.0.0.1:8000',
+    'http://127.0.0.1:8080'
 ];
 
 const io = new Server(httpServer, {
     cors: {
-        origin: allowedOrigins,
+        origin: [
+            'http://localhost:5173',
+            'http://localhost:5174',
+            'http://localhost:5175',
+            'http://localhost:5176',
+            'http://localhost:5177',
+            'http://localhost:5178',
+            'http://localhost:5179',
+            'http://localhost:5180',
+            'http://localhost:3000',
+            'http://localhost:3001',
+            'http://localhost:3002',
+            'http://localhost:4000',
+            'http://localhost:4001',
+            'http://localhost:8000',
+            'http://localhost:8080',
+            'http://127.0.0.1:5173',
+            'http://127.0.0.1:5174',
+            'http://127.0.0.1:5175',
+            'http://127.0.0.1:5176',
+            'http://127.0.0.1:5177',
+            'http://127.0.0.1:5178',
+            'http://127.0.0.1:5179',
+            'http://127.0.0.1:5180',
+            'http://127.0.0.1:3000',
+            'http://127.0.0.1:3001',
+            'http://127.0.0.1:3002',
+            'http://127.0.0.1:4000',
+            'http://127.0.0.1:4001',
+            'http://127.0.0.1:8000',
+            'http://127.0.0.1:8080'
+        ],
         methods: ["GET", "POST"],
         credentials: true
     }
@@ -120,9 +175,9 @@ app.use(cors({
         // Check if origin is in allowed list
         if (allowedOrigins.includes(origin)) return callback(null, true);
         
-        // Allow localhost and local network IPs in development
+        // Allow localhost and 127.0.0.1 with any port in development
         if (process.env.NODE_ENV !== 'production') {
-            const localhostPattern = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?$/;
+            const localhostPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
             if (localhostPattern.test(origin)) {
                 return callback(null, true);
             }
@@ -2061,6 +2116,256 @@ app.post('/notifications/bulk-delete', authMiddleware, async (req: Request, res:
     }
 });
 
+// Cities endpoints
+app.get('/cities', async (_req: Request, res: Response) => {
+    try {
+        const cities = await prisma.city.findMany({
+            where: { isActive: true },
+            orderBy: { name: 'asc' }
+        });
+        res.json(cities);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.get('/cities/protected', authMiddleware, async (_req: Request, res: Response) => {
+    try {
+        const cities = await prisma.city.findMany({
+            where: { isActive: true },
+            orderBy: { name: 'asc' }
+        });
+        res.json(cities);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/cities', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
+    const { name } = req.body as { name: string };
+    
+    if (!name || !name.trim()) {
+        return res.status(400).json({ error: 'City name is required' });
+    }
+    
+    try {
+        // Check if a city with this name already exists (including inactive ones)
+        const existingCity = await prisma.city.findUnique({
+            where: { name: name.trim() }
+        });
+        
+        if (existingCity) {
+            if (existingCity.isActive) {
+                return res.status(400).json({ error: 'City already exists' });
+            } else {
+                // Reactivate the existing city
+                const city = await prisma.city.update({
+                    where: { id: existingCity.id },
+                    data: { isActive: true }
+                });
+                emitToAll('city_created', city);
+                return res.status(201).json(city);
+            }
+        }
+        
+        // Create new city if none exists
+        const city = await prisma.city.create({
+            data: { name: name.trim() }
+        });
+        
+        emitToAll('city_created', city);
+        res.status(201).json(city);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.put('/cities/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const cityId = parseInt(req.params.id || '');
+    const { name } = req.body as { name: string };
+    
+    if (!name || !name.trim()) {
+        return res.status(400).json({ error: 'City name is required' });
+    }
+    
+    try {
+        const city = await prisma.city.update({
+            where: { id: cityId },
+            data: { name: name.trim() }
+        });
+        
+        emitToAll('city_updated', city);
+        res.json(city);
+    } catch (err: any) {
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'City already exists' });
+        }
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.delete('/cities/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const cityId = parseInt(req.params.id || '');
+    
+    try {
+        const city = await prisma.city.update({
+            where: { id: cityId },
+            data: { isActive: false }
+        });
+        
+        // Also deactivate all areas in this city
+        await prisma.area.updateMany({
+            where: { cityId: cityId },
+            data: { isActive: false }
+        });
+        
+        emitToAll('city_deleted', { id: cityId });
+        res.json({ success: true, city });
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// Areas endpoints
+app.get('/areas', async (req: Request, res: Response) => {
+    const { cityId } = req.query as { cityId?: string };
+    
+    try {
+        const whereClause: any = { isActive: true };
+        if (cityId) {
+            whereClause.cityId = parseInt(cityId);
+        }
+        
+        const areas = await prisma.area.findMany({
+            where: whereClause,
+            include: { city: true },
+            orderBy: { name: 'asc' }
+        });
+        res.json(areas);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.get('/areas/protected', authMiddleware, async (req: Request, res: Response) => {
+    const { cityId } = req.query as { cityId?: string };
+    
+    try {
+        const whereClause: any = { isActive: true };
+        if (cityId) {
+            whereClause.cityId = parseInt(cityId);
+        }
+        
+        const areas = await prisma.area.findMany({
+            where: whereClause,
+            include: { city: true },
+            orderBy: { name: 'asc' }
+        });
+        res.json(areas);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/areas', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
+    const { name, cityId } = req.body as { name: string; cityId: number };
+    
+    if (!name || !name.trim() || !cityId) {
+        return res.status(400).json({ error: 'Area name and city are required' });
+    }
+    
+    try {
+        // Check if city exists
+        const city = await prisma.city.findUnique({ where: { id: cityId } });
+        if (!city || !city.isActive) {
+            return res.status(400).json({ error: 'Invalid city selected' });
+        }
+        
+        // Check if area already exists in this city
+        const existingArea = await prisma.area.findUnique({
+            where: { 
+                name_cityId: {
+                    name: name.trim(),
+                    cityId: cityId
+                }
+            }
+        });
+        
+        if (existingArea) {
+            if (existingArea.isActive) {
+                return res.status(400).json({ error: 'Area already exists in this city' });
+            } else {
+                // Reactivate the existing area
+                const area = await prisma.area.update({
+                    where: { id: existingArea.id },
+                    data: { isActive: true },
+                    include: { city: true }
+                });
+                emitToAll('area_created', area);
+                return res.status(201).json(area);
+            }
+        }
+        
+        // Create new area
+        const area = await prisma.area.create({
+            data: { 
+                name: name.trim(),
+                cityId: cityId
+            },
+            include: { city: true }
+        });
+        
+        emitToAll('area_created', area);
+        res.status(201).json(area);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.put('/areas/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const areaId = parseInt(req.params.id || '');
+    const { name, cityId } = req.body as { name: string; cityId: number };
+    
+    if (!name || !name.trim() || !cityId) {
+        return res.status(400).json({ error: 'Area name and city are required' });
+    }
+    
+    try {
+        const area = await prisma.area.update({
+            where: { id: areaId },
+            data: { 
+                name: name.trim(),
+                cityId: cityId
+            },
+            include: { city: true }
+        });
+        
+        emitToAll('area_updated', area);
+        res.json(area);
+    } catch (err: any) {
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'Area already exists in this city' });
+        }
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.delete('/areas/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const areaId = parseInt(req.params.id || '');
+    
+    try {
+        const area = await prisma.area.update({
+            where: { id: areaId },
+            data: { isActive: false }
+        });
+        
+        emitToAll('area_deleted', { id: areaId });
+        res.json({ success: true, area });
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
 // Categories endpoints
 app.get('/categories', async (_req: Request, res: Response) => {
     try {
@@ -3338,10 +3643,10 @@ async function startServer() {
     try {
         await initializeDatabase();
         
-        httpServer.listen(PORT, '0.0.0.0', () => {
+        httpServer.listen(PORT, '127.0.0.1', () => {
             console.log(`Server running on port ${PORT}`);
             console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-            console.log(`Health check: https://deploy-call-1.onrender.com/health`);
+            console.log(`Health check: http://localhost:${PORT}/health`);
         });
     } catch (error) {
         console.error('Failed to start server:', error);

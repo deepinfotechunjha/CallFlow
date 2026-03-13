@@ -88,6 +88,31 @@ model Notification {
   @@index([userId, isRead])
 }
 
+model City {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  areas     Area[]
+
+  @@index([name])
+}
+
+model Area {
+  id        Int      @id @default(autoincrement())
+  name      String
+  cityId    Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  city      City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@unique([name, cityId])
+  @@index([cityId])
+  @@index([name])
+}
+
 model Category {
   id        Int      @id @default(autoincrement())
   name      String   @unique

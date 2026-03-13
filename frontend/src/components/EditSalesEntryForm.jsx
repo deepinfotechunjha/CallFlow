@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import useSalesStore from '../store/salesStore';
 import useClickOutside from '../hooks/useClickOutside';
+import CityAreaSelector from './CityAreaSelector';
+import useCitiesAndAreas from '../hooks/useCitiesAndAreas';
 
 const EditSalesEntryForm = ({ entry, onClose }) => {
   const [formData, setFormData] = useState({
@@ -19,9 +21,41 @@ const EditSalesEntryForm = ({ entry, onClose }) => {
     pincode: entry.pincode || '',
     email: entry.email || ''
   });
+  const [selectedCity, setSelectedCity] = useState(null);
+  const [selectedArea, setSelectedArea] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { updateEntry } = useSalesStore();
+  const { cities, areas } = useCitiesAndAreas();
   const modalRef = useClickOutside(onClose);
+
+  // Initialize selected city and area from existing data
+  useEffect(() => {
+    if (entry.city && cities.length > 0) {
+      const city = cities.find(c => c.name === entry.city);
+      if (city) {
+        setSelectedCity(city);
+      }
+    }
+  }, [entry.city, cities]);
+
+  useEffect(() => {
+    if (entry.area && areas.length > 0 && selectedCity) {
+      const area = areas.find(a => a.name === entry.area && a.cityId === selectedCity.id);
+      if (area) {
+        setSelectedArea(area);
+      }
+    }
+  }, [entry.area, areas, selectedCity]);
+
+  const handleCityChange = (city) => {
+    setSelectedCity(city);
+    setFormData(prev => ({ ...prev, city: city ? city.name : '' }));
+  };
+
+  const handleAreaChange = (area) => {
+    setSelectedArea(area);
+    setFormData(prev => ({ ...prev, area: area ? area.name : '' }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -165,27 +199,6 @@ const EditSalesEntryForm = ({ entry, onClose }) => {
             </div>
 
             <div>
-              <label className="block text-xs sm:text-sm font-medium mb-1">Area</label>
-              <input
-                type="text"
-                value={formData.area}
-                onChange={(e) => setFormData(prev => ({ ...prev, area: e.target.value }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs sm:text-sm font-medium mb-1">City *</label>
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
-                required
-              />
-            </div>
-
-            <div>
               <label className="block text-xs sm:text-sm font-medium mb-1">Pincode *</label>
               <input
                 type="text"
@@ -196,6 +209,18 @@ const EditSalesEntryForm = ({ entry, onClose }) => {
                 required
               />
             </div>
+          </div>
+
+          {/* City and Area Selector */}
+          <div className="border-t pt-4">
+            <CityAreaSelector
+              selectedCity={selectedCity}
+              selectedArea={selectedArea}
+              onCityChange={handleCityChange}
+              onAreaChange={handleAreaChange}
+              required={true}
+              disabled={isSubmitting}
+            />
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2 pt-4">
