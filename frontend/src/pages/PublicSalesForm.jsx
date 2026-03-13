@@ -158,7 +158,7 @@ const PublicSalesForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.firmName || !formData.gstNo || !formData.contactPerson1Name || !formData.contactPerson1Number || !formData.address || !formData.city || !formData.pincode) {
+    if (!formData.firmName || !formData.gstNo || !formData.contactPerson1Name || !formData.contactPerson1Number || !formData.address || !formData.city || !formData.area || !formData.pincode) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -462,7 +462,7 @@ const PublicSalesForm = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Area
+                      Area <span className="text-red-500">*</span>
                     </label>
                     {showOtherArea ? (
                       <div className="relative">
@@ -484,20 +484,36 @@ const PublicSalesForm = () => {
                       </div>
                     ) : (
                       <div className="relative" ref={areaDropdownRef}>
-                        <input
-                          type="text"
-                          value={formData.area || areaSearch}
-                          onChange={(e) => {
-                            setAreaSearch(e.target.value);
-                            setShowAreaDropdown(true);
-                          }}
-                          onFocus={() => setShowAreaDropdown(true)}
-                          onClick={() => setShowAreaDropdown(true)}
-                          placeholder={loadingData ? "Loading areas..." : selectedCity ? "Select or search area" : "Please select a city first"}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                          disabled={loadingData || !selectedCity}
-                        />
-                        {showAreaDropdown && !loadingData && (
+                        {formData.area && !showOtherArea ? (
+                          <div className="w-full p-3 border border-gray-300 rounded-lg bg-green-50 flex items-center justify-between">
+                            <span>{formData.area}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFormData(prev => ({ ...prev, area: '' }));
+                                setAreaSearch('');
+                              }}
+                              className="text-red-500 hover:text-red-700 font-bold text-lg leading-none"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            value={areaSearch}
+                            onChange={(e) => {
+                              setAreaSearch(e.target.value);
+                              setShowAreaDropdown(true);
+                            }}
+                            onFocus={() => setShowAreaDropdown(true)}
+                            onClick={() => setShowAreaDropdown(true)}
+                            placeholder={loadingData ? "Loading areas..." : selectedCity ? "Select or search area" : "Please select a city first"}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            disabled={loadingData || !selectedCity}
+                          />
+                        )}
+                        {showAreaDropdown && !loadingData && !formData.area && (
                           <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-hidden">
                             <div 
                               onClick={() => handleAreaSelect('OTHER')}
@@ -553,21 +569,39 @@ const PublicSalesForm = () => {
                       </div>
                     ) : (
                       <div className="relative" ref={cityDropdownRef}>
-                        <input
-                          type="text"
-                          value={formData.city || citySearch}
-                          onChange={(e) => {
-                            setCitySearch(e.target.value);
-                            setShowCityDropdown(true);
-                          }}
-                          onFocus={() => setShowCityDropdown(true)}
-                          onClick={() => setShowCityDropdown(true)}
-                          placeholder={loadingData ? "Loading cities..." : "Select or search city"}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                          disabled={loadingData}
-                          required
-                        />
-                        {showCityDropdown && !loadingData && (
+                        {selectedCity ? (
+                          <div className="w-full p-3 border border-gray-300 rounded-lg bg-blue-50 flex items-center justify-between">
+                            <span>{selectedCity.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedCity(null);
+                                setFormData(prev => ({ ...prev, city: '' }));
+                                setAreas([]);
+                                setFormData(prev => ({ ...prev, area: '' }));
+                              }}
+                              className="text-red-500 hover:text-red-700 font-bold text-lg leading-none"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            value={citySearch}
+                            onChange={(e) => {
+                              setCitySearch(e.target.value);
+                              setShowCityDropdown(true);
+                            }}
+                            onFocus={() => setShowCityDropdown(true)}
+                            onClick={() => setShowCityDropdown(true)}
+                            placeholder={loadingData ? "Loading cities..." : "Select or search city"}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            disabled={loadingData}
+                            required
+                          />
+                        )}
+                        {showCityDropdown && !loadingData && !selectedCity && (
                           <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-hidden">
                             <div 
                               onClick={() => handleCitySelect('OTHER')}
