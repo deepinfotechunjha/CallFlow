@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import useSalesStore from '../store/salesStore';
 import useClickOutside from '../hooks/useClickOutside';
-import { getAllCities, addCustomCity } from '../utils/cities';
+import CityAreaSelector from './CityAreaSelector';
 
 const AddSalesEntryForm = ({ onClose }) => {
   const [formData, setFormData] = useState({
@@ -20,42 +20,20 @@ const AddSalesEntryForm = ({ onClose }) => {
     pincode: '',
     email: ''
   });
+  const [selectedCity, setSelectedCity] = useState(null);
+  const [selectedArea, setSelectedArea] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showOtherCity, setShowOtherCity] = useState(false);
-  const [customCityInput, setCustomCityInput] = useState('');
-  const [cities, setCities] = useState(getAllCities());
-  const [showCityDropdown, setShowCityDropdown] = useState(false);
-  const [citySearch, setCitySearch] = useState('');
   const { addEntry } = useSalesStore();
   const modalRef = useClickOutside(onClose);
-  const cityDropdownRef = useClickOutside(() => setShowCityDropdown(false));
 
-  const filteredCities = cities.filter(city => 
-    city.toLowerCase().includes(citySearch.toLowerCase())
-  );
-
-  const handleCitySelect = (city) => {
-    if (city === 'OTHER') {
-      setShowOtherCity(true);
-      setFormData(prev => ({ ...prev, city: '' }));
-      setShowCityDropdown(false);
-    } else {
-      setShowOtherCity(false);
-      setFormData(prev => ({ ...prev, city: city }));
-      setShowCityDropdown(false);
-      setCitySearch('');
-    }
+  const handleCityChange = (city) => {
+    setSelectedCity(city);
+    setFormData(prev => ({ ...prev, city: city ? city.name : '' }));
   };
 
-  const handleAddCustomCity = () => {
-    const trimmedCity = customCityInput.trim();
-    if (trimmedCity) {
-      addCustomCity(trimmedCity);
-      setCities(getAllCities());
-      setFormData(prev => ({ ...prev, city: trimmedCity }));
-      setCustomCityInput('');
-      setShowOtherCity(false);
-    }
+  const handleAreaChange = (area) => {
+    setSelectedArea(area);
+    setFormData(prev => ({ ...prev, area: area ? area.name : '' }));
   };
 
   const handleSubmit = async (e) => {
@@ -201,90 +179,6 @@ const AddSalesEntryForm = ({ onClose }) => {
             </div>
 
             <div>
-              <label className="block text-xs sm:text-sm font-medium mb-1">Area</label>
-              <input
-                type="text"
-                value={formData.area}
-                onChange={(e) => setFormData(prev => ({ ...prev, area: e.target.value }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs sm:text-sm font-medium mb-1">City *</label>
-              {showOtherCity ? (
-                <div className="space-y-2">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value="Other (Custom City)"
-                      readOnly
-                      onClick={() => setShowOtherCity(false)}
-                      className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer bg-gray-50"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={customCityInput}
-                      onChange={(e) => setCustomCityInput(e.target.value)}
-                      className="flex-1 p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
-                      placeholder="Enter city name"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddCustomCity}
-                      className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
-                    >
-                      Add
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="relative" ref={cityDropdownRef}>
-                  <input
-                    type="text"
-                    value={formData.city || citySearch}
-                    onChange={(e) => {
-                      setCitySearch(e.target.value);
-                      setShowCityDropdown(true);
-                    }}
-                    onFocus={() => setShowCityDropdown(true)}
-                    onClick={() => setShowCityDropdown(true)}
-                    placeholder="Select or search city"
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
-                    required
-                  />
-                  {showCityDropdown && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-hidden">
-                      <div 
-                        onClick={() => handleCitySelect('OTHER')}
-                        className="sticky top-0 px-3 py-2 bg-blue-50 hover:bg-blue-100 cursor-pointer font-medium text-blue-700 border-b-2 border-blue-200 z-10"
-                      >
-                        ✏️ Other (Custom City)
-                      </div>
-                      <div className="overflow-y-auto max-h-52">
-                        {filteredCities.length > 0 ? (
-                          filteredCities.map((city, index) => (
-                            <div
-                              key={index}
-                              onClick={() => handleCitySelect(city)}
-                              className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                            >
-                              {city}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="px-3 py-2 text-gray-500 text-sm">No cities found</div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div>
               <label className="block text-xs sm:text-sm font-medium mb-1">Pincode *</label>
               <input
                 type="text"
@@ -295,6 +189,18 @@ const AddSalesEntryForm = ({ onClose }) => {
                 required
               />
             </div>
+          </div>
+
+          {/* City and Area Selector */}
+          <div className="border-t pt-4">
+            <CityAreaSelector
+              selectedCity={selectedCity}
+              selectedArea={selectedArea}
+              onCityChange={handleCityChange}
+              onAreaChange={handleAreaChange}
+              required={true}
+              disabled={isSubmitting}
+            />
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2 pt-4">
