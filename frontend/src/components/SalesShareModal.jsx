@@ -93,7 +93,7 @@ const SalesShareModal = ({ isOpen, onClose }) => {
                   <div className="text-left">
                     <h4 className="font-medium text-yellow-800 mb-1 text-sm sm:text-base">Important Notes:</h4>
                     <ul className="text-xs sm:text-sm text-yellow-700 space-y-1">
-                      <li>• Link expires after 24 hours</li>
+                      <li>• Link expires after 1 hour</li>
                       <li>• Can only be used once</li>
                       <li>• Automatically deleted after use</li>
                       <li>• No authentication required</li>
@@ -129,7 +129,7 @@ const SalesShareModal = ({ isOpen, onClose }) => {
                 </div>
                 <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">Link Generated Successfully!</h3>
                 <p className="text-gray-600 text-xs sm:text-sm px-2">
-                  Share this link with anyone who needs to submit a sales entry. It will expire in 24 hours.
+                  Share this link with anyone who needs to submit a sales entry. It will expire in 1 hour.
                 </p>
               </div>
 

@@ -3017,13 +3017,13 @@ app.post('/share/create-link', authMiddleware, async (req: Request, res: Respons
 
 app.post('/share/create-sales-link', authMiddleware, async (req: Request, res: Response) => {
     try {
-        // Create JWT token with 24 hour expiry and unique ID
+        // Create JWT token with 1 hour expiry and unique ID
         const token = jwt.sign(
             { 
                 type: 'sales-share-link',
                 id: crypto.randomUUID(), // Unique ID ensures no duplicates
                 createdAt: Date.now(),
-                exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+                exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hour
             }, 
             JWT_SECRET
         );
@@ -3034,7 +3034,7 @@ app.post('/share/create-sales-link', authMiddleware, async (req: Request, res: R
             success: true, 
             shareUrl,
             linkId: token,
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString()
         });
     } catch (err: any) {
         console.error('Create sales share link error:', err);
