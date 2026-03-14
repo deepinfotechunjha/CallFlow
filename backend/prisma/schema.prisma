@@ -89,26 +89,24 @@ model Notification {
 }
 
 model City {
-  id           Int          @id @default(autoincrement())
-  name         String       @unique
-  displayName  String
-  isActive     Boolean      @default(true)
-  createdAt    DateTime     @default(now())
-  areas        Area[]
-  salesEntries SalesEntry[]
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  areas     Area[]
 
   @@index([name])
 }
 
 model Area {
-  id           Int          @id @default(autoincrement())
-  name         String
-  displayName  String
-  cityId       Int
-  city         City         @relation(fields: [cityId], references: [id])
-  isActive     Boolean      @default(true)
-  createdAt    DateTime     @default(now())
-  salesEntries SalesEntry[]
+  id        Int      @id @default(autoincrement())
+  name      String
+  cityId    Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  city      City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
 
   @@unique([name, cityId])
   @@index([cityId])
@@ -207,6 +205,7 @@ model SalesEntry {
   landmark             String?    @db.VarChar(200)
   pincode              String     @db.VarChar(6)
   email                String?    @db.VarChar(255)
+  whatsappNumber       String?    @db.VarChar(15)
   createdBy            String     @db.VarChar(50)
   createdById          Int?
   createdAt            DateTime   @default(now()) @db.Timestamptz(6)

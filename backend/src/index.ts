@@ -3140,7 +3140,7 @@ app.get('/share/sales/:linkId', async (req: Request, res: Response) => {
 
 app.post('/share/sales/:linkId/submit', async (req: Request, res: Response) => {
     const { linkId } = req.params;
-    const { firmName, gstNo, contactPerson1Name, contactPerson1Number, contactPerson2Name, contactPerson2Number, accountContactName, accountContactNumber, address, landmark, area, city, pincode, email } = req.body;
+    const { firmName, gstNo, contactPerson1Name, contactPerson1Number, contactPerson2Name, contactPerson2Number, accountContactName, accountContactNumber, address, landmark, area, city, pincode, email, whatsappNumber } = req.body;
     
     if (!linkId) {
         return res.status(400).json({ error: 'Link ID is required' });
@@ -3214,6 +3214,7 @@ app.post('/share/sales/:linkId/submit', async (req: Request, res: Response) => {
                     city,
                     pincode,
                     email,
+                    whatsappNumber: whatsappNumber || null,
                     createdBy: 'Share Link',
                     createdById: anyUser.id
                 }
@@ -3245,6 +3246,7 @@ app.post('/share/sales/:linkId/submit', async (req: Request, res: Response) => {
                 city,
                 pincode,
                 email,
+                whatsappNumber: whatsappNumber || null,
                 createdBy: 'Share Link',
                 createdById: hostUser.id
             }
@@ -3507,7 +3509,7 @@ app.get('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_EXECUT
 });
 
 app.post('/sales-entries', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
-    const { firmName, gstNo, contactPerson1Name, contactPerson1Number, contactPerson2Name, contactPerson2Number, accountContactName, accountContactNumber, address, landmark, area, city, pincode, email } = req.body;
+    const { firmName, gstNo, contactPerson1Name, contactPerson1Number, contactPerson2Name, contactPerson2Number, accountContactName, accountContactNumber, address, landmark, area, city, pincode, email, whatsappNumber } = req.body;
     
     if (!firmName || !gstNo || !contactPerson1Name || !contactPerson1Number || !address || !city || !pincode) {
         return res.status(400).json({ error: 'Required fields missing' });
@@ -3535,6 +3537,7 @@ app.post('/sales-entries', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE
                 city,
                 pincode,
                 email,
+                whatsappNumber: whatsappNumber || null,
                 createdBy: req.user!.username,
                 createdById: req.user!.id
             }
@@ -3609,7 +3612,7 @@ app.post('/sales-entries/:id/call', authMiddleware, requireRole(['HOST', 'SALES_
 
 app.put('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
     const entryId = parseInt(req.params.id || '');
-    const { firmName, gstNo, contactPerson1Name, contactPerson1Number, contactPerson2Name, contactPerson2Number, accountContactName, accountContactNumber, address, landmark, area, city, pincode, email } = req.body;
+    const { firmName, gstNo, contactPerson1Name, contactPerson1Number, contactPerson2Name, contactPerson2Number, accountContactName, accountContactNumber, address, landmark, area, city, pincode, email, whatsappNumber } = req.body;
     
     try {
         const updateData: any = {};
@@ -3627,6 +3630,7 @@ app.put('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_EXECUT
         if (city) updateData.city = city;
         if (pincode) updateData.pincode = pincode;
         if (email !== undefined) updateData.email = email;
+        if (whatsappNumber !== undefined) updateData.whatsappNumber = whatsappNumber || null;
         
         const entry = await prisma.salesEntry.update({
             where: { id: entryId },
