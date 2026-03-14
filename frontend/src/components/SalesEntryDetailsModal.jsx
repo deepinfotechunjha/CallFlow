@@ -42,6 +42,9 @@ const SalesEntryDetailsModal = ({ entry, onClose }) => {
                 <p><span className="font-medium">GST:</span> {details.gstNo}</p>
                 <p><span className="font-medium">Email:</span> {details.email || 'N/A'}</p>
                 <p><span className="font-medium">Contact-1:</span> {details.contactPerson1Name} ({details.contactPerson1Number})</p>
+                {details.whatsappNumber && (
+                  <p><span className="font-medium">WhatsApp:</span> {details.whatsappNumber}</p>
+                )}
                 {details.contactPerson2Name && (
                   <p><span className="font-medium">Contact-2:</span> {details.contactPerson2Name} ({details.contactPerson2Number})</p>
                 )}

@@ -1,0 +1,1 @@
+ALTER TABLE "SalesEntry" ADD COLUMN IF NOT EXISTS "whatsappNumber" VARCHAR(15);

@@ -18,7 +18,8 @@ const AddSalesEntryForm = ({ onClose }) => {
     area: '',
     city: '',
     pincode: '',
-    email: ''
+    email: '',
+    whatsappNumber: ''
   });
   const [selectedCity, setSelectedCity] = useState(null);
   const [selectedArea, setSelectedArea] = useState(null);
@@ -99,6 +100,7 @@ const AddSalesEntryForm = ({ onClose }) => {
               />
             </div>
 
+            {/* Contact Person 1 - Name & Number in parallel */}
             <div>
               <label className="block text-xs sm:text-sm font-medium mb-1">Contact Person-1 Name *</label>
               <input
@@ -122,6 +124,7 @@ const AddSalesEntryForm = ({ onClose }) => {
               />
             </div>
 
+            {/* Contact Person 2 - Name & Number in parallel */}
             <div>
               <label className="block text-xs sm:text-sm font-medium mb-1">Contact Person-2 Name</label>
               <input
@@ -143,6 +146,7 @@ const AddSalesEntryForm = ({ onClose }) => {
               />
             </div>
 
+            {/* Account Contact - Name & Number in parallel */}
             <div>
               <label className="block text-xs sm:text-sm font-medium mb-1">Account Contact Name</label>
               <input
@@ -161,6 +165,19 @@ const AddSalesEntryForm = ({ onClose }) => {
                 onChange={(e) => setFormData(prev => ({ ...prev, accountContactNumber: e.target.value }))}
                 className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
                 maxLength={10}
+              />
+            </div>
+
+            {/* WhatsApp Number - full row */}
+            <div className="md:col-span-2">
+              <label className="block text-xs sm:text-sm font-medium mb-1">💬 WhatsApp Number <span className="text-gray-400 font-normal">(optional — defaults to Contact-1 number)</span></label>
+              <input
+                type="tel"
+                value={formData.whatsappNumber}
+                onChange={(e) => setFormData(prev => ({ ...prev, whatsappNumber: e.target.value }))}
+                className="w-full p-2 border rounded focus:ring-2 focus:ring-green-500 text-sm"
+                maxLength={10}
+                placeholder="Leave blank to use Contact-1 number"
               />
             </div>
 
