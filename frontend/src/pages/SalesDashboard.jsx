@@ -20,8 +20,13 @@ const SalesDashboard = () => {
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [cityFilter, setCityFilter] = useState('ALL');
+  const [logTypeFilter, setLogTypeFilter] = useState('ALL');
   const [filterField, setFilterField] = useState('firmName');
   const [showDropdown, setShowDropdown] = useState(false);
+  const [dateRange, setDateRange] = useState({
+    startDate: '',
+    endDate: ''
+  });
 
   const { user } = useAuthStore();
   const { entries, fetchEntries, loading } = useSalesStore();
@@ -29,6 +34,15 @@ const SalesDashboard = () => {
   useEffect(() => {
     fetchEntries();
   }, [fetchEntries]);
+
+  // Refetch entries when date range changes
+  useEffect(() => {
+    if (dateRange.startDate || dateRange.endDate) {
+      fetchEntries(dateRange);
+    } else {
+      fetchEntries();
+    }
+  }, [dateRange.startDate, dateRange.endDate, fetchEntries]);
 
   const getUniqueOptions = () => {
     const options = new Set();
@@ -50,17 +64,61 @@ const SalesDashboard = () => {
       if (!value || !value.toLowerCase().startsWith(searchQuery.toLowerCase())) return false;
     }
     if (cityFilter !== 'ALL' && entry.city !== cityFilter) return false;
+    if (logTypeFilter !== 'ALL') {
+      if (logTypeFilter === 'VISIT' && !(entry.visitCount > 0)) return false;
+      if (logTypeFilter === 'CALL' && !(entry.callCount > 0)) return false;
+    }
+    
+    // Date range filter
+    if (dateRange.startDate || dateRange.endDate) {
+      const entryDate = new Date(entry.createdAt);
+      const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null;
+      const endDate = dateRange.endDate ? new Date(dateRange.endDate + 'T23:59:59') : null;
+      
+      if (startDate && entryDate < startDate) return false;
+      if (endDate && entryDate > endDate) return false;
+    }
+    
     return true;
   });
 
   const uniqueCities = [...new Set(entries.map(e => e.city))].sort();
 
-  const stats = {
-    totalEntries: entries.length,
-    visitsToday: entries.reduce((sum, e) => sum + (e.visitCount || 0), 0),
-    callsToday: entries.reduce((sum, e) => sum + (e.callCount || 0), 0),
-    logsThisMonth: entries.reduce((sum, e) => sum + (e.visitCount || 0) + (e.callCount || 0), 0)
+  // Get filtered stats based on current filters
+  const getFilteredStats = () => {
+    const filtered = entries.filter(entry => {
+      if (searchQuery.trim()) {
+        const value = entry[filterField];
+        if (!value || !value.toLowerCase().startsWith(searchQuery.toLowerCase())) return false;
+      }
+      if (cityFilter !== 'ALL' && entry.city !== cityFilter) return false;
+      if (logTypeFilter !== 'ALL') {
+        if (logTypeFilter === 'VISIT' && !(entry.visitCount > 0)) return false;
+        if (logTypeFilter === 'CALL' && !(entry.callCount > 0)) return false;
+      }
+      
+      // Date range filter for stats
+      if (dateRange.startDate || dateRange.endDate) {
+        const entryDate = new Date(entry.createdAt);
+        const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null;
+        const endDate = dateRange.endDate ? new Date(dateRange.endDate + 'T23:59:59') : null;
+        
+        if (startDate && entryDate < startDate) return false;
+        if (endDate && entryDate > endDate) return false;
+      }
+      
+      return true;
+    });
+    
+    return {
+      totalEntries: filtered.length,
+      visitsToday: filtered.reduce((sum, e) => sum + (e.visitCount || 0), 0),
+      callsToday: filtered.reduce((sum, e) => sum + (e.callCount || 0), 0),
+      logsThisMonth: filtered.reduce((sum, e) => sum + (e.visitCount || 0) + (e.callCount || 0), 0)
+    };
   };
+
+  const stats = getFilteredStats();
 
   const handleVisitClick = (entry) => {
     setSelectedEntry(entry);
@@ -150,80 +208,132 @@ const SalesDashboard = () => {
         <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
           <span>🔍</span> Search & Filters
         </h2>
-        <div className="flex flex-wrap items-center gap-3">
-          <select
-            value={filterField}
-            onChange={(e) => {
-              setFilterField(e.target.value);
-              setSearchQuery('');
-            }}
-            className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors min-w-[160px]"
-          >
-            <option value="firmName">Firm Name</option>
-            <option value="contactPerson1Name">Contact 1 Name</option>
-            <option value="contactPerson1Number">Contact 1 Number</option>
-            <option value="contactPerson2Name">Contact 2 Name</option>
-            <option value="contactPerson2Number">Contact 2 Number</option>
-            <option value="accountContactName">Account Name</option>
-            <option value="accountContactNumber">Account Number</option>
-          </select>
-          <div className="relative flex-1 min-w-[200px]">
-            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">🔍</span>
-            <input
-              type="text"
-              placeholder={`Search by ${filterField === 'firmName' ? 'firm name' : filterField === 'contactPerson1Name' ? 'contact 1 name' : filterField === 'contactPerson1Number' ? 'contact 1 number' : filterField === 'contactPerson2Name' ? 'contact 2 name' : filterField === 'contactPerson2Number' ? 'contact 2 number' : filterField === 'accountContactName' ? 'account name' : 'account number'}...`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setShowDropdown(true)}
-              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-              className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xl transition-colors"
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="bg-white p-4 rounded-xl border border-gray-200">
+            <label className="text-sm font-medium text-gray-700">🔍 Search</label>
+            <div className="mt-3 flex flex-col gap-2">
+              <select
+                value={filterField}
+                onChange={(e) => {
+                  setFilterField(e.target.value);
+                  setSearchQuery('');
+                }}
+                className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
               >
-                ×
+                <option value="firmName">Firm Name</option>
+                <option value="contactPerson1Name">Contact 1 Name</option>
+                <option value="contactPerson1Number">Contact 1 Number</option>
+                <option value="contactPerson2Name">Contact 2 Name</option>
+                <option value="contactPerson2Number">Contact 2 Number</option>
+                <option value="accountContactName">Account Name</option>
+                <option value="accountContactNumber">Account Number</option>
+              </select>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">🔍</span>
+                <input
+                  type="text"
+                  placeholder={`Search by ${filterField === 'firmName' ? 'firm name' : filterField === 'contactPerson1Name' ? 'contact 1 name' : filterField === 'contactPerson1Number' ? 'contact 1 number' : filterField === 'contactPerson2Name' ? 'contact 2 name' : filterField === 'contactPerson2Number' ? 'contact 2 number' : filterField === 'accountContactName' ? 'account name' : 'account number'}...`}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setShowDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                  className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xl transition-colors"
+                  >
+                    ×
+                  </button>
+                )}
+                {showDropdown && filteredOptions.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {filteredOptions.map((option, index) => (
+                      <div
+                        key={index}
+                        onClick={() => {
+                          setSearchQuery(option);
+                          setShowDropdown(false);
+                        }}
+                        className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm text-gray-700 border-b border-gray-100 last:border-b-0"
+                      >
+                        {option}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl border border-gray-200">
+            <label className="text-sm font-medium text-gray-700">🏙️ City</label>
+            <select
+              value={cityFilter}
+              onChange={(e) => setCityFilter(e.target.value)}
+              className="mt-3 w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
+            >
+              <option value="ALL">All Cities</option>
+              {uniqueCities.map((city, index) => (
+                <option key={index} value={city}>{city}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl border border-gray-200">
+            <label className="text-sm font-medium text-gray-700">🧭 Action Filter</label>
+            <div className="mt-3 flex flex-col gap-3">
+              <div>
+                <p className="text-xs font-medium text-gray-500">Type</p>
+                <select
+                  value={logTypeFilter}
+                  onChange={(e) => setLogTypeFilter(e.target.value)}
+                  className="mt-2 w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
+                >
+                  <option value="ALL">All Logs</option>
+                  <option value="VISIT">Visited</option>
+                  <option value="CALL">Called</option>
+                </select>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-500">Date range</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                  <input
+                    type="date"
+                    value={dateRange.startDate}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                    className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[120px]"
+                    placeholder="Start Date"
+                  />
+                  <span className="text-gray-400 text-sm">to</span>
+                  <input
+                    type="date"
+                    value={dateRange.endDate}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                    className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[120px]"
+                    placeholder="End Date"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="sm:col-span-2 lg:col-span-4 flex justify-end">
+            {(searchQuery || cityFilter !== 'ALL' || logTypeFilter !== 'ALL' || dateRange.startDate || dateRange.endDate) && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setCityFilter('ALL');
+                  setLogTypeFilter('ALL');
+                  setDateRange({ startDate: '', endDate: '' });
+                }}
+                className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap"
+              >
+                Clear All
               </button>
             )}
-            {showDropdown && filteredOptions.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {filteredOptions.map((option, index) => (
-                  <div
-                    key={index}
-                    onClick={() => {
-                      setSearchQuery(option);
-                      setShowDropdown(false);
-                    }}
-                    className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm text-gray-700 border-b border-gray-100 last:border-b-0"
-                  >
-                    {option}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
-          <select
-            value={cityFilter}
-            onChange={(e) => setCityFilter(e.target.value)}
-            className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors min-w-[140px]"
-          >
-            <option value="ALL">All Cities</option>
-            {uniqueCities.map((city, index) => (
-              <option key={index} value={city}>{city}</option>
-            ))}
-          </select>
-          {(searchQuery || cityFilter !== 'ALL') && (
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setCityFilter('ALL');
-              }}
-              className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
-            >
-              Clear All
-            </button>
-          )}
         </div>
       </div>
 
