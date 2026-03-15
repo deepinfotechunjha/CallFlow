@@ -34,10 +34,24 @@ const useSalesStore = create((set, get) => ({
     }));
   },
 
-  fetchEntries: async () => {
+  fetchEntries: async (dateRange = null) => {
     set({ loading: true });
     try {
-      const response = await apiClient.get('/sales-entries');
+      let url = '/sales-entries';
+      const params = new URLSearchParams();
+      
+      if (dateRange?.startDate) {
+        params.append('startDate', dateRange.startDate);
+      }
+      if (dateRange?.endDate) {
+        params.append('endDate', dateRange.endDate);
+      }
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
+      const response = await apiClient.get(url);
       set({ entries: response.data, loading: false });
     } catch (error) {
       toast.error('Failed to fetch sales entries');
