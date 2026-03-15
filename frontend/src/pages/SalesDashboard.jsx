@@ -19,7 +19,6 @@ const SalesDashboard = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [cityFilter, setCityFilter] = useState('ALL');
   const [logTypeFilter, setLogTypeFilter] = useState('ALL');
   const [filterField, setFilterField] = useState('firmName');
   const [showDropdown, setShowDropdown] = useState(false);
@@ -58,31 +57,49 @@ const SalesDashboard = () => {
     option.toLowerCase().startsWith(searchQuery.toLowerCase())
   );
 
+  const isInDateRange = (dateString) => {
+    const entryDate = new Date(dateString);
+    const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null;
+    const endDate = dateRange.endDate ? new Date(dateRange.endDate + 'T23:59:59') : null;
+
+    // If no date range is selected, default to showing today's entries
+    if (!startDate && !endDate) {
+      const today = new Date();
+      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+      return entryDate >= startOfToday && entryDate <= endOfToday;
+    }
+
+    if (startDate && entryDate < startDate) return false;
+    if (endDate && entryDate > endDate) return false;
+    return true;
+  };
+
   const filteredEntries = entries.filter(entry => {
     if (searchQuery.trim()) {
       const value = entry[filterField];
       if (!value || !value.toLowerCase().startsWith(searchQuery.toLowerCase())) return false;
     }
-    if (cityFilter !== 'ALL' && entry.city !== cityFilter) return false;
+
     if (logTypeFilter !== 'ALL') {
       if (logTypeFilter === 'VISIT' && !(entry.visitCount > 0)) return false;
       if (logTypeFilter === 'CALL' && !(entry.callCount > 0)) return false;
+      if (logTypeFilter === 'CREATED' && !isInDateRange(entry.createdAt)) return false;
     }
-    
-    // Date range filter
-    if (dateRange.startDate || dateRange.endDate) {
+
+    // Date range filter (applies when not showing "Created" specifically)
+    if (logTypeFilter !== 'CREATED' && (dateRange.startDate || dateRange.endDate)) {
       const entryDate = new Date(entry.createdAt);
       const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null;
       const endDate = dateRange.endDate ? new Date(dateRange.endDate + 'T23:59:59') : null;
-      
+
       if (startDate && entryDate < startDate) return false;
       if (endDate && entryDate > endDate) return false;
     }
-    
+
     return true;
   });
 
-  const uniqueCities = [...new Set(entries.map(e => e.city))].sort();
 
   // Get filtered stats based on current filters
   const getFilteredStats = () => {
@@ -91,14 +108,14 @@ const SalesDashboard = () => {
         const value = entry[filterField];
         if (!value || !value.toLowerCase().startsWith(searchQuery.toLowerCase())) return false;
       }
-      if (cityFilter !== 'ALL' && entry.city !== cityFilter) return false;
       if (logTypeFilter !== 'ALL') {
         if (logTypeFilter === 'VISIT' && !(entry.visitCount > 0)) return false;
         if (logTypeFilter === 'CALL' && !(entry.callCount > 0)) return false;
+        if (logTypeFilter === 'CREATED' && !isInDateRange(entry.createdAt)) return false;
       }
       
-      // Date range filter for stats
-      if (dateRange.startDate || dateRange.endDate) {
+      // Date range filter for stats (ignore when specifically filtering by created date)
+      if (logTypeFilter !== 'CREATED' && (dateRange.startDate || dateRange.endDate)) {
         const entryDate = new Date(entry.createdAt);
         const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null;
         const endDate = dateRange.endDate ? new Date(dateRange.endDate + 'T23:59:59') : null;
@@ -227,12 +244,32 @@ const SalesDashboard = () => {
                 <option value="contactPerson2Number">Contact 2 Number</option>
                 <option value="accountContactName">Account Name</option>
                 <option value="accountContactNumber">Account Number</option>
+                <option value="city">City</option>
+                <option value="createdBy">Created By</option>
               </select>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">🔍</span>
                 <input
                   type="text"
-                  placeholder={`Search by ${filterField === 'firmName' ? 'firm name' : filterField === 'contactPerson1Name' ? 'contact 1 name' : filterField === 'contactPerson1Number' ? 'contact 1 number' : filterField === 'contactPerson2Name' ? 'contact 2 name' : filterField === 'contactPerson2Number' ? 'contact 2 number' : filterField === 'accountContactName' ? 'account name' : 'account number'}...`}
+                  placeholder={`Search by ${
+                    filterField === 'firmName'
+                      ? 'firm name'
+                      : filterField === 'contactPerson1Name'
+                      ? 'contact 1 name'
+                      : filterField === 'contactPerson1Number'
+                      ? 'contact 1 number'
+                      : filterField === 'contactPerson2Name'
+                      ? 'contact 2 name'
+                      : filterField === 'contactPerson2Number'
+                      ? 'contact 2 number'
+                      : filterField === 'accountContactName'
+                      ? 'account name'
+                      : filterField === 'accountContactNumber'
+                      ? 'account number'
+                      : filterField === 'city'
+                      ? 'city'
+                      : 'created by'
+                  }...`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setShowDropdown(true)}
@@ -267,19 +304,7 @@ const SalesDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-gray-200">
-            <label className="text-sm font-medium text-gray-700">🏙️ City</label>
-            <select
-              value={cityFilter}
-              onChange={(e) => setCityFilter(e.target.value)}
-              className="mt-3 w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
-            >
-              <option value="ALL">All Cities</option>
-              {uniqueCities.map((city, index) => (
-                <option key={index} value={city}>{city}</option>
-              ))}
-            </select>
-          </div>
+
 
           <div className="bg-white p-4 rounded-xl border border-gray-200">
             <label className="text-sm font-medium text-gray-700">🧭 Action Filter</label>
@@ -294,6 +319,7 @@ const SalesDashboard = () => {
                   <option value="ALL">All Logs</option>
                   <option value="VISIT">Visited</option>
                   <option value="CALL">Called</option>
+                  <option value="CREATED">Created</option>
                 </select>
               </div>
               <div>
@@ -320,11 +346,10 @@ const SalesDashboard = () => {
           </div>
 
           <div className="sm:col-span-2 lg:col-span-4 flex justify-end">
-            {(searchQuery || cityFilter !== 'ALL' || logTypeFilter !== 'ALL' || dateRange.startDate || dateRange.endDate) && (
+            {(searchQuery || logTypeFilter !== 'ALL' || dateRange.startDate || dateRange.endDate) && (
               <button
                 onClick={() => {
                   setSearchQuery('');
-                  setCityFilter('ALL');
                   setLogTypeFilter('ALL');
                   setDateRange({ startDate: '', endDate: '' });
                 }}
