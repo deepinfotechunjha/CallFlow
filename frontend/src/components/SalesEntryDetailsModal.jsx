@@ -75,21 +75,89 @@ const SalesEntryDetailsModal = ({ entry, onClose }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                 <p><span className="font-medium">GST:</span> {details.gstNo}</p>
                 <p><span className="font-medium">Email:</span> {details.email || 'N/A'}</p>
-                <p><span className="font-medium">Contact-1:</span> {details.contactPerson1Name} ({details.contactPerson1Number})</p>
-                {details.whatsappNumber && (
-                  <p><span className="font-medium">WhatsApp:</span> {details.whatsappNumber}</p>
-                )}
-                {details.contactPerson2Name && (
-                  <p><span className="font-medium">Contact-2:</span> {details.contactPerson2Name} ({details.contactPerson2Number})</p>
-                )}
-                {details.accountContactName && (
-                  <p><span className="font-medium">Account:</span> {details.accountContactName} ({details.accountContactNumber})</p>
-                )}
-                <p className="md:col-span-2"><span className="font-medium">Address:</span> {details.address}, {details.city} - {details.pincode}</p>
-                {details.landmark && <p><span className="font-medium">Landmark:</span> {details.landmark}</p>}
-                {details.area && <p><span className="font-medium">Area:</span> {details.area}</p>}
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium">Contact-1:</span>
+                      <span>{details.contactPerson1Name} ({details.contactPerson1Number})</span>
+                    </div>
+                    {details.contactPerson1Number && (
+                      <button
+                        onClick={() => handleCall(details.contactPerson1Number)}
+                        className="flex items-center justify-center px-2 py-1 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 text-xs font-medium"
+                        title="Call Contact-1"
+                      >
+                        <img src="/call.png" alt="Call" className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {details.whatsappNumber && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium">WhatsApp:</span>
+                        <span className="inline-flex items-center">
+                          {details.whatsappNumber}
+                          <img src="/whatsapp.png" alt="WhatsApp" className="w-4 h-4 ml-1" />
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleWhatsApp(details.whatsappNumber)}
+                          className="flex items-center justify-center px-2 py-1 bg-green-50 border border-green-200 rounded hover:bg-green-100 text-xs font-medium"
+                          title="Open WhatsApp"
+                        >
+                          <img src="/whatsapp.png" alt="WhatsApp" className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleCall(details.whatsappNumber)}
+                          className="flex items-center justify-center px-2 py-1 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 text-xs font-medium"
+                          title="Call WhatsApp number"
+                        >
+                          <img src="/call.png" alt="Call" className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {details.contactPerson2Name && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium">Contact-2:</span>
+                        <span>{details.contactPerson2Name} ({details.contactPerson2Number})</span>
+                      </div>
+                      {details.contactPerson2Number && (
+                        <button
+                          onClick={() => handleCall(details.contactPerson2Number)}
+                          className="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 text-xs font-medium"
+                          title="Call Contact-2"
+                        >
+                          <img src="/call.png" alt="Call" className="w-4 h-4" />
+                          Call
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {details.accountContactName && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium">Account:</span>
+                        <span>{details.accountContactName} ({details.accountContactNumber})</span>
+                      </div>
+                      {details.accountContactNumber && (
+                        <button
+                          onClick={() => handleCall(details.accountContactNumber)}
+                          className="flex items-center justify-center px-2 py-1 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 text-xs font-medium"
+                          title="Call Account Contact"
+                        >
+                          <img src="/call.png" alt="Call" className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
 
             {details.address && (
               <div className="bg-white rounded-lg mb-6 overflow-hidden border border-gray-200">
@@ -166,31 +234,10 @@ const SalesEntryDetailsModal = ({ entry, onClose }) => {
                           )}
                         </div>
 
-                        {(whatsappNumber || callNumber) && (
-                          <div className="flex gap-2 items-start">
-                            {whatsappNumber && (
-                              <button
-                                onClick={() => handleWhatsApp(whatsappNumber)}
-                                className="px-3 py-1 bg-green-50 border border-green-200 rounded hover:bg-green-100 text-sm font-medium flex items-center gap-1"
-                                title="WhatsApp"
-                              >
-                                <img src="/whatsapp.png" alt="WhatsApp" className="w-4 h-4" />
-                              </button>
-                            )}
-                            {callNumber && (
-                              <button
-                                onClick={() => handleCall(callNumber)}
-                                className="px-3 py-1 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 text-sm font-medium flex items-center gap-1"
-                                title="Call"
-                              >
-                                <img src="/call.png" alt="Call" className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        )}
                       </div>
                     </div>
-                  )})}
+                  );
+                })}
                 </div>
               ) : (
                 <p className="text-gray-500 text-center py-4">No activity logs yet</p>
