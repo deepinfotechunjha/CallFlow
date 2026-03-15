@@ -42,7 +42,7 @@ const SalesEntryCard = ({ entry, onVisitClick, onCallClick, onDetailsClick, onEd
         </button>
         <div className="flex gap-2 ml-2">
           <button
-            onClick={() => handleWhatsApp(entry.contactPerson1Number)}
+            onClick={() => handleWhatsApp(entry.whatsappNumber || entry.contactPerson1Number)}
             className="px-2 py-1 bg-green-50 border border-green-200 rounded hover:bg-green-100 text-sm font-medium flex items-center"
           >
             <img src="/whatsapp.png" alt="WhatsApp" className="w-4 h-4" />

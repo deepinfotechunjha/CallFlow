@@ -93,7 +93,7 @@ model City {
   name      String   @unique
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime
   areas     Area[]
 
   @@index([name])
@@ -105,7 +105,7 @@ model Area {
   cityId    Int
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime
   city      City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
 
   @@unique([name, cityId])
@@ -203,8 +203,6 @@ model SalesEntry {
   accountContactNumber String?    @db.VarChar(15)
   address              String     @db.VarChar(500)
   landmark             String?    @db.VarChar(200)
-  area                 String?    @db.VarChar(100)
-  city                 String     @db.VarChar(100)
   pincode              String     @db.VarChar(6)
   email                String?    @db.VarChar(255)
   createdBy            String     @db.VarChar(50)
@@ -215,6 +213,9 @@ model SalesEntry {
   delayedBy            String[]   @default([])
   lastActivityDate     DateTime?  @db.Timestamptz(6)
   reminderDate         DateTime?  @db.Timestamptz(6)
+  area                 String?    @db.VarChar(100)
+  city                 String     @db.VarChar(100)
+  whatsappNumber       String?    @db.VarChar(15)
   creator              User?      @relation(fields: [createdById], references: [id])
   logs                 SalesLog[]
 
@@ -237,8 +238,8 @@ model SalesLog {
   loggedById       Int?
   loggedAt         DateTime   @default(now()) @db.Timestamptz(6)
   latitude         Float?
-  longitude        Float?
   locationAccuracy Float?
+  longitude        Float?
   logger           User?      @relation(fields: [loggedById], references: [id])
   salesEntry       SalesEntry @relation(fields: [salesEntryId], references: [id], onDelete: Cascade)
 

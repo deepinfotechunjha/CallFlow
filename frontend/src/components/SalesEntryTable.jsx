@@ -70,7 +70,7 @@ const SalesEntryTable = ({ entries, onVisitClick, onCallClick, onDetailsClick, o
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleWhatsApp(entry.contactPerson1Number)}
+                      onClick={() => handleWhatsApp(entry.whatsappNumber || entry.contactPerson1Number)}
                       className="px-3 py-1 bg-green-50 border border-green-200 rounded hover:bg-green-100 text-sm font-medium flex items-center gap-1"
                       title="WhatsApp"
                     >
