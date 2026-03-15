@@ -5,7 +5,7 @@ import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import SalesDashboard from './pages/SalesDashboard';
-import RemindersPage from './pages/RemindersPage';
+import SalesReport from './pages/SalesReport';
 import UserManagement from './pages/UserManagement';
 import Profile from './pages/Profile';
 import EngineerAnalytics from './pages/EngineerAnalytics';
@@ -66,7 +66,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/sales-dashboard" element={<ProtectedRoute allowedRoles={['HOST', 'SALES_EXECUTIVE']}><SalesDashboard /></ProtectedRoute>} />
-          <Route path="/reminders" element={<ProtectedRoute allowedRoles={['HOST', 'SALES_EXECUTIVE']}><RemindersPage /></ProtectedRoute>} />
+          <Route path="/sales-report" element={<ProtectedRoute allowedRoles={['HOST', 'SALES_EXECUTIVE']}><SalesReport /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute allowedRoles={['HOST']}><UserManagement /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute allowedRoles={['HOST']}><EngineerAnalytics /></ProtectedRoute>} />
