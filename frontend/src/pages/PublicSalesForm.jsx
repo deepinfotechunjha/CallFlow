@@ -245,7 +245,7 @@ const PublicSalesForm = () => {
             This share link is either invalid, expired, or has already been used.
           </p>
           <p className="text-sm text-gray-500">
-            Share links expire after 24 hours and can only be used once.
+            Share links expire after 1 hour and can only be used once.
           </p>
         </div>
       </div>
