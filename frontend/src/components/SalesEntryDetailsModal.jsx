@@ -9,6 +9,16 @@ const SalesEntryDetailsModal = ({ entry, onClose }) => {
   const { getEntryDetails } = useSalesStore();
   const modalRef = useClickOutside(onClose);
 
+  const getMapUrl = (address, city, pincode) => {
+    const query = `${address}${city ? `, ${city}` : ''}${pincode ? `, ${pincode}` : ''}`;
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  };
+
+  const getEmbedMapUrl = (address, city, pincode) => {
+    const query = `${address}${city ? `, ${city}` : ''}${pincode ? `, ${pincode}` : ''}`;
+    return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+  };
+
   const handleWhatsApp = (number) => {
     setConfirmDialog({ show: true, type: 'whatsapp', number });
   };
@@ -80,6 +90,30 @@ const SalesEntryDetailsModal = ({ entry, onClose }) => {
                 {details.area && <p><span className="font-medium">Area:</span> {details.area}</p>}
               </div>
             </div>
+
+            {details.address && (
+              <div className="bg-white rounded-lg mb-6 overflow-hidden border border-gray-200">
+                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                  <h3 className="font-semibold text-gray-800">📍 Location</h3>
+                  <p className="text-xs text-gray-500">Based on the provided address</p>
+                </div>
+                <iframe
+                  title={`Map - ${details.firmName}`}
+                  src={getEmbedMapUrl(details.address, details.city, details.pincode)}
+                  className="w-full h-52"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+                <div className="p-3 border-t border-gray-200 bg-gray-50">
+                  <button
+                    onClick={() => window.open(getMapUrl(details.address, details.city, details.pincode), '_blank')}
+                    className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm"
+                  >
+                    Open in Google Maps
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="bg-blue-50 p-4 rounded-lg mb-6">
               <h3 className="font-semibold text-gray-800 mb-3">ℹ️ Entry Information</h3>
