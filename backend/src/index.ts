@@ -3481,7 +3481,11 @@ app.get('/sales-entries', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE'
             SELECT 
                 se.*,
                 COUNT(CASE WHEN sl."logType" = 'VISIT' THEN 1 END)::int as "visitCount",
-                COUNT(CASE WHEN sl."logType" = 'CALL' THEN 1 END)::int as "callCount"
+                COUNT(CASE WHEN sl."logType" = 'CALL' THEN 1 END)::int as "callCount",
+                -- Latest log timestamp (if any)
+                (SELECT sl2."loggedAt" FROM "SalesLog" sl2 WHERE sl2."salesEntryId" = se.id ORDER BY sl2."loggedAt" DESC LIMIT 1) as "lastLoggedAt",
+                -- Latest log type (if any)
+                (SELECT sl2."logType" FROM "SalesLog" sl2 WHERE sl2."salesEntryId" = se.id ORDER BY sl2."loggedAt" DESC LIMIT 1) as "lastLogType"
             FROM "SalesEntry" se
             LEFT JOIN "SalesLog" sl ON se.id = sl."salesEntryId"
         `;
@@ -3687,96 +3691,6 @@ app.put('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_EXECUT
     }
 });
 
-// Reminder endpoints
-app.get('/sales-reminders', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
-    try {
-        const now = new Date();
-        const reminders = await prisma.$queryRaw`
-            SELECT 
-                se.*,
-                COUNT(CASE WHEN sl."logType" = 'VISIT' THEN 1 END)::int as "visitCount",
-                COUNT(CASE WHEN sl."logType" = 'CALL' THEN 1 END)::int as "callCount"
-            FROM "SalesEntry" se
-            LEFT JOIN "SalesLog" sl ON se.id = sl."salesEntryId"
-            WHERE se."reminderDate" IS NOT NULL AND se."reminderDate" <= ${now}
-            GROUP BY se.id
-            ORDER BY se."reminderDate" ASC
-        `;
-        res.json(reminders);
-    } catch (err: any) {
-        res.status(500).json({ error: String(err) });
-    }
-});
-
-app.post('/sales-entries/:id/reminder-action', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
-    const entryId = parseInt(req.params.id || '');
-    const { actionType, remark } = req.body;
-    
-    if (!actionType || !['CALL', 'VISIT'].includes(actionType)) {
-        return res.status(400).json({ error: 'Valid action type required (CALL or VISIT)' });
-    }
-    
-    try {
-        const entry = await prisma.salesEntry.findUnique({ where: { id: entryId } });
-        if (!entry) return res.status(404).json({ error: 'Entry not found' });
-        
-        const now = new Date();
-        const reminderDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000);
-        
-        const log = await prisma.salesLog.create({
-            data: {
-                salesEntryId: entryId,
-                logType: actionType,
-                callType: actionType === 'CALL' ? 'OUTGOING' : undefined,
-                remark,
-                loggedBy: req.user!.username,
-                loggedById: req.user!.id
-            }
-        });
-        
-        await prisma.salesEntry.update({
-            where: { id: entryId },
-            data: {
-                lastActivityDate: now,
-                reminderDate: reminderDate
-            }
-        });
-        
-        emitToAll('sales_log_created', { salesEntryId: entryId, log });
-        res.status(201).json({ log, message: 'Reminder reset to 15 days' });
-    } catch (err: any) {
-        res.status(500).json({ error: String(err) });
-    }
-});
-
-app.post('/sales-entries/:id/delay', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
-    const entryId = parseInt(req.params.id || '');
-    const { delayDate } = req.body;
-    
-    if (!delayDate) {
-        return res.status(400).json({ error: 'Delay date is required' });
-    }
-    
-    try {
-        const entry = await prisma.salesEntry.findUnique({ where: { id: entryId } });
-        if (!entry) return res.status(404).json({ error: 'Entry not found' });
-        
-        const newDelayedBy = [...(entry.delayedBy || []), req.user!.username];
-        
-        const updatedEntry = await prisma.salesEntry.update({
-            where: { id: entryId },
-            data: {
-                reminderDate: new Date(delayDate),
-                delayCount: entry.delayCount + 1,
-                delayedBy: newDelayedBy
-            }
-        });
-        
-        res.json({ message: 'Reminder delayed successfully', entry: updatedEntry });
-    } catch (err: any) {
-        res.status(500).json({ error: String(err) });
-    }
-});
 
 io.on('connection', (socket) => {
     socket.on('register', (userId: number) => {

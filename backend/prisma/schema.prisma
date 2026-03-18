@@ -93,7 +93,7 @@ model City {
   name      String   @unique
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   areas     Area[]
 
   @@index([name])
@@ -105,7 +105,7 @@ model Area {
   cityId    Int
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   city      City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
 
   @@unique([name, cityId])
