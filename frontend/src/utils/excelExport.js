@@ -353,3 +353,100 @@ export const exportToExcel = async (data, filename, password = null) => {
   a.click();
   window.URL.revokeObjectURL(url);
 };
+
+export const exportSalesEntriesToExcel = async (entries) => {
+  try {
+    if (!entries || entries.length === 0) {
+      throw new Error('No data to export');
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Sales Entries');
+
+    // Define columns
+    worksheet.columns = [
+      { header: 'ID', key: 'id', width: 10 },
+      { header: 'Firm Name', key: 'firmName', width: 30 },
+      { header: 'GST Number', key: 'gstNo', width: 18 },
+      { header: 'Contact Person 1 Name', key: 'contactPerson1Name', width: 25 },
+      { header: 'Contact Person 1 Number', key: 'contactPerson1Number', width: 18 },
+      { header: 'Contact Person 2 Name', key: 'contactPerson2Name', width: 25 },
+      { header: 'Contact Person 2 Number', key: 'contactPerson2Number', width: 18 },
+      { header: 'Account Contact Name', key: 'accountContactName', width: 25 },
+      { header: 'Account Contact Number', key: 'accountContactNumber', width: 18 },
+      { header: 'WhatsApp Number', key: 'whatsappNumber', width: 18 },
+      { header: 'Email', key: 'email', width: 30 },
+      { header: 'Address', key: 'address', width: 40 },
+      { header: 'Landmark', key: 'landmark', width: 25 },
+      { header: 'Area', key: 'area', width: 20 },
+      { header: 'City', key: 'city', width: 20 },
+      { header: 'Pincode', key: 'pincode', width: 12 },
+      { header: 'Visit Count', key: 'visitCount', width: 12 },
+      { header: 'Call Count', key: 'callCount', width: 12 },
+      { header: 'Total Logs', key: 'totalLogs', width: 12 },
+      { header: 'Delay Count', key: 'delayCount', width: 12 },
+      { header: 'Delayed By', key: 'delayedBy', width: 30 },
+      { header: 'Reminder Date', key: 'reminderDate', width: 20 },
+      { header: 'Last Activity Date', key: 'lastActivityDate', width: 20 },
+      { header: 'Created By', key: 'createdBy', width: 20 },
+      { header: 'Created At', key: 'createdAt', width: 20 },
+      { header: 'Updated At', key: 'updatedAt', width: 20 }
+    ];
+
+    // Add data
+    entries.forEach(entry => {
+      worksheet.addRow({
+        id: entry.id || '',
+        firmName: entry.firmName || '',
+        gstNo: entry.gstNo || '',
+        contactPerson1Name: entry.contactPerson1Name || '',
+        contactPerson1Number: entry.contactPerson1Number || '',
+        contactPerson2Name: entry.contactPerson2Name || '',
+        contactPerson2Number: entry.contactPerson2Number || '',
+        accountContactName: entry.accountContactName || '',
+        accountContactNumber: entry.accountContactNumber || '',
+        whatsappNumber: entry.whatsappNumber || entry.contactPerson1Number || '',
+        email: entry.email || '',
+        address: entry.address || '',
+        landmark: entry.landmark || '',
+        area: entry.area || '',
+        city: entry.city || '',
+        pincode: entry.pincode || '',
+        visitCount: entry.visitCount || 0,
+        callCount: entry.callCount || 0,
+        totalLogs: (entry.visitCount || 0) + (entry.callCount || 0),
+        delayCount: entry.delayCount || 0,
+        delayedBy: entry.delayedBy ? entry.delayedBy.join(', ') : '',
+        reminderDate: entry.reminderDate ? new Date(entry.reminderDate).toLocaleString() : '',
+        lastActivityDate: entry.lastActivityDate ? new Date(entry.lastActivityDate).toLocaleString() : '',
+        createdBy: entry.createdBy || '',
+        createdAt: entry.createdAt ? new Date(entry.createdAt).toLocaleString() : '',
+        updatedAt: entry.updatedAt ? new Date(entry.updatedAt).toLocaleString() : ''
+      });
+    });
+
+    // Style header row
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    const fileName = `Sales_Entries_Export_${new Date().toISOString().split('T')[0]}.xlsx`;
+    const buffer = await workbook.xlsx.writeBuffer();
+    
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    return true;
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
