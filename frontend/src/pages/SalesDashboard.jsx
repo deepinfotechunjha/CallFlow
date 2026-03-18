@@ -20,6 +20,8 @@ const SalesDashboard = () => {
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [cityFilter, setCityFilter] = useState('ALL');
+  const [areaFilter, setAreaFilter] = useState('ALL');
+  const [salesExecutiveFilter, setSalesExecutiveFilter] = useState('ALL');
   const [logTypeFilter, setLogTypeFilter] = useState('ALL');
   const [filterField, setFilterField] = useState('firmName');
   const [showDropdown, setShowDropdown] = useState(false);
@@ -28,12 +30,16 @@ const SalesDashboard = () => {
     endDate: ''
   });
 
-  const { user } = useAuthStore();
+  const { user, users, fetchUsers } = useAuthStore();
   const { entries, fetchEntries, loading } = useSalesStore();
 
   useEffect(() => {
     fetchEntries();
-  }, [fetchEntries]);
+    // Fetch users for sales executive filter (only for ADMIN/HOST)
+    if (user?.role === 'ADMIN' || user?.role === 'HOST') {
+      fetchUsers();
+    }
+  }, [fetchEntries, fetchUsers, user?.role]);
 
   // Refetch entries when date range changes
   useEffect(() => {
@@ -59,11 +65,22 @@ const SalesDashboard = () => {
   );
 
   const filteredEntries = entries.filter(entry => {
+    // Search filter
     if (searchQuery.trim()) {
       const value = entry[filterField];
       if (!value || !value.toLowerCase().startsWith(searchQuery.toLowerCase())) return false;
     }
+    
+    // City filter
     if (cityFilter !== 'ALL' && entry.city !== cityFilter) return false;
+    
+    // Area filter (cascading - depends on city)
+    if (areaFilter !== 'ALL' && entry.area !== areaFilter) return false;
+    
+    // Sales Executive filter (only for ADMIN/HOST)
+    if (salesExecutiveFilter !== 'ALL' && entry.createdBy !== salesExecutiveFilter) return false;
+    
+    // Log type filter
     if (logTypeFilter !== 'ALL') {
       if (logTypeFilter === 'VISIT' && !(entry.visitCount > 0)) return false;
       if (logTypeFilter === 'CALL' && !(entry.callCount > 0)) return false;
@@ -83,15 +100,40 @@ const SalesDashboard = () => {
   });
 
   const uniqueCities = [...new Set(entries.map(e => e.city))].sort();
+  
+  // Get unique areas based on selected city
+  const uniqueAreas = [...new Set(
+    entries
+      .filter(e => cityFilter === 'ALL' || e.city === cityFilter)
+      .map(e => e.area)
+      .filter(Boolean)
+  )].sort();
+  
+  // Get unique sales executives (only SALES_EXECUTIVE role users)
+  const salesExecutives = users
+    .filter(u => u.role === 'SALES_EXECUTIVE' || u.role === 'HOST')
+    .map(u => u.username)
+    .sort();
 
   // Get filtered stats based on current filters
   const getFilteredStats = () => {
     const filtered = entries.filter(entry => {
+      // Search filter
       if (searchQuery.trim()) {
         const value = entry[filterField];
         if (!value || !value.toLowerCase().startsWith(searchQuery.toLowerCase())) return false;
       }
+      
+      // City filter
       if (cityFilter !== 'ALL' && entry.city !== cityFilter) return false;
+      
+      // Area filter
+      if (areaFilter !== 'ALL' && entry.area !== areaFilter) return false;
+      
+      // Sales Executive filter
+      if (salesExecutiveFilter !== 'ALL' && entry.createdBy !== salesExecutiveFilter) return false;
+      
+      // Log type filter
       if (logTypeFilter !== 'ALL') {
         if (logTypeFilter === 'VISIT' && !(entry.visitCount > 0)) return false;
         if (logTypeFilter === 'CALL' && !(entry.callCount > 0)) return false;
@@ -268,18 +310,59 @@ const SalesDashboard = () => {
           </div>
 
           <div className="bg-white p-4 rounded-xl border border-gray-200">
-            <label className="text-sm font-medium text-gray-700">🏙️ City</label>
-            <select
-              value={cityFilter}
-              onChange={(e) => setCityFilter(e.target.value)}
-              className="mt-3 w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
-            >
-              <option value="ALL">All Cities</option>
-              {uniqueCities.map((city, index) => (
-                <option key={index} value={city}>{city}</option>
-              ))}
-            </select>
+            <label className="text-sm font-medium text-gray-700">🏙️ City & Area</label>
+            <div className="mt-3 flex flex-col gap-3">
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-2">City</p>
+                <select
+                  value={cityFilter}
+                  onChange={(e) => {
+                    setCityFilter(e.target.value);
+                    // Reset area filter when city changes
+                    if (e.target.value === 'ALL') {
+                      setAreaFilter('ALL');
+                    }
+                  }}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
+                >
+                  <option value="ALL">All Cities</option>
+                  {uniqueCities.map((city, index) => (
+                    <option key={index} value={city}>{city}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-2">Area</p>
+                <select
+                  value={areaFilter}
+                  onChange={(e) => setAreaFilter(e.target.value)}
+                  disabled={cityFilter === 'ALL'}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
+                  <option value="ALL">{cityFilter === 'ALL' ? 'Select city first' : 'All Areas'}</option>
+                  {uniqueAreas.map((area, index) => (
+                    <option key={index} value={area}>{area}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
+
+          {(user?.role === 'ADMIN' || user?.role === 'HOST') && (
+            <div className="bg-white p-4 rounded-xl border border-gray-200">
+              <label className="text-sm font-medium text-gray-700">👤 Sales Executive</label>
+              <select
+                value={salesExecutiveFilter}
+                onChange={(e) => setSalesExecutiveFilter(e.target.value)}
+                className="mt-3 w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
+              >
+                <option value="ALL">All Sales Executives</option>
+                {salesExecutives.map((executive, index) => (
+                  <option key={index} value={executive}>{executive}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="bg-white p-4 rounded-xl border border-gray-200">
             <label className="text-sm font-medium text-gray-700">🧭 Action Filter</label>
@@ -320,11 +403,13 @@ const SalesDashboard = () => {
           </div>
 
           <div className="sm:col-span-2 lg:col-span-4 flex justify-end">
-            {(searchQuery || cityFilter !== 'ALL' || logTypeFilter !== 'ALL' || dateRange.startDate || dateRange.endDate) && (
+            {(searchQuery || cityFilter !== 'ALL' || areaFilter !== 'ALL' || salesExecutiveFilter !== 'ALL' || logTypeFilter !== 'ALL' || dateRange.startDate || dateRange.endDate) && (
               <button
                 onClick={() => {
                   setSearchQuery('');
                   setCityFilter('ALL');
+                  setAreaFilter('ALL');
+                  setSalesExecutiveFilter('ALL');
                   setLogTypeFilter('ALL');
                   setDateRange({ startDate: '', endDate: '' });
                 }}
