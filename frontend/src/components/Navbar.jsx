@@ -21,9 +21,9 @@ const Navbar = () => {
 
   return (
     <nav className="bg-white shadow-lg border-b">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4">
+      <div className="w-full px-2 sm:px-4">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-2 sm:space-x-8">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               className="lg:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100"
@@ -38,14 +38,14 @@ const Navbar = () => {
             </button>
             
             <Link to="/" className="flex items-center">
-              <img src="/deep.png" alt="Deep Infotech" className="h-8 sm:h-10 lg:h-12 w-auto max-w-none" />
+              <img src="/deep.png" alt="Deep Infotech" className="h-8 sm:h-9 lg:h-10 w-auto max-w-none" />
             </Link>
             
-            <div className="hidden lg:flex space-x-1 xl:space-x-4">
+            <div className="hidden lg:flex space-x-1 xl:space-x-5">
               {user?.role !== 'SALES_EXECUTIVE' && (
                 <Link
                   to="/"
-                  className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium transition-all duration-300 ${
+                  className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium transition-all duration-300 ${
                     isActive('/') 
                       ? 'text-blue-600 font-semibold' 
                       : 'text-gray-700 hover:text-blue-600'
@@ -62,7 +62,7 @@ const Navbar = () => {
                 <>
                   <Link
                     to="/sales-dashboard"
-                    className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                    className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
                       isActive('/sales-dashboard') 
                         ? 'text-blue-600 font-semibold' 
                         : 'text-gray-700 hover:text-blue-600'
@@ -73,26 +73,14 @@ const Navbar = () => {
                       <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
                     )}
                   </Link>
-                  <Link
-                    to="/sales-report"
-                    className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                      isActive('/sales-report') 
-                        ? 'text-blue-600 font-semibold' 
-                        : 'text-gray-700 hover:text-blue-600'
-                    }`}
-                  >
-                    Sales Report
-                    {isActive('/sales-report') && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
-                    )}
-                  </Link>
+
                 </>
               )}
               
               {user?.role !== 'SALES_EXECUTIVE' && (
                 <Link
                   to="/carry-in-service"
-                  className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                  className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
                     isActive('/carry-in-service') 
                       ? 'text-blue-600 font-semibold' 
                       : 'text-gray-700 hover:text-blue-600'
@@ -108,7 +96,7 @@ const Navbar = () => {
               {(user?.role === 'HOST' || user?.role === 'ADMIN') && (
                 <Link
                   to="/dc"
-                  className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                  className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
                     isActive('/dc') 
                       ? 'text-blue-600 font-semibold' 
                       : 'text-gray-700 hover:text-blue-600'
@@ -125,7 +113,7 @@ const Navbar = () => {
                 <>
                   <Link
                     to="/users"
-                    className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                    className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
                       isActive('/users') 
                         ? 'text-blue-600 font-semibold' 
                         : 'text-gray-700 hover:text-blue-600'
@@ -138,7 +126,7 @@ const Navbar = () => {
                   </Link>
                   <Link
                     to="/customers"
-                    className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                    className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
                       isActive('/customers') 
                         ? 'text-blue-600 font-semibold' 
                         : 'text-gray-700 hover:text-blue-600'
@@ -151,7 +139,7 @@ const Navbar = () => {
                   </Link>
                   <Link
                     to="/analytics"
-                    className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                    className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
                       isActive('/analytics') 
                         ? 'text-blue-600 font-semibold' 
                         : 'text-gray-700 hover:text-blue-600'
@@ -164,7 +152,7 @@ const Navbar = () => {
                   </Link>
                   <Link
                     to="/settings/categories"
-                    className={`relative px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                    className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
                       isActive('/settings') 
                         ? 'text-blue-600 font-semibold' 
                         : 'text-gray-700 hover:text-blue-600'
@@ -180,11 +168,11 @@ const Navbar = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-0.5 sm:space-x-2">
+          <div className="flex items-center space-x-0.5 sm:space-x-1">
             <NotificationBell />
             
-            <span className="text-xs sm:text-sm text-gray-700">
-              {user?.username} ({user?.role})
+            <span className="text-xs text-gray-700">
+              {user?.username} <span className="hidden xl:inline">({user?.role})</span>
             </span>
             
             <Link
@@ -233,13 +221,7 @@ const Navbar = () => {
                   >
                     Sales Dashboard
                   </Link>
-                  <Link
-                    to="/sales-report"
-                    onClick={() => setShowMobileMenu(false)}
-                    className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Sales Report
-                  </Link>
+
                 </>
               )}
               
