@@ -9,6 +9,9 @@ import VisitLogModal from '../components/VisitLogModal';
 import CallLogModal from '../components/CallLogModal';
 import SalesEntryDetailsModal from '../components/SalesEntryDetailsModal';
 import SalesShareModal from '../components/SalesShareModal';
+import ExportModal from '../components/ExportModal';
+import { exportSalesEntriesToExcel } from '../utils/excelExport';
+import toast from 'react-hot-toast';
 
 const SalesDashboard = () => {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -17,6 +20,8 @@ const SalesDashboard = () => {
   const [showCallModal, setShowCallModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [cityFilter, setCityFilter] = useState('ALL');
@@ -35,8 +40,8 @@ const SalesDashboard = () => {
 
   useEffect(() => {
     fetchEntries();
-    // Fetch users for sales executive filter (only for ADMIN/HOST)
-    if (user?.role === 'ADMIN' || user?.role === 'HOST') {
+    // Fetch users for sales executive filter (only for HOST)
+    if (user?.role === 'HOST') {
       fetchUsers();
     }
   }, [fetchEntries, fetchUsers, user?.role]);
@@ -202,6 +207,43 @@ const SalesDashboard = () => {
     setShowEditForm(true);
   };
 
+  const handleExport = async (exportType, password) => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/auth/verify-secret`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${useAuthStore.getState().token}`
+        },
+        body: JSON.stringify({ secretPassword: password })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success && data.hasAccess) {
+        const dataToExport = exportType === 'filtered' ? filteredEntries : entries;
+        
+        if (dataToExport.length === 0) {
+          toast.error('No data to export');
+          return;
+        }
+        
+        await exportSalesEntriesToExcel(dataToExport);
+        toast.success(`Successfully exported ${dataToExport.length} sales entries to Excel`);
+        setShowExportModal(false);
+      } else {
+        toast.error('Invalid secret password');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export data. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-3">
@@ -210,6 +252,19 @@ const SalesDashboard = () => {
           <p className="text-gray-600">Hello <span className="font-semibold text-blue-600">{user?.username}</span>, manage your firm entries</p>
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
+          {user?.role === 'HOST' && (
+            <button
+              onClick={() => setShowExportModal(true)}
+              disabled={isExporting}
+              className={`px-4 sm:px-6 py-3 rounded-xl font-medium text-sm sm:text-base whitespace-nowrap flex items-center gap-2 shadow-sm transition-all ${
+                isExporting 
+                  ? 'bg-gray-400 cursor-not-allowed text-white' 
+                  : 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800'
+              }`}
+            >
+              {isExporting ? '⏳ Exporting...' : '📊 Export'}
+            </button>
+          )}
           <button
             onClick={() => setShowShareModal(true)}
             className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-purple-700 hover:to-purple-800 font-medium text-sm sm:text-base whitespace-nowrap shadow-sm transition-all flex items-center gap-2"
@@ -388,7 +443,7 @@ const SalesDashboard = () => {
             </div>
           </div>
 
-          {(user?.role === 'ADMIN' || user?.role === 'HOST') && (
+          {user?.role === 'HOST' && (
             <div className="bg-white p-4 rounded-xl border border-gray-200">
               <label className="text-sm font-medium text-gray-700">👤 Sales Executive</label>
               <select
@@ -553,6 +608,16 @@ const SalesDashboard = () => {
         <SalesShareModal
           isOpen={showShareModal}
           onClose={() => setShowShareModal(false)}
+        />
+      )}
+      {showExportModal && (
+        <ExportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          onExport={handleExport}
+          totalCount={entries.length}
+          filteredCount={filteredEntries.length}
+          title="Export Sales Entries to Excel"
         />
       )}
     </div>
