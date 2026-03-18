@@ -64,6 +64,24 @@ const SalesDashboard = () => {
     option.toLowerCase().startsWith(searchQuery.toLowerCase())
   );
 
+  const isInDateRange = (dateString) => {
+    const entryDate = new Date(dateString);
+    const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null;
+    const endDate = dateRange.endDate ? new Date(dateRange.endDate + 'T23:59:59') : null;
+
+    // If no date range is selected, default to showing today's entries
+    if (!startDate && !endDate) {
+      const today = new Date();
+      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+      return entryDate >= startOfToday && entryDate <= endOfToday;
+    }
+
+    if (startDate && entryDate < startDate) return false;
+    if (endDate && entryDate > endDate) return false;
+    return true;
+  };
+
   const filteredEntries = entries.filter(entry => {
     // Search filter
     if (searchQuery.trim()) {
@@ -84,18 +102,19 @@ const SalesDashboard = () => {
     if (logTypeFilter !== 'ALL') {
       if (logTypeFilter === 'VISIT' && !(entry.visitCount > 0)) return false;
       if (logTypeFilter === 'CALL' && !(entry.callCount > 0)) return false;
+      if (logTypeFilter === 'CREATED' && !isInDateRange(entry.createdAt)) return false;
     }
-    
-    // Date range filter
-    if (dateRange.startDate || dateRange.endDate) {
+
+    // Date range filter (applies when not showing "Created" specifically)
+    if (logTypeFilter !== 'CREATED' && (dateRange.startDate || dateRange.endDate)) {
       const entryDate = new Date(entry.createdAt);
       const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null;
       const endDate = dateRange.endDate ? new Date(dateRange.endDate + 'T23:59:59') : null;
-      
+
       if (startDate && entryDate < startDate) return false;
       if (endDate && entryDate > endDate) return false;
     }
-    
+
     return true;
   });
 
@@ -137,10 +156,11 @@ const SalesDashboard = () => {
       if (logTypeFilter !== 'ALL') {
         if (logTypeFilter === 'VISIT' && !(entry.visitCount > 0)) return false;
         if (logTypeFilter === 'CALL' && !(entry.callCount > 0)) return false;
+        if (logTypeFilter === 'CREATED' && !isInDateRange(entry.createdAt)) return false;
       }
       
-      // Date range filter for stats
-      if (dateRange.startDate || dateRange.endDate) {
+      // Date range filter for stats (ignore when specifically filtering by created date)
+      if (logTypeFilter !== 'CREATED' && (dateRange.startDate || dateRange.endDate)) {
         const entryDate = new Date(entry.createdAt);
         const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null;
         const endDate = dateRange.endDate ? new Date(dateRange.endDate + 'T23:59:59') : null;
@@ -269,12 +289,32 @@ const SalesDashboard = () => {
                 <option value="contactPerson2Number">Contact 2 Number</option>
                 <option value="accountContactName">Account Name</option>
                 <option value="accountContactNumber">Account Number</option>
+                <option value="city">City</option>
+                <option value="createdBy">Created By</option>
               </select>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">🔍</span>
                 <input
                   type="text"
-                  placeholder={`Search by ${filterField === 'firmName' ? 'firm name' : filterField === 'contactPerson1Name' ? 'contact 1 name' : filterField === 'contactPerson1Number' ? 'contact 1 number' : filterField === 'contactPerson2Name' ? 'contact 2 name' : filterField === 'contactPerson2Number' ? 'contact 2 number' : filterField === 'accountContactName' ? 'account name' : 'account number'}...`}
+                  placeholder={`Search by ${
+                    filterField === 'firmName'
+                      ? 'firm name'
+                      : filterField === 'contactPerson1Name'
+                      ? 'contact 1 name'
+                      : filterField === 'contactPerson1Number'
+                      ? 'contact 1 number'
+                      : filterField === 'contactPerson2Name'
+                      ? 'contact 2 name'
+                      : filterField === 'contactPerson2Number'
+                      ? 'contact 2 number'
+                      : filterField === 'accountContactName'
+                      ? 'account name'
+                      : filterField === 'accountContactNumber'
+                      ? 'account number'
+                      : filterField === 'city'
+                      ? 'city'
+                      : 'created by'
+                  }...`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setShowDropdown(true)}
@@ -377,6 +417,7 @@ const SalesDashboard = () => {
                   <option value="ALL">All Logs</option>
                   <option value="VISIT">Visited</option>
                   <option value="CALL">Called</option>
+                  <option value="CREATED">Created</option>
                 </select>
               </div>
               <div>
