@@ -1,0 +1,326 @@
+Project: Call Management System (Deeplatest)
+
+Overview
+--------
+This repository implements a full-stack call management platform with:
+- Backend: Node.js, Express, TypeScript, Prisma ORM, PostgreSQL
+- Frontend: React 19, Vite, Tailwind CSS, Zustand store, React Router
+- Realtime: Socket.IO (backend + socket.io-client frontend)
+- Auth: JWT + bcrypt + role-based access control
+- Notifications, bulk actions, admin secret features, public share token flows
+
+Folder structure
+----------------
+root
+  ├── README.md
+  ├── backend/
+  │   ├── package.json
+  │   ├── tsconfig.json
+  │   ├── prisma/
+  │   │   ├── schema.prisma
+  │   │   └── migrations/
+  │   ├── scripts/
+  │   │   ├── seedHost.js
+  │   │   └── other helper scripts
+  │   └── src/index.ts          # entire API and logic
+  ├── frontend/
+  │   ├── package.json
+  │   ├── vite.config.js
+  │   ├── src/
+  │   │   ├── api/apiClient.js
+  │   │   ├── store/*.js
+  │   │   ├── pages/*.jsx
+  │   │   ├── components/*.jsx
+  │   │   ├── hooks/useSocket.js
+  │   │   ├── App.jsx
+  │   │   ├── main.jsx
+  │   │   ├── index.css
+  │   │   └── App.css
+  │   └── public/...
+
+Key dependencies
+----------------
+Backend:
+- express, cors, cookie-parser
+- prisma, @prisma/client
+- bcryptjs, jsonwebtoken
+- dotenv, nodemailer
+- socket.io, typescript, tsx
+Frontend:
+- react, react-dom, react-router-dom
+- zustand, axios, react-hot-toast
+- socket.io-client
+- tailwindcss, postcss, autoprefixer
+- vite, eslint
+
+Backend server pipeline
+-----------------------
+1. Load .env via dotenv
+2. Create PrismaClient using DATABASE_URL
+3. Connection retry helper with exponential backoff
+4. Keep-alive query loop to prevent DB drops
+5. Express middlewares: json parser + cookie parser + CORS (whitelist + localhost rule)
+6. Define JWT_SECRET fallback
+7. OTP cache and cleanup intervals using in-memory Map and Set
+8. Nodemailer SMTP config (Gmail, environmental credentials)
+9. Helper functions:
+   - generateOTP
+   - sendOTPEmail
+   - sendDeletionNotificationEmail
+   - signToken/verifyToken
+10. Authentication middleware (`authMiddleware`) checks Authorization header and verifies JWT
+11. requireRole(roles) for role-based permissions
+12. API routes are in one file (src/index.ts) organized by domain
+13. WebSocket server (io) and `emitToAll` for events
+14. Error handlers: global and 404
+15. Graceful shutdown on SIGINT/SIGTERM and unhandled errors
+
+Database model (prisma/schema.prisma)
+------------------------------
+Models:
+- User (id, username, password, email, phone, role, secretPassword, createdAt)
+- Call (problem, category, status, assignedTo/At/By, createdBy/At, completed fields, dc flags, customer relation)
+- Customer (name, phone, email, address, stats fields, relations)
+- Notification (userId, message, type, isRead, callId)
+- City, Area, Category, ServiceCategory (common isActive soft delete)
+- CarryInService (service lifecycle, relation with Customer)
+- OtpToken (email-based token store but then this app uses in-memory OTP cache too)
+- DeletionHistory, ServiceDeletionHistory
+- SalesEntry / SalesLog (sales lead info + logs, tracking, delays)
+- PublicAccessToken (for anonymous form access with token/cookie expiring)
+
+Important routes and their behavior
+-----------------------------------
+Authentication:
+- POST /auth/login: username/password -> returns JWT + user info
+- GET /auth/me: fetch user from token
+- GET /health: server status & DB latency
+- /auth/forgot-password / verify-otp / reset-password: HOST secret reset flow
+- special admin endpoints: /auth/special-admin-login, /special-admin-request-otp, etc.
+
+User management:
+- GET /users (HOST/ADMIN/SPECIAL_ADMIN)
+- POST /users (HOST/SPECIAL_ADMIN)
+- PUT/DELETE /users/:id (HOST/SPECIAL_ADMIN)
+
+Calls:
+- GET /calls (role-based filtering for ENGINEER)
+- POST /calls (create call + optional customer upsert)
+- PUT /calls/:id (update pending call)
+- POST /calls/:id/assign, /complete, /visited /dc /complete-dc
+- POST /calls/check-duplicate
+- PUT /calls/:id/increment (call count + notification generation)
+- POST /calls/bulk-delete (HOST with secret password and audit record)
+
+Customer endpoints:
+- GET /customers, /customers/phone/:phone, /customers/analytics, /customers/directory
+- PUT /customers/:id (HOST/ADMIN)
+
+City/Area/Category/ServiceCategory: full CRUD with soft delete isActive and role checks
+
+Carry-in services:
+- /carry-in-services CRUD + complete/deliver/bulk-delete (HOST only)
+
+Notifications:
+- GET /notifications, /unread-count
+- PUT /notification/:id/read, DELETE /notifications/:id, POST /notifications/bulk-delete
+
+Sale share API:
+- /share/create-link, /share/create-sales-link (generate share JWT)
+- /share/:linkId, /share/sales/:linkId (validate, assign public access token)
+- /share/:linkId/submit, /share/:linkId/submit-service (anonymous call/service submission via link)
+
+Sales entries:
+- GET /sales-entries, /sales-entries/:id
+- POST /sales-entries
+- POST /sales-entries/:id/visit and /call (SalesLog entries)
+- PUT /sales-entries/:id
+
+Frontend app flow
+-----------------
+- Root (`main.jsx`) loads `<App />` with `BrowserRouter`
+- `App.jsx` uses Zustand `useAuthStore` and `useSocket`
+- Auth initialization reads token from local storage and hits /auth/me
+- Protected routes redirect to /login if not authenticated
+- `/login`, `/forgot-password`, `/secreturl`, `/share/*` and core path routes
+- Navbar hides on login/secret/share pages
+
+API client (/frontend/src/api/apiClient.js):
+- base URL from env `VITE_API_URL` or default local
+- request interceptor adds JWT
+- response interceptor auto-logout and redirect on invalid token
+
+Zustand stores pattern
+----------------------
+- authStore: login/logout/me, users CRUD and local persistence via `persist`
+- callStore: load calls, create/update/assign/complete, bulk operations, duplicate check
+- carryInServiceStore: carryin services CRUD, state updates
+- dcStore: DC call list, status update
+- categoryStore/serviceCategoryStore: category + service-category CRUD
+- salesStore: sales entries + logs + analytics
+
+Realtime events from backend via Socket.IO
+----------------------------------------
+Common events:
+- user_created, user_updated, user_deleted_broadcast
+- call_created, call_updated, call_assigned, call_completed, call_visited, dc_completed
+- customer_updated
+- service_created, service_updated
+- city/area/category/service_category create/update/delete
+- sales_entry_created, sales_entry_updated, sales_log_created
+- notification_created, calls_bulk_deleted, services_bulk_deleted
+
+Database sync guarantees: UI updates immediately when server emits events.
+
+Secrets & security
+------------------
+- JWT for auth with 7d expiry
+- bcrypt for password hash and secret password
+- Secret admin endpoint designed to protect critical actions (OTP, special admin)
+- share tokens (JWT) + one-time used caches + PublicAccessToken cookie
+- CORS strict list plus localhost dev fallback
+- Several role checks and production guard for CORS
+- Error handling in backend global middleware and periodic cleanup loops
+
+Deployment
+----------
+- backend command: `npm run dev` (tsx watch) + build with `npm run build`, run `node dist/index.js`
+- frontend command: `npm run dev` (Vite), `npm run build` output `/dist`
+- env vars for backend: DATABASE_URL, JWT_SECRET, FRONTEND_ORIGIN, PORT, RUN_PRISMA_PUSH, EMAIL_USER/PASS, SPECIAL_ADMIN_*
+- env var for frontend: VITE_API_URL
+
+Database migrations
+-------------------
+- Prisma migrations in `backend/prisma/migrations/*.sql`
+- `npx prisma db push --accept-data-loss` or `npx prisma migrate deploy`
+- `postinstall` runs `prisma generate`
+
+Known business flows
+--------------------
+1. Standard login + dashboard
+2. USER/ENGINEER sees own assigned calls, can complete/visit if assigned
+3. HOST/ADMIN can manage all calls, assign to engineers, delete completed calls with secret
+4. Sales executives manage sales entries and field logs
+5. Public share link includes non-auth call/service/sales form contributions
+6. Notification queue for changes (user/call/service, etc.)
+7. City/Area/Category lookup for forms and analytics
+8. Analytics route for HOST to view engineer performance
+
+Extra insights
+--------------
+- `backend/index.ts` is a single 3800+ loc file with minimal router splitting, so scanning is easiest by heading sections.
+- `prisma/schema.prisma` is source of truth for fields and indexing.
+- `frontend/src/store` is the state engine; each page uses those stores directly.
+- `frontend/src/pages` are the visible features; if a route exists, page file exists.
+
+File map and purpose (detailed)
+-------------------------------
+root/README.md
+- Project description, tech stack, setup, deployment, and API endpoint summary.
+
+backend/package.json
+- Backend dependencies, scripts (build/dev/seed/db commands), postinstall Prisma generate.
+
+backend/tsconfig.json
+- TypeScript compiler options and module resolution.
+
+backend/prisma/schema.prisma
+- Database schema definitions, models, relations, indexes, default values.
+
+backend/prisma/migrations/
+- SQL migration history that upgrades DB schema over time.
+
+backend/scripts/seedHost.js
+- Seed initial HOST user for first login and admin setup.
+
+backend/src/index.ts
+- Entire backend server logic, APIs, middleware, auth, real-time emit, cleanup, error-handling, graceful shutdown.
+
+frontend/package.json
+- Frontend dependencies, Vite scripts, lint.
+
+frontend/vite.config.js
+- Vite configuration for React app building and dev server.
+
+frontend/src/main.jsx
+- React root render; wraps App in BrowserRouter.
+
+frontend/src/App.jsx
+- App layout, route definitions, page components, ProtectedRoute checks, navbar visibility, auth init, socket init.
+
+frontend/src/api/apiClient.js
+- Axios instance with base URL, JWT request interceptor, 404/401 response handling.
+
+frontend/src/hooks/useSocket.js
+- Socket.IO client setup, event listeners for real-time updates (users, calls, notifications, etc.).
+
+frontend/src/store/authStore.js
+- Auth state, login/logout, current user, user CRUD, persistence with Zustand and local storage.
+
+frontend/src/store/callStore.js
+- UI state for calls, API actions (get/create/info/update/assign/complete), duplicate check, notifications.
+
+frontend/src/store/carryInServiceStore.js
+- Carry-in service actions and state management.
+
+frontend/src/store/dcStore.js
+- DC-related call states and actions (fetch DC calls and complete DC).
+
+frontend/src/store/categoryStore.js
+- City/area/category service endpoints + CRUD states.
+
+frontend/src/store/serviceCategoryStore.js
+- Service-category endpoints + CRUD states.
+
+frontend/src/store/salesStore.js
+- Sales entries and logs, analytics queries, create/update operations.
+
+frontend/src/pages/Login.jsx
+- Login form UI, calls authStore.login on submit.
+
+frontend/src/pages/ForgotPassword.jsx
+- Password reset flow UI + OTP management.
+
+frontend/src/pages/Dashboard.jsx
+- Main call management dashboard for HOST/ADMIN/ENGINEER users.
+
+frontend/src/pages/SalesDashboard.jsx
+- Sales executive dashboard listing sales entry vs stats.
+
+frontend/src/pages/UserManagement.jsx
+- CRUD for users, role updates, delete users (HOST only).
+
+frontend/src/pages/Profile.jsx
+- Display/edit current user profile details.
+
+frontend/src/pages/EngineerAnalytics.jsx
+- Engineer performance charts and statistic endpoints.
+
+frontend/src/pages/CategorySettings.jsx
+- UI for category/city/area/service category management.
+
+frontend/src/pages/CustomerDirectory.jsx
+- Customer list and search features.
+
+frontend/src/pages/CarryInService.jsx
+- Carry-in service list and operations.
+
+frontend/src/pages/DCPage.jsx
+- DC calls management (pending/completed, action complete DC).
+
+frontend/src/pages/AdminLogin.jsx
+- Secret URL admin login options.
+
+frontend/src/pages/AdminUserManagement.jsx
+- Admin-only user manager.
+
+frontend/src/pages/PublicCallForm.jsx
+- Public call submission via share token link.
+
+frontend/src/pages/PublicServiceForm.jsx
+- Public carry-in service submission via share token link.
+
+frontend/src/pages/PublicSalesForm.jsx
+- Public sales entry form via share token link.
+
+This file is intentionally exhaustive and entry-level friendly. It covers each component type and mapping as per user request.
