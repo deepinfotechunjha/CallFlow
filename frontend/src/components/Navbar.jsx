@@ -1,7 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import NotificationBell from './NotificationBell';
+
+const SALES_DASHBOARD_ROLES = ['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN'];
+const ORDERS_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_EXECUTIVE', 'COMPANY_PAYROLL', 'SALES_ADMIN'];
+const HIDE_MAIN_DASHBOARD = ['SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN', 'ACCOUNTANT', 'COMPANY_PAYROLL'];
 
 const Navbar = () => {
   const { user, logout } = useAuthStore();
@@ -18,6 +22,30 @@ const Navbar = () => {
     logout();
     navigate('/login');
   };
+
+  const navLink = (to, label, extraClass = '') => (
+    <Link
+      to={to}
+      className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${extraClass} ${
+        isActive(to) ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'
+      }`}
+    >
+      {label}
+      {isActive(to) && (
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
+      )}
+    </Link>
+  );
+
+  const mobileLink = (to, label) => (
+    <Link
+      to={to}
+      onClick={() => setShowMobileMenu(false)}
+      className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
+    >
+      {label}
+    </Link>
+  );
 
   return (
     <nav className="bg-white shadow-lg border-b">
@@ -36,133 +64,29 @@ const Navbar = () => {
                 )}
               </svg>
             </button>
-            
+
             <Link to="/" className="flex items-center">
               <img src="/deep.png" alt="Deep Infotech" className="h-8 sm:h-9 lg:h-10 w-auto max-w-none" />
             </Link>
-            
-            <div className="hidden lg:flex space-x-1 xl:space-x-5">
-              {user?.role !== 'SALES_EXECUTIVE' && (
-                <Link
-                  to="/"
-                  className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium transition-all duration-300 ${
-                    isActive('/') 
-                      ? 'text-blue-600 font-semibold' 
-                      : 'text-gray-700 hover:text-blue-600'
-                  }`}
-                >
-                  Dashboard
-                  {isActive('/') && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
-                  )}
-                </Link>
-              )}
-              
-              {(user?.role === 'HOST' || user?.role === 'SALES_EXECUTIVE') && (
-                <>
-                  <Link
-                    to="/sales-dashboard"
-                    className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                      isActive('/sales-dashboard') 
-                        ? 'text-blue-600 font-semibold' 
-                        : 'text-gray-700 hover:text-blue-600'
-                    }`}
-                  >
-                    Sales Dashboard
-                    {isActive('/sales-dashboard') && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
-                    )}
-                  </Link>
 
-                </>
-              )}
-              
-              {user?.role !== 'SALES_EXECUTIVE' && (
-                <Link
-                  to="/carry-in-service"
-                  className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                    isActive('/carry-in-service') 
-                      ? 'text-blue-600 font-semibold' 
-                      : 'text-gray-700 hover:text-blue-600'
-                  }`}
-                >
-                  CarryInService
-                  {isActive('/carry-in-service') && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
-                  )}
-                </Link>
-              )}
-              
-              {(user?.role === 'HOST' || user?.role === 'ADMIN') && (
-                <Link
-                  to="/dc"
-                  className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                    isActive('/dc') 
-                      ? 'text-blue-600 font-semibold' 
-                      : 'text-gray-700 hover:text-blue-600'
-                  }`}
-                >
-                  DC
-                  {isActive('/dc') && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
-                  )}
-                </Link>
-              )}
-              
+            {/* Desktop Nav */}
+            <div className="hidden lg:flex space-x-1 xl:space-x-5">
+              {!HIDE_MAIN_DASHBOARD.includes(user?.role) && navLink('/', 'Dashboard')}
+
+              {SALES_DASHBOARD_ROLES.includes(user?.role) && navLink('/sales-dashboard', 'Sales Dashboard')}
+
+              {ORDERS_ROLES.includes(user?.role) && navLink('/orders', 'Orders')}
+
+              {user?.role !== 'SALES_EXECUTIVE' && user?.role !== 'TALLY_CALLER' && user?.role !== 'SALES_ADMIN' && user?.role !== 'ACCOUNTANT' && user?.role !== 'COMPANY_PAYROLL' && navLink('/carry-in-service', 'CarryInService')}
+
+              {(user?.role === 'HOST' || user?.role === 'ADMIN') && navLink('/dc', 'DC')}
+
               {user?.role === 'HOST' && (
                 <>
-                  <Link
-                    to="/users"
-                    className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                      isActive('/users') 
-                        ? 'text-blue-600 font-semibold' 
-                        : 'text-gray-700 hover:text-blue-600'
-                    }`}
-                  >
-                    Role Management
-                    {isActive('/users') && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
-                    )}
-                  </Link>
-                  <Link
-                    to="/customers"
-                    className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                      isActive('/customers') 
-                        ? 'text-blue-600 font-semibold' 
-                        : 'text-gray-700 hover:text-blue-600'
-                    }`}
-                  >
-                    Customers
-                    {isActive('/customers') && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
-                    )}
-                  </Link>
-                  <Link
-                    to="/analytics"
-                    className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                      isActive('/analytics') 
-                        ? 'text-blue-600 font-semibold' 
-                        : 'text-gray-700 hover:text-blue-600'
-                    }`}
-                  >
-                    Engineer Analytics
-                    {isActive('/analytics') && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
-                    )}
-                  </Link>
-                  <Link
-                    to="/settings/categories"
-                    className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                      isActive('/settings') 
-                        ? 'text-blue-600 font-semibold' 
-                        : 'text-gray-700 hover:text-blue-600'
-                    }`}
-                  >
-                    Categories
-                    {isActive('/settings') && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
-                    )}
-                  </Link>
+                  {navLink('/users', 'Role Management')}
+                  {navLink('/customers', 'Customers')}
+                  {navLink('/analytics', 'Engineer Analytics')}
+                  {navLink('/settings/categories', 'Categories')}
                 </>
               )}
             </div>
@@ -170,17 +94,15 @@ const Navbar = () => {
 
           <div className="flex items-center space-x-0.5 sm:space-x-1">
             <NotificationBell />
-            
+
             <span className="text-xs text-gray-700">
               {user?.username} <span className="hidden xl:inline">({user?.role})</span>
             </span>
-            
+
             <Link
               to="/profile"
               className={`relative hidden sm:block px-1 sm:px-2 py-2 text-xs sm:text-sm font-medium transition-all duration-300 ${
-                isActive('/profile') 
-                  ? 'text-blue-600 font-semibold' 
-                  : 'text-gray-700 hover:text-blue-600'
+                isActive('/profile') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'
               }`}
             >
               Profile
@@ -188,7 +110,7 @@ const Navbar = () => {
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
               )}
             </Link>
-            
+
             <button
               onClick={handleLogout}
               className="bg-red-600 text-white px-1.5 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium hover:bg-red-700"
@@ -202,87 +124,24 @@ const Navbar = () => {
         {showMobileMenu && (
           <div className="lg:hidden border-t border-gray-200 py-2">
             <div className="flex flex-col space-y-1">
-              {user?.role !== 'SALES_EXECUTIVE' && (
-                <Link
-                  to="/"
-                  onClick={() => setShowMobileMenu(false)}
-                  className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Dashboard
-                </Link>
-              )}
-              
-              {(user?.role === 'HOST' || user?.role === 'SALES_EXECUTIVE') && (
-                <>
-                  <Link
-                    to="/sales-dashboard"
-                    onClick={() => setShowMobileMenu(false)}
-                    className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Sales Dashboard
-                  </Link>
+              {!HIDE_MAIN_DASHBOARD.includes(user?.role) && mobileLink('/', 'Dashboard')}
 
-                </>
-              )}
-              
-              <Link
-                to="/profile"
-                onClick={() => setShowMobileMenu(false)}
-                className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                Profile
-              </Link>
-              
-              {user?.role !== 'SALES_EXECUTIVE' && (
-                <Link
-                  to="/carry-in-service"
-                  onClick={() => setShowMobileMenu(false)}
-                  className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  CarryInService
-                </Link>
-              )}
-              
-              {(user?.role === 'HOST' || user?.role === 'ADMIN') && (
-                <Link
-                  to="/dc"
-                  onClick={() => setShowMobileMenu(false)}
-                  className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  DC
-                </Link>
-              )}
-              
+              {SALES_DASHBOARD_ROLES.includes(user?.role) && mobileLink('/sales-dashboard', 'Sales Dashboard')}
+
+              {ORDERS_ROLES.includes(user?.role) && mobileLink('/orders', 'Orders')}
+
+              {mobileLink('/profile', 'Profile')}
+
+              {user?.role !== 'SALES_EXECUTIVE' && user?.role !== 'TALLY_CALLER' && user?.role !== 'SALES_ADMIN' && user?.role !== 'ACCOUNTANT' && user?.role !== 'COMPANY_PAYROLL' && mobileLink('/carry-in-service', 'CarryInService')}
+
+              {(user?.role === 'HOST' || user?.role === 'ADMIN') && mobileLink('/dc', 'DC')}
+
               {user?.role === 'HOST' && (
                 <>
-                  <Link
-                    to="/users"
-                    onClick={() => setShowMobileMenu(false)}
-                    className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Role Management
-                  </Link>
-                  <Link
-                    to="/customers"
-                    onClick={() => setShowMobileMenu(false)}
-                    className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Customers
-                  </Link>
-                  <Link
-                    to="/analytics"
-                    onClick={() => setShowMobileMenu(false)}
-                    className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Engineer Analytics
-                  </Link>
-                  <Link
-                    to="/settings/categories"
-                    onClick={() => setShowMobileMenu(false)}
-                    className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Categories
-                  </Link>
+                  {mobileLink('/users', 'Role Management')}
+                  {mobileLink('/customers', 'Customers')}
+                  {mobileLink('/analytics', 'Engineer Analytics')}
+                  {mobileLink('/settings/categories', 'Categories')}
                 </>
               )}
             </div>

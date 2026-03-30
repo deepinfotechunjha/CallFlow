@@ -1020,7 +1020,7 @@ app.post('/auth/reset-password', authMiddleware, async (req: Request, res: Respo
 });
 
 // User endpoints - display purpose anywhere 
-app.get("/users", authMiddleware, requireRole(['HOST', 'ADMIN', 'SPECIAL_ADMIN']), async (_req: Request, res: Response) => {
+app.get("/users", authMiddleware, requireRole(['HOST', 'ADMIN', 'SPECIAL_ADMIN', 'SALES_ADMIN', 'ACCOUNTANT']), async (_req: Request, res: Response) => {
     try {
         const users = await prisma.user.findMany({ 
             select: { id: true, username: true, email: true, phone: true, role: true, createdAt: true } 
@@ -1039,8 +1039,8 @@ app.post("/users", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), async
         return res.status(400).json({ error: "username, password, email, phone, and role are required" });
     }
     
-    if (!['HOST', 'ADMIN', 'ENGINEER', 'SALES_EXECUTIVE'].includes(role)) {
-        return res.status(400).json({ error: "Invalid role. Must be HOST, ADMIN, ENGINEER, or SALES_EXECUTIVE" });
+    if (!['HOST', 'ADMIN', 'ENGINEER', 'SALES_EXECUTIVE', 'ACCOUNTANT', 'COMPANY_PAYROLL', 'TALLY_CALLER', 'SALES_ADMIN'].includes(role)) {
+        return res.status(400).json({ error: "Invalid role" });
     }
     
     try {
@@ -1105,7 +1105,7 @@ app.put("/users/:id", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), as
             updateData.password = await bcrypt.hash(password, 10);
         }
         
-        if (role && ['HOST', 'ADMIN', 'ENGINEER', 'SALES_EXECUTIVE'].includes(role)) {
+        if (role && ['HOST', 'ADMIN', 'ENGINEER', 'SALES_EXECUTIVE', 'ACCOUNTANT', 'COMPANY_PAYROLL', 'TALLY_CALLER', 'SALES_ADMIN'].includes(role)) {
             updateData.role = role;
             
             if (role === 'HOST' && currentUser.role !== 'HOST') {
@@ -2143,7 +2143,7 @@ app.get('/cities/protected', authMiddleware, async (_req: Request, res: Response
     }
 });
 
-app.post('/cities', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
+app.post('/cities', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (req: Request, res: Response) => {
     const { name } = req.body as { name: string };
     
     if (!name || !name.trim()) {
@@ -2269,7 +2269,7 @@ app.get('/areas/protected', authMiddleware, async (req: Request, res: Response) 
     }
 });
 
-app.post('/areas', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
+app.post('/areas', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (req: Request, res: Response) => {
     const { name, cityId } = req.body as { name: string; cityId: number };
     
     if (!name || !name.trim() || !cityId) {
@@ -3472,7 +3472,7 @@ app.post('/share/:linkId/submit-service', async (req: Request, res: Response) =>
     }
 });
 // Sales Executive endpoints
-app.get('/sales-entries', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
+app.get('/sales-entries', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (req: Request, res: Response) => {
     const { startDate, endDate } = req.query as { startDate?: string; endDate?: string };
     
     try {
@@ -3523,7 +3523,45 @@ app.get('/sales-entries', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE'
     }
 });
 
-app.get('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
+app.get('/sales-entries/search', authMiddleware, async (req: Request, res: Response) => {
+    const { q } = req.query as { q?: string };
+    const allowedRoles = ['HOST', 'SALES_EXECUTIVE', 'ACCOUNTANT', 'COMPANY_PAYROLL', 'TALLY_CALLER', 'SALES_ADMIN'];
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    if (!q || !q.trim()) {
+        return res.status(400).json({ error: 'Search query is required' });
+    }
+    try {
+        const entries = await prisma.salesEntry.findMany({
+            where: {
+                OR: [
+                    { firmName: { contains: q, mode: 'insensitive' } },
+                    { contactPerson1Number: { contains: q } },
+                    { contactPerson2Number: { contains: q } },
+                    { gstNo: { contains: q, mode: 'insensitive' } }
+                ]
+            },
+            select: {
+                id: true,
+                firmName: true,
+                gstNo: true,
+                contactPerson1Name: true,
+                contactPerson1Number: true,
+                city: true,
+                area: true,
+                address: true
+            },
+            take: 20,
+            orderBy: { firmName: 'asc' }
+        });
+        res.json(entries);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.get('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (req: Request, res: Response) => {
     const entryId = parseInt(req.params.id || '');
     try {
         const entry = await prisma.salesEntry.findUnique({
@@ -3541,7 +3579,7 @@ app.get('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_EXECUT
     }
 });
 
-app.post('/sales-entries', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
+app.post('/sales-entries', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (req: Request, res: Response) => {
     const { firmName, gstNo, contactPerson1Name, contactPerson1Number, contactPerson2Name, contactPerson2Number, accountContactName, accountContactNumber, address, landmark, area, city, pincode, email, whatsappNumber } = req.body;
     
     if (!firmName || !gstNo || !contactPerson1Name || !contactPerson1Number || !address || !city || !pincode) {
@@ -3585,7 +3623,7 @@ app.post('/sales-entries', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE
     }
 });
 
-app.post('/sales-entries/:id/visit', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
+app.post('/sales-entries/:id/visit', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (req: Request, res: Response) => {
     const entryId = parseInt(req.params.id || '');
     const { remark, latitude, longitude, locationAccuracy } = req.body;
     
@@ -3613,7 +3651,7 @@ app.post('/sales-entries/:id/visit', authMiddleware, requireRole(['HOST', 'SALES
     }
 });
 
-app.post('/sales-entries/:id/call', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
+app.post('/sales-entries/:id/call', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (req: Request, res: Response) => {
     const entryId = parseInt(req.params.id || '');
     const { callType, remark } = req.body;
     
@@ -3643,7 +3681,7 @@ app.post('/sales-entries/:id/call', authMiddleware, requireRole(['HOST', 'SALES_
     }
 });
 
-app.put('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE']), async (req: Request, res: Response) => {
+app.put('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (req: Request, res: Response) => {
     const entryId = parseInt(req.params.id || '');
     const { firmName, gstNo, contactPerson1Name, contactPerson1Number, contactPerson2Name, contactPerson2Number, accountContactName, accountContactNumber, address, landmark, area, city, pincode, email, whatsappNumber } = req.body;
     
@@ -3691,6 +3729,275 @@ app.put('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_EXECUT
     }
 });
 
+
+// ─── Orders ───────────────────────────────────────────────────────────────
+const ORDER_PAGE_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_EXECUTIVE', 'COMPANY_PAYROLL', 'SALES_ADMIN'];
+const ORDER_ACTION_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_ADMIN'];
+
+app.get('/orders', authMiddleware, async (req: Request, res: Response) => {
+    if (!req.user || !ORDER_PAGE_ROLES.includes(req.user.role)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    const { status, startDate, endDate } = req.query as { status?: string; startDate?: string; endDate?: string };
+    try {
+        const where: any = {};
+        // Scoping: SALES_EXECUTIVE and COMPANY_PAYROLL see only their own orders
+        if (['SALES_EXECUTIVE', 'COMPANY_PAYROLL'].includes(req.user.role)) {
+            where.createdById = req.user.id;
+        }
+        if (status && status !== 'ALL') where.status = status;
+        if (startDate || endDate) {
+            where.createdAt = {};
+            if (startDate) where.createdAt.gte = new Date(startDate);
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                where.createdAt.lte = end;
+            }
+        }
+        const orders = await prisma.order.findMany({
+            where,
+            include: {
+                salesEntry: {
+                    select: {
+                        id: true,
+                        firmName: true,
+                        city: true,
+                        area: true,
+                        contactPerson1Name: true,
+                        contactPerson1Number: true,
+                        gstNo: true
+                    }
+                },
+                holds: { orderBy: { heldAt: 'asc' } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json(orders);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/orders', authMiddleware, async (req: Request, res: Response) => {
+    if (!req.user || !ORDER_PAGE_ROLES.includes(req.user.role)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    const { salesEntryId, orderRemark, calledBy } = req.body as {
+        salesEntryId: number;
+        orderRemark: string;
+        calledBy?: string;
+    };
+    if (!salesEntryId || !orderRemark || !orderRemark.trim()) {
+        return res.status(400).json({ error: 'salesEntryId and orderRemark are required' });
+    }
+    try {
+        const entry = await prisma.salesEntry.findUnique({ where: { id: Number(salesEntryId) } });
+        if (!entry) return res.status(404).json({ error: 'Sales entry not found' });
+
+        const order = await prisma.order.create({
+            data: {
+                salesEntryId: Number(salesEntryId),
+                orderRemark: orderRemark.trim(),
+                calledBy: ORDER_ACTION_ROLES.includes(req.user.role) ? (calledBy || null) : null,
+                status: 'PENDING',
+                createdBy: req.user.username,
+                createdById: req.user.id
+            },
+            include: {
+                salesEntry: {
+                    select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true }
+                },
+                holds: true
+            }
+        });
+        emitToAll('order_created', order);
+        res.status(201).json(order);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/orders/:id/hold', authMiddleware, async (req: Request, res: Response) => {
+    if (!req.user || !ORDER_ACTION_ROLES.includes(req.user.role)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    const orderId = parseInt(req.params.id || '');
+    const { remark } = req.body as { remark: string };
+    if (!remark || !remark.trim()) {
+        return res.status(400).json({ error: 'Hold remark is required' });
+    }
+    try {
+        const order = await prisma.order.findUnique({ where: { id: orderId } });
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        if (['CANCELLED', 'COMPLETED'].includes(order.status)) {
+            return res.status(400).json({ error: `Cannot hold a ${order.status.toLowerCase()} order` });
+        }
+        await prisma.orderHold.create({
+            data: {
+                orderId,
+                remark: remark.trim(),
+                heldBy: req.user.username,
+                heldById: req.user.id
+            }
+        });
+        const updated = await prisma.order.update({
+            where: { id: orderId },
+            data: { status: 'ON_HOLD' },
+            include: {
+                salesEntry: { select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true } },
+                holds: { orderBy: { heldAt: 'asc' } }
+            }
+        });
+        emitToAll('order_updated', updated);
+        res.json(updated);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/orders/:id/bill', authMiddleware, async (req: Request, res: Response) => {
+    if (!req.user || !ORDER_ACTION_ROLES.includes(req.user.role)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    const orderId = parseInt(req.params.id || '');
+    const { billingRemark } = req.body as { billingRemark: string };
+    if (!billingRemark || !billingRemark.trim()) {
+        return res.status(400).json({ error: 'Billing remark is required' });
+    }
+    try {
+        const order = await prisma.order.findUnique({ where: { id: orderId } });
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        if (['CANCELLED', 'COMPLETED', 'BILLED'].includes(order.status)) {
+            return res.status(400).json({ error: `Cannot bill a ${order.status.toLowerCase()} order` });
+        }
+        const updated = await prisma.order.update({
+            where: { id: orderId },
+            data: {
+                status: 'BILLED',
+                billingRemark: billingRemark.trim(),
+                billedBy: req.user.username,
+                billedAt: new Date()
+            },
+            include: {
+                salesEntry: { select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true } },
+                holds: { orderBy: { heldAt: 'asc' } }
+            }
+        });
+        emitToAll('order_updated', updated);
+        res.json(updated);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/orders/:id/complete', authMiddleware, async (req: Request, res: Response) => {
+    if (!req.user || !ORDER_ACTION_ROLES.includes(req.user.role)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    const orderId = parseInt(req.params.id || '');
+    const { completionRemark } = req.body as { completionRemark: string };
+    if (!completionRemark || !completionRemark.trim()) {
+        return res.status(400).json({ error: 'Completion remark is required' });
+    }
+    try {
+        const order = await prisma.order.findUnique({ where: { id: orderId } });
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        if (order.status !== 'BILLED') {
+            return res.status(400).json({ error: 'Order must be BILLED before completing' });
+        }
+        const updated = await prisma.order.update({
+            where: { id: orderId },
+            data: {
+                status: 'COMPLETED',
+                completionRemark: completionRemark.trim(),
+                completedBy: req.user.username,
+                completedAt: new Date()
+            },
+            include: {
+                salesEntry: { select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true } },
+                holds: { orderBy: { heldAt: 'asc' } }
+            }
+        });
+        emitToAll('order_updated', updated);
+        res.json(updated);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/orders/:id/cancel', authMiddleware, async (req: Request, res: Response) => {
+    if (!req.user || !ORDER_PAGE_ROLES.includes(req.user.role)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    const orderId = parseInt(req.params.id || '');
+    try {
+        const order = await prisma.order.findUnique({ where: { id: orderId } });
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        if (['CANCELLED', 'COMPLETED'].includes(order.status)) {
+            return res.status(400).json({ error: `Order is already ${order.status.toLowerCase()}` });
+        }
+        const updated = await prisma.order.update({
+            where: { id: orderId },
+            data: {
+                status: 'CANCELLED',
+                cancelledBy: req.user.username,
+                cancelledAt: new Date()
+            },
+            include: {
+                salesEntry: { select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true } },
+                holds: { orderBy: { heldAt: 'asc' } }
+            }
+        });
+        emitToAll('order_updated', updated);
+        res.json(updated);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/orders/:id/revert', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const orderId = parseInt(req.params.id || '');
+    const { secretPassword, targetStatus } = req.body as { secretPassword: string; targetStatus: string };
+    if (!secretPassword || !targetStatus) {
+        return res.status(400).json({ error: 'secretPassword and targetStatus are required' });
+    }
+    if (!['ON_HOLD', 'BILLED', 'PENDING'].includes(targetStatus)) {
+        return res.status(400).json({ error: 'targetStatus must be ON_HOLD, BILLED, or PENDING' });
+    }
+    try {
+        const order = await prisma.order.findUnique({ where: { id: orderId } });
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        if (order.status !== 'CANCELLED') {
+            return res.status(400).json({ error: 'Only cancelled orders can be reverted' });
+        }
+        const dbUser = await prisma.user.findUnique({
+            where: { id: req.user!.id },
+            select: { secretPassword: true }
+        });
+        if (!dbUser) return res.status(404).json({ error: 'User not found' });
+        const isValid = await bcrypt.compare(secretPassword, dbUser.secretPassword);
+        if (!isValid) return res.status(401).json({ error: 'Invalid secret password' });
+
+        const updated = await prisma.order.update({
+            where: { id: orderId },
+            data: {
+                status: targetStatus,
+                cancelledBy: null,
+                cancelledAt: null
+            },
+            include: {
+                salesEntry: { select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true } },
+                holds: { orderBy: { heldAt: 'asc' } }
+            }
+        });
+        emitToAll('order_updated', updated);
+        res.json(updated);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+// ─── End Orders ────────────────────────────────────────────────────────────
 
 io.on('connection', (socket) => {
     socket.on('register', (userId: number) => {

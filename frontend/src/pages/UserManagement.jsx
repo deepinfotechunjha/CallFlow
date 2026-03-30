@@ -503,9 +503,14 @@ const UserManagement = () => {
                     <span className={`px-3 py-1 text-xs font-medium rounded-full border ${
                       u.role === 'HOST' ? 'bg-purple-100 text-purple-800 border-purple-200' :
                       u.role === 'ADMIN' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                      'bg-green-100 text-green-800 border-green-200'
+                      u.role === 'SALES_EXECUTIVE' ? 'bg-green-100 text-green-800 border-green-200' :
+                      u.role === 'SALES_ADMIN' ? 'bg-indigo-100 text-indigo-800 border-indigo-200' :
+                      u.role === 'ACCOUNTANT' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                      u.role === 'COMPANY_PAYROLL' ? 'bg-orange-100 text-orange-800 border-orange-200' :
+                      u.role === 'TALLY_CALLER' ? 'bg-pink-100 text-pink-800 border-pink-200' :
+                      'bg-gray-100 text-gray-800 border-gray-200'
                     }`}>
-                      {u.role}
+                      {u.role.replace(/_/g, ' ')}
                     </span>
                   </td>
                   <td className="hidden lg:table-cell px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
@@ -556,9 +561,14 @@ const UserManagement = () => {
                   <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full border mt-1 ${
                     u.role === 'HOST' ? 'bg-purple-100 text-purple-800 border-purple-200' :
                     u.role === 'ADMIN' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                    'bg-green-100 text-green-800 border-green-200'
+                    u.role === 'SALES_EXECUTIVE' ? 'bg-green-100 text-green-800 border-green-200' :
+                    u.role === 'SALES_ADMIN' ? 'bg-indigo-100 text-indigo-800 border-indigo-200' :
+                    u.role === 'ACCOUNTANT' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                    u.role === 'COMPANY_PAYROLL' ? 'bg-orange-100 text-orange-800 border-orange-200' :
+                    u.role === 'TALLY_CALLER' ? 'bg-pink-100 text-pink-800 border-pink-200' :
+                    'bg-gray-100 text-gray-800 border-gray-200'
                   }`}>
-                    {u.role}
+                    {u.role.replace(/_/g, ' ')}
                   </span>
                 </div>
               </div>
@@ -676,6 +686,10 @@ const UserManagement = () => {
                   {canCreateAdmin && <option value="ADMIN">Admin</option>}
                   {user?.role === 'HOST' && <option value="HOST">Host</option>}
                   {user?.role === 'HOST' && <option value="SALES_EXECUTIVE">Sales Executive</option>}
+                  {user?.role === 'HOST' && <option value="ACCOUNTANT">Accountant</option>}
+                  {user?.role === 'HOST' && <option value="COMPANY_PAYROLL">Company Payroll</option>}
+                  {user?.role === 'HOST' && <option value="TALLY_CALLER">Tally Caller</option>}
+                  {user?.role === 'HOST' && <option value="SALES_ADMIN">Sales Admin</option>}
                 </select>
               </div>
 
@@ -795,6 +809,10 @@ const UserManagement = () => {
                   <option value="ADMIN">Admin</option>
                   <option value="HOST">Host</option>
                   {user?.role === 'HOST' && <option value="SALES_EXECUTIVE">Sales Executive</option>}
+                  {user?.role === 'HOST' && <option value="ACCOUNTANT">Accountant</option>}
+                  {user?.role === 'HOST' && <option value="COMPANY_PAYROLL">Company Payroll</option>}
+                  {user?.role === 'HOST' && <option value="TALLY_CALLER">Tally Caller</option>}
+                  {user?.role === 'HOST' && <option value="SALES_ADMIN">Sales Admin</option>}
                 </select>
               </div>
 
