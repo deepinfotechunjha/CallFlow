@@ -7,6 +7,7 @@ import useCategoryStore from '../store/categoryStore';
 import useServiceCategoryStore from '../store/serviceCategoryStore';
 import useDCStore from '../store/dcStore';
 import useSalesStore from '../store/salesStore';
+import useOrderStore from '../store/orderStore';
 
 let socket = null;
 
@@ -161,6 +162,15 @@ const useSocket = () => {
 
       socket.on('sales_log_created', (data) => {
         useSalesStore.getState().handleSalesLogCreated(data);
+      });
+
+      // Order events
+      socket.on('order_created', (order) => {
+        useOrderStore.getState().handleOrderCreated(order);
+      });
+
+      socket.on('order_updated', (order) => {
+        useOrderStore.getState().handleOrderUpdated(order);
       });
     }
 

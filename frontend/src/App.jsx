@@ -12,6 +12,7 @@ import CategorySettings from './pages/CategorySettings';
 import CustomerDirectory from './pages/CustomerDirectory';
 import CarryInService from './pages/CarryInService';
 import DCPage from './pages/DCPage';
+import OrdersPage from './pages/OrdersPage';
 import AdminLogin from './pages/AdminLogin';
 import AdminUserManagement from './pages/AdminUserManagement';
 import PublicCallForm from './pages/PublicCallForm';
@@ -61,10 +62,15 @@ function App() {
           <Route path="/secreturl/manage" element={<AdminUserManagement />} />
           <Route path="/" element={
             <ProtectedRoute>
-              {user?.role === 'SALES_EXECUTIVE' ? <Navigate to="/sales-dashboard" replace /> : <Dashboard />}
+              {['SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN'].includes(user?.role)
+              ? <Navigate to="/sales-dashboard" replace />
+              : ['ACCOUNTANT', 'COMPANY_PAYROLL'].includes(user?.role)
+              ? <Navigate to="/orders" replace />
+              : <Dashboard />}
             </ProtectedRoute>
           } />
-          <Route path="/sales-dashboard" element={<ProtectedRoute allowedRoles={['HOST', 'SALES_EXECUTIVE']}><SalesDashboard /></ProtectedRoute>} />
+          <Route path="/sales-dashboard" element={<ProtectedRoute allowedRoles={['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']}><SalesDashboard /></ProtectedRoute>} />
+          <Route path="/orders" element={<ProtectedRoute allowedRoles={['HOST', 'ACCOUNTANT', 'SALES_EXECUTIVE', 'COMPANY_PAYROLL', 'SALES_ADMIN']}><OrdersPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute allowedRoles={['HOST']}><UserManagement /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute allowedRoles={['HOST']}><EngineerAnalytics /></ProtectedRoute>} />

@@ -20,6 +20,8 @@ model User {
   salesEntries           SalesEntry[]
   salesLogs              SalesLog[]
   serviceDeletionHistory ServiceDeletionHistory[]
+  orders                 Order[]
+  orderHolds             OrderHold[]
 }
 
 model Call {
@@ -218,6 +220,7 @@ model SalesEntry {
   whatsappNumber       String?    @db.VarChar(15)
   creator              User?      @relation(fields: [createdById], references: [id])
   logs                 SalesLog[]
+  orders               Order[]
 
   @@index([firmName])
   @@index([city])
@@ -258,4 +261,45 @@ model PublicAccessToken {
 
   @@index([token])
   @@index([expiresAt])
+}
+
+model Order {
+  id               Int         @id @default(autoincrement())
+  salesEntryId     Int
+  orderRemark      String
+  calledBy         String?     @db.VarChar(50)
+  status           String      @default("PENDING")
+  createdBy        String      @db.VarChar(50)
+  createdById      Int?
+  createdAt        DateTime    @default(now()) @db.Timestamptz(6)
+  billingRemark    String?
+  billedBy         String?     @db.VarChar(50)
+  billedAt         DateTime?   @db.Timestamptz(6)
+  completionRemark String?
+  completedBy      String?     @db.VarChar(50)
+  completedAt      DateTime?   @db.Timestamptz(6)
+  cancelledBy      String?     @db.VarChar(50)
+  cancelledAt      DateTime?   @db.Timestamptz(6)
+  creator          User?       @relation(fields: [createdById], references: [id])
+  salesEntry       SalesEntry  @relation(fields: [salesEntryId], references: [id])
+  holds            OrderHold[]
+
+  @@index([salesEntryId])
+  @@index([status])
+  @@index([createdById])
+  @@index([createdAt])
+}
+
+model OrderHold {
+  id         Int      @id @default(autoincrement())
+  orderId    Int
+  remark     String
+  heldBy     String   @db.VarChar(50)
+  heldById   Int?
+  heldAt     DateTime @default(now()) @db.Timestamptz(6)
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  holder     User?    @relation(fields: [heldById], references: [id])
+
+  @@index([orderId])
+  @@index([heldAt])
 }
