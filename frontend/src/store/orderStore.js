@@ -100,9 +100,10 @@ const useOrderStore = create((set, get) => ({
     }
   },
 
-  revertOrder: async (id, secretPassword, targetStatus) => {
+  revertOrder: async (id, secretPassword, targetStatus, remark) => {
     try {
-      const response = await apiClient.post(`/orders/${id}/revert`, { secretPassword, targetStatus });
+      const response = await apiClient.post(`/orders/${id}/revert`, { secretPassword, targetStatus, remark });
+      set(state => ({ orders: state.orders.map(o => o.id === id ? response.data : o) }));
       toast.success('Order reverted successfully');
       return response.data;
     } catch (err) {
@@ -110,7 +111,7 @@ const useOrderStore = create((set, get) => ({
       toast.error(msg);
       throw err;
     }
-  }
+  },
 }));
 
 export default useOrderStore;
