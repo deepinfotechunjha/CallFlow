@@ -6,10 +6,10 @@ import OrderHoldModal from '../components/OrderHoldModal';
 import OrderBillModal from '../components/OrderBillModal';
 import OrderCompleteModal from '../components/OrderCompleteModal';
 import OrderRevertModal from '../components/OrderRevertModal';
+import OrderDetailModal from '../components/OrderDetailModal';
 
 const ORDER_ACTION_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_ADMIN'];
 const ALL_ORDER_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_ADMIN'];
-const PERSONAL_ORDER_ROLES = ['SALES_EXECUTIVE', 'COMPANY_PAYROLL'];
 
 const STATUS_BADGE = {
   PENDING:   'bg-gray-100 text-gray-700',
@@ -28,6 +28,7 @@ const OrdersPage = () => {
   const [showBillModal, setShowBillModal] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showRevertModal, setShowRevertModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [expandedHolds, setExpandedHolds] = useState({});
   const [confirmCancel, setConfirmCancel] = useState(null);
@@ -47,7 +48,6 @@ const OrdersPage = () => {
     if (canSeeAll) fetchUsers();
   }, []);
 
-  // Refetch when filters change (runs on mount too, replacing the initial fetch)
   useEffect(() => {
     const filters = {};
     if (statusFilter !== 'ALL') filters.status = statusFilter;
@@ -62,6 +62,7 @@ const OrdersPage = () => {
     else if (type === 'bill') setShowBillModal(true);
     else if (type === 'complete') setShowCompleteModal(true);
     else if (type === 'revert') setShowRevertModal(true);
+    else if (type === 'detail') setShowDetailModal(true);
   };
 
   const closeAll = () => {
@@ -69,6 +70,7 @@ const OrdersPage = () => {
     setShowBillModal(false);
     setShowCompleteModal(false);
     setShowRevertModal(false);
+    setShowDetailModal(false);
     setSelectedOrder(null);
   };
 
@@ -79,7 +81,6 @@ const OrdersPage = () => {
 
   const toggleHolds = (id) => setExpandedHolds(prev => ({ ...prev, [id]: !prev[id] }));
 
-  // Client-side createdBy filter (server already scopes by role)
   const filteredOrders = orders.filter(o => {
     if (createdByFilter !== 'ALL' && o.createdBy !== createdByFilter) return false;
     return true;
@@ -87,7 +88,6 @@ const OrdersPage = () => {
 
   const uniqueCreators = [...new Set(orders.map(o => o.createdBy))].sort();
 
-  // Stats
   const stats = {
     total: filteredOrders.length,
     pending: filteredOrders.filter(o => o.status === 'PENDING').length,
@@ -151,9 +151,8 @@ const OrdersPage = () => {
 
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">🔍 Filters</h2>
+        <h2 className="text-sm font-semibold text-gray-700 mb-4">🔍 Filters</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Status */}
           <div>
             <label className="text-xs font-medium text-gray-600 mb-1 block">Status</label>
             <select
@@ -170,7 +169,6 @@ const OrdersPage = () => {
             </select>
           </div>
 
-          {/* Created By — only for roles that see all orders */}
           {canSeeAll && (
             <div>
               <label className="text-xs font-medium text-gray-600 mb-1 block">Created By</label>
@@ -187,7 +185,6 @@ const OrdersPage = () => {
             </div>
           )}
 
-          {/* Date Range */}
           <div className="sm:col-span-2">
             <label className="text-xs font-medium text-gray-600 mb-1 block">Date Range</label>
             <div className="flex items-center gap-2">
@@ -210,10 +207,7 @@ const OrdersPage = () => {
 
         {hasFilters && (
           <div className="mt-3 flex justify-end">
-            <button
-              onClick={clearFilters}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200"
-            >
+            <button onClick={clearFilters} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">
               Clear Filters
             </button>
           </div>
@@ -245,7 +239,10 @@ const OrdersPage = () => {
                 <tbody className="divide-y divide-gray-100">
                   {filteredOrders.map(order => (
                     <React.Fragment key={order.id}>
-                      <tr className={`hover:bg-gray-50 transition-colors ${order.status === 'CANCELLED' ? 'opacity-60' : ''}`}>
+                      <tr
+                        onClick={() => openModal('detail', order)}
+                        className={`hover:bg-gray-50 transition-colors cursor-pointer ${order.status === 'CANCELLED' ? 'opacity-60' : ''}`}
+                      >
                         <td className="px-4 py-3 text-sm text-gray-500">{order.id}</td>
                         <td className="px-4 py-3">
                           <p className={`font-medium text-sm text-gray-800 ${order.status === 'CANCELLED' ? 'line-through' : ''}`}>
@@ -263,7 +260,7 @@ const OrdersPage = () => {
                           </span>
                           {order.holds?.length > 0 && (
                             <button
-                              onClick={() => toggleHolds(order.id)}
+                              onClick={e => { e.stopPropagation(); toggleHolds(order.id); }}
                               className="ml-2 text-xs text-yellow-600 hover:underline"
                             >
                               {expandedHolds[order.id] ? '▲' : '▼'} {order.holds.length} hold{order.holds.length > 1 ? 's' : ''}
@@ -272,7 +269,7 @@ const OrdersPage = () => {
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">{order.createdBy}</td>
                         <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{formatDate(order.createdAt)}</td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                           <ActionButtons
                             order={order}
                             canAction={canAction}
@@ -287,7 +284,6 @@ const OrdersPage = () => {
                         </td>
                       </tr>
 
-                      {/* Holds expansion row */}
                       {expandedHolds[order.id] && order.holds?.length > 0 && (
                         <tr className="bg-yellow-50">
                           <td colSpan={8} className="px-6 py-3">
@@ -305,7 +301,6 @@ const OrdersPage = () => {
                         </tr>
                       )}
 
-                      {/* Billing / Completion info row */}
                       {(order.status === 'BILLED' || order.status === 'COMPLETED') && (
                         <tr className="bg-blue-50">
                           <td colSpan={8} className="px-6 py-2 text-xs text-gray-600">
@@ -342,7 +337,8 @@ const OrdersPage = () => {
           filteredOrders.map(order => (
             <div
               key={order.id}
-              className={`bg-white rounded-xl border shadow-sm p-4 ${order.status === 'CANCELLED' ? 'opacity-60 border-red-200' : 'border-gray-200'}`}
+              onClick={() => openModal('detail', order)}
+              className={`bg-white rounded-xl border shadow-sm p-4 cursor-pointer ${order.status === 'CANCELLED' ? 'opacity-60 border-red-200' : 'border-gray-200'}`}
             >
               <div className="flex justify-between items-start mb-2">
                 <div>
@@ -360,11 +356,10 @@ const OrdersPage = () => {
               {order.calledBy && <p className="text-xs text-gray-500 mb-1">Called by: {order.calledBy}</p>}
               <p className="text-xs text-gray-500 mb-3">By {order.createdBy} · {formatDate(order.createdAt)}</p>
 
-              {/* Holds */}
               {order.holds?.length > 0 && (
                 <div className="mb-3">
                   <button
-                    onClick={() => toggleHolds(order.id)}
+                    onClick={e => { e.stopPropagation(); toggleHolds(order.id); }}
                     className="text-xs text-yellow-600 font-medium hover:underline"
                   >
                     {expandedHolds[order.id] ? '▲ Hide' : '▼ Show'} {order.holds.length} hold{order.holds.length > 1 ? 's' : ''}
@@ -383,7 +378,6 @@ const OrdersPage = () => {
                 </div>
               )}
 
-              {/* Billing info */}
               {(order.status === 'BILLED' || order.status === 'COMPLETED') && order.billingRemark && (
                 <div className="bg-blue-50 rounded-lg p-2 mb-2 text-xs text-gray-600">
                   🧾 <strong>Billing:</strong> {order.billingRemark} — {order.billedBy}
@@ -393,17 +387,19 @@ const OrdersPage = () => {
                 </div>
               )}
 
-              <ActionButtons
-                order={order}
-                canAction={canAction}
-                canCancel={canCancel}
-                onHold={() => openModal('hold', order)}
-                onBill={() => openModal('bill', order)}
-                onComplete={() => openModal('complete', order)}
-                onCancel={() => setConfirmCancel(order)}
-                onRevert={() => openModal('revert', order)}
-                isHost={user?.role === 'HOST'}
-              />
+              <div onClick={e => e.stopPropagation()}>
+                <ActionButtons
+                  order={order}
+                  canAction={canAction}
+                  canCancel={canCancel}
+                  onHold={() => openModal('hold', order)}
+                  onBill={() => openModal('bill', order)}
+                  onComplete={() => openModal('complete', order)}
+                  onCancel={() => setConfirmCancel(order)}
+                  onRevert={() => openModal('revert', order)}
+                  isHost={user?.role === 'HOST'}
+                />
+              </div>
             </div>
           ))
         )}
@@ -442,11 +438,11 @@ const OrdersPage = () => {
       {showBillModal && selectedOrder && <OrderBillModal order={selectedOrder} onClose={closeAll} />}
       {showCompleteModal && selectedOrder && <OrderCompleteModal order={selectedOrder} onClose={closeAll} />}
       {showRevertModal && selectedOrder && <OrderRevertModal order={selectedOrder} onClose={closeAll} />}
+      {showDetailModal && selectedOrder && <OrderDetailModal order={selectedOrder} onClose={closeAll} />}
     </div>
   );
 };
 
-// Extracted action buttons component to keep JSX clean
 const ActionButtons = ({ order, canAction, canCancel, onHold, onBill, onComplete, onCancel, onRevert, isHost }) => {
   const { status } = order;
   const isCancelled = status === 'CANCELLED';
@@ -454,52 +450,28 @@ const ActionButtons = ({ order, canAction, canCancel, onHold, onBill, onComplete
 
   return (
     <div className="flex flex-wrap gap-1.5">
-      {/* Hold — action roles, not cancelled/completed */}
-      {canAction && !isCancelled && !isCompleted && (
-        <button
-          onClick={onHold}
-          className="px-2.5 py-1.5 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 text-xs font-medium"
-        >
+      {canAction && !isCancelled && !isCompleted && status !== 'BILLED' && (
+        <button onClick={onHold} className="px-2.5 py-1.5 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 text-xs font-medium">
           ⏸ Hold
         </button>
       )}
-
-      {/* Bill — action roles, only PENDING or ON_HOLD */}
       {canAction && ['PENDING', 'ON_HOLD'].includes(status) && (
-        <button
-          onClick={onBill}
-          className="px-2.5 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-xs font-medium"
-        >
+        <button onClick={onBill} className="px-2.5 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-xs font-medium">
           🧾 Bill
         </button>
       )}
-
-      {/* Complete — action roles, only BILLED */}
       {canAction && status === 'BILLED' && (
-        <button
-          onClick={onComplete}
-          className="px-2.5 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 text-xs font-medium"
-        >
+        <button onClick={onComplete} className="px-2.5 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 text-xs font-medium">
           ✅ Complete
         </button>
       )}
-
-      {/* Cancel — all page roles except COMPANY_PAYROLL, not already cancelled/completed */}
       {canCancel && !isCancelled && !isCompleted && (
-        <button
-          onClick={onCancel}
-          className="px-2.5 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-xs font-medium"
-        >
+        <button onClick={onCancel} className="px-2.5 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-xs font-medium">
           ✕ Cancel
         </button>
       )}
-
-      {/* Revert — HOST only, only cancelled */}
       {isHost && isCancelled && (
-        <button
-          onClick={onRevert}
-          className="px-2.5 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 text-xs font-medium"
-        >
+        <button onClick={onRevert} className="px-2.5 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 text-xs font-medium">
           🔄 Revert
         </button>
       )}
