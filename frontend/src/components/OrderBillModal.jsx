@@ -15,8 +15,8 @@ const OrderBillModal = ({ order, onClose }) => {
     setIsSubmitting(true);
     try {
       await billOrder(order.id, billingRemark.trim());
-      setStep(2);
       setIsSubmitting(false);
+      onClose();
     } catch {
       setIsSubmitting(false);
     }
