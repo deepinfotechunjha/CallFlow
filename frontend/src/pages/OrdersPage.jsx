@@ -41,7 +41,7 @@ const OrdersPage = () => {
 
   const canAction = ORDER_ACTION_ROLES.includes(user?.role);
   const canSeeAll = ALL_ORDER_ROLES.includes(user?.role);
-  const canCancel = user?.role !== 'COMPANY_PAYROLL';
+  const canCancel = true;
 
   useEffect(() => {
     if (canSeeAll) fetchUsers();
@@ -318,6 +318,15 @@ const OrdersPage = () => {
                           </td>
                         </tr>
                       )}
+
+                      {/* Cancelled By info row */}
+                      {order.status === 'CANCELLED' && order.cancelledBy && (
+                        <tr className="bg-red-50">
+                          <td colSpan={8} className="px-6 py-2 text-xs text-red-700">
+                            ✕ <strong>Cancelled by:</strong> {order.cancelledBy} @ {formatDate(order.cancelledAt)}
+                          </td>
+                        </tr>
+                      )}
                     </React.Fragment>
                   ))}
                 </tbody>
@@ -390,6 +399,13 @@ const OrdersPage = () => {
                   {order.status === 'COMPLETED' && order.completionRemark && (
                     <div className="mt-1">✅ <strong>Completion:</strong> {order.completionRemark} — {order.completedBy}</div>
                   )}
+                </div>
+              )}
+
+              {/* Cancelled info */}
+              {order.status === 'CANCELLED' && order.cancelledBy && (
+                <div className="bg-red-50 rounded-lg p-2 mb-2 text-xs text-red-700">
+                  ✕ <strong>Cancelled by:</strong> {order.cancelledBy} @ {formatDate(order.cancelledAt)}
                 </div>
               )}
 
@@ -484,7 +500,7 @@ const ActionButtons = ({ order, canAction, canCancel, onHold, onBill, onComplete
         </button>
       )}
 
-      {/* Cancel — all page roles except COMPANY_PAYROLL, not already cancelled/completed */}
+      {/* Cancel — all order page roles, not already cancelled/completed */}
       {canCancel && !isCancelled && !isCompleted && (
         <button
           onClick={onCancel}
