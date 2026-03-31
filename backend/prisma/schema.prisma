@@ -280,6 +280,7 @@ model Order {
   completedAt      DateTime?   @db.Timestamptz(6)
   cancelledBy      String?     @db.VarChar(50)
   cancelledAt      DateTime?   @db.Timestamptz(6)
+  revertRemark     String?
   creator          User?       @relation(fields: [createdById], references: [id])
   salesEntry       SalesEntry  @relation(fields: [salesEntryId], references: [id])
   holds            OrderHold[]

@@ -2,20 +2,35 @@ import React, { useState } from 'react';
 import useOrderStore from '../store/orderStore';
 import useClickOutside from '../hooks/useClickOutside';
 
+const REMARK_CONFIG = {
+  ON_HOLD:  { label: 'Hold Remark',       placeholder: 'Enter hold reason...', required: true },
+  BILLED:   { label: 'Billing Remark',    placeholder: 'Enter billing details...', required: true },
+  PENDING:  { label: 'Revert Remark',     placeholder: 'Optional note...', required: false },
+};
+
 const OrderRevertModal = ({ order, onClose }) => {
   const [secretPassword, setSecretPassword] = useState('');
   const [targetStatus, setTargetStatus] = useState('PENDING');
+  const [remark, setRemark] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { revertOrder } = useOrderStore();
   const modalRef = useClickOutside(onClose);
 
+  const config = REMARK_CONFIG[targetStatus];
+  const canSubmit = secretPassword.trim() && (!config.required || remark.trim()) && !isSubmitting;
+
+  const handleStatusChange = (s) => {
+    setTargetStatus(s);
+    setRemark('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!secretPassword.trim() || isSubmitting) return;
+    if (!canSubmit) return;
     setIsSubmitting(true);
     try {
-      await revertOrder(order.id, secretPassword, targetStatus);
+      await revertOrder(order.id, secretPassword, targetStatus, remark.trim() || undefined);
       onClose();
     } catch {
       setIsSubmitting(false);
@@ -50,13 +65,26 @@ const OrderRevertModal = ({ order, onClose }) => {
                       type="radio"
                       value={s}
                       checked={targetStatus === s}
-                      onChange={e => setTargetStatus(e.target.value)}
+                      onChange={() => handleStatusChange(s)}
                       className="accent-blue-600"
                     />
                     <span className="text-sm text-gray-700">{s.replace('_', ' ')}</span>
                   </label>
                 ))}
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {config.label} {config.required && <span className="text-red-500">*</span>}
+              </label>
+              <textarea
+                value={remark}
+                onChange={e => setRemark(e.target.value)}
+                rows={2}
+                placeholder={config.placeholder}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
             </div>
 
             <div>
@@ -93,7 +121,7 @@ const OrderRevertModal = ({ order, onClose }) => {
               </button>
               <button
                 type="submit"
-                disabled={!secretPassword.trim() || isSubmitting}
+                disabled={!canSubmit}
                 className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300 text-sm font-medium"
               >
                 {isSubmitting ? 'Reverting...' : '🔄 Revert Order'}
