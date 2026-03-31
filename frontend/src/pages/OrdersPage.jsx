@@ -42,7 +42,7 @@ const OrdersPage = () => {
 
   const canAction = ORDER_ACTION_ROLES.includes(user?.role);
   const canSeeAll = ALL_ORDER_ROLES.includes(user?.role);
-  const canCancel = user?.role !== 'COMPANY_PAYROLL';
+  const canCancel = true;
 
   useEffect(() => {
     if (canSeeAll) fetchUsers();
@@ -313,6 +313,15 @@ const OrdersPage = () => {
                           </td>
                         </tr>
                       )}
+
+                      {/* Cancelled By info row */}
+                      {order.status === 'CANCELLED' && order.cancelledBy && (
+                        <tr className="bg-red-50">
+                          <td colSpan={8} className="px-6 py-2 text-xs text-red-700">
+                            ✕ <strong>Cancelled by:</strong> {order.cancelledBy} @ {formatDate(order.cancelledAt)}
+                          </td>
+                        </tr>
+                      )}
                     </React.Fragment>
                   ))}
                 </tbody>
@@ -387,6 +396,7 @@ const OrdersPage = () => {
                 </div>
               )}
 
+<<<<<<< HEAD
               <div onClick={e => e.stopPropagation()}>
                 <ActionButtons
                   order={order}
@@ -400,6 +410,26 @@ const OrdersPage = () => {
                   isHost={user?.role === 'HOST'}
                 />
               </div>
+=======
+              {/* Cancelled info */}
+              {order.status === 'CANCELLED' && order.cancelledBy && (
+                <div className="bg-red-50 rounded-lg p-2 mb-2 text-xs text-red-700">
+                  ✕ <strong>Cancelled by:</strong> {order.cancelledBy} @ {formatDate(order.cancelledAt)}
+                </div>
+              )}
+
+              <ActionButtons
+                order={order}
+                canAction={canAction}
+                canCancel={canCancel}
+                onHold={() => openModal('hold', order)}
+                onBill={() => openModal('bill', order)}
+                onComplete={() => openModal('complete', order)}
+                onCancel={() => setConfirmCancel(order)}
+                onRevert={() => openModal('revert', order)}
+                isHost={user?.role === 'HOST'}
+              />
+>>>>>>> 9667f8f2f5de156e8d6c125f7dd12fda767f6cde
             </div>
           ))
         )}
@@ -465,6 +495,11 @@ const ActionButtons = ({ order, canAction, canCancel, onHold, onBill, onComplete
           ✅ Complete
         </button>
       )}
+<<<<<<< HEAD
+=======
+
+      {/* Cancel — all order page roles, not already cancelled/completed */}
+>>>>>>> 9667f8f2f5de156e8d6c125f7dd12fda767f6cde
       {canCancel && !isCancelled && !isCompleted && (
         <button onClick={onCancel} className="px-2.5 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-xs font-medium">
           ✕ Cancel
