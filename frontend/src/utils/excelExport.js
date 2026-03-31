@@ -354,6 +354,94 @@ export const exportToExcel = async (data, filename, password = null) => {
   window.URL.revokeObjectURL(url);
 };
 
+export const exportOrdersToExcel = async (orders) => {
+  try {
+    if (!orders || orders.length === 0) {
+      throw new Error('No data to export');
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Orders');
+
+    worksheet.columns = [
+      { header: 'Order ID', key: 'id', width: 10 },
+      { header: 'Firm Name', key: 'firmName', width: 30 },
+      { header: 'GST No', key: 'gstNo', width: 18 },
+      { header: 'City', key: 'city', width: 18 },
+      { header: 'Area', key: 'area', width: 18 },
+      { header: 'Contact Person', key: 'contactPerson', width: 25 },
+      { header: 'Contact Number', key: 'contactNumber', width: 18 },
+      { header: 'Order Remark', key: 'orderRemark', width: 35 },
+      { header: 'Called By', key: 'calledBy', width: 18 },
+      { header: 'Status', key: 'status', width: 14 },
+      { header: 'Created By', key: 'createdBy', width: 18 },
+      { header: 'Created At', key: 'createdAt', width: 22 },
+      { header: 'Billing Remark', key: 'billingRemark', width: 35 },
+      { header: 'Billed By', key: 'billedBy', width: 18 },
+      { header: 'Billed At', key: 'billedAt', width: 22 },
+      { header: 'Completion Remark', key: 'completionRemark', width: 35 },
+      { header: 'Completed By', key: 'completedBy', width: 18 },
+      { header: 'Completed At', key: 'completedAt', width: 22 },
+      { header: 'Cancelled By', key: 'cancelledBy', width: 18 },
+      { header: 'Cancelled At', key: 'cancelledAt', width: 22 },
+      { header: 'Hold Count', key: 'holdCount', width: 12 },
+      { header: 'Hold History', key: 'holdHistory', width: 50 },
+    ];
+
+    orders.forEach(order => {
+      const holdHistory = order.holds?.length
+        ? order.holds.map(h => `${h.heldBy} @ ${new Date(h.heldAt).toLocaleString()}: ${h.remark}`).join(' | ')
+        : '';
+
+      worksheet.addRow({
+        id: order.id || '',
+        firmName: order.salesEntry?.firmName || '',
+        gstNo: order.salesEntry?.gstNo || '',
+        city: order.salesEntry?.city || '',
+        area: order.salesEntry?.area || '',
+        contactPerson: order.salesEntry?.contactPerson1Name || '',
+        contactNumber: order.salesEntry?.contactPerson1Number || '',
+        orderRemark: order.orderRemark || '',
+        calledBy: order.calledBy || '',
+        status: order.status?.replace('_', ' ') || '',
+        createdBy: order.createdBy || '',
+        createdAt: order.createdAt ? new Date(order.createdAt).toLocaleString() : '',
+        billingRemark: order.billingRemark || '',
+        billedBy: order.billedBy || '',
+        billedAt: order.billedAt ? new Date(order.billedAt).toLocaleString() : '',
+        completionRemark: order.completionRemark || '',
+        completedBy: order.completedBy || '',
+        completedAt: order.completedAt ? new Date(order.completedAt).toLocaleString() : '',
+        cancelledBy: order.cancelledBy || '',
+        cancelledAt: order.cancelledAt ? new Date(order.cancelledAt).toLocaleString() : '',
+        holdCount: order.holds?.length || 0,
+        holdHistory,
+      });
+    });
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    const fileName = `Orders_Export_${new Date().toISOString().split('T')[0]}.xlsx`;
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    return true;
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
+
 export const exportSalesEntriesToExcel = async (entries) => {
   try {
     if (!entries || entries.length === 0) {
