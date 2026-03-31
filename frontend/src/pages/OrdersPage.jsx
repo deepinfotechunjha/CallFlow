@@ -6,6 +6,10 @@ import OrderHoldModal from '../components/OrderHoldModal';
 import OrderBillModal from '../components/OrderBillModal';
 import OrderCompleteModal from '../components/OrderCompleteModal';
 import OrderRevertModal from '../components/OrderRevertModal';
+import SalesShareModal from '../components/SalesShareModal';
+import ExportModal from '../components/ExportModal';
+import { exportOrdersToExcel } from '../utils/excelExport';
+import toast from 'react-hot-toast';
 
 const ORDER_ACTION_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_ADMIN'];
 const ALL_ORDER_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_ADMIN'];
@@ -24,6 +28,9 @@ const formatDate = (d) =>
 
 const OrdersPage = () => {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [showHoldModal, setShowHoldModal] = useState(false);
   const [showBillModal, setShowBillModal] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -42,6 +49,38 @@ const OrdersPage = () => {
   const canAction = ORDER_ACTION_ROLES.includes(user?.role);
   const canSeeAll = ALL_ORDER_ROLES.includes(user?.role);
   const canCancel = true;
+
+  const handleExport = async (exportType, password) => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/auth/verify-secret`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${useAuthStore.getState().token}`
+        },
+        body: JSON.stringify({ secretPassword: password })
+      });
+      const data = await response.json();
+      if (response.ok && data.success && data.hasAccess) {
+        const dataToExport = exportType === 'filtered' ? filteredOrders : orders;
+        if (dataToExport.length === 0) {
+          toast.error('No data to export');
+          return;
+        }
+        await exportOrdersToExcel(dataToExport);
+        toast.success(`Successfully exported ${dataToExport.length} orders to Excel`);
+        setShowExportModal(false);
+      } else {
+        toast.error('Invalid secret password');
+      }
+    } catch (error) {
+      toast.error('Failed to export data. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   useEffect(() => {
     if (canSeeAll) fetchUsers();
@@ -113,12 +152,33 @@ const OrdersPage = () => {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">Orders 📦</h1>
           <p className="text-gray-600">Hello <span className="font-semibold text-blue-600">{user?.username}</span>, manage your orders</p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium text-sm shadow-sm transition-all"
-        >
-          + Add Entry
-        </button>
+        <div className="flex gap-3">
+          {user?.role === 'HOST' && (
+            <button
+              onClick={() => setShowExportModal(true)}
+              disabled={isExporting}
+              className={`px-5 py-3 rounded-xl font-medium text-sm shadow-sm transition-all flex items-center gap-2 ${
+                isExporting
+                  ? 'bg-gray-400 cursor-not-allowed text-white'
+                  : 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800'
+              }`}
+            >
+              {isExporting ? '⏳ Exporting...' : '📊 Export'}
+            </button>
+          )}
+          <button
+            onClick={() => setShowShareModal(true)}
+            className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-5 py-3 rounded-xl hover:from-purple-700 hover:to-purple-800 font-medium text-sm shadow-sm transition-all flex items-center gap-2"
+          >
+            🔗 Share
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium text-sm shadow-sm transition-all"
+          >
+            + Add Entry
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -454,6 +514,17 @@ const OrdersPage = () => {
 
       {/* Modals */}
       {showAddModal && <AddOrderModal onClose={() => setShowAddModal(false)} />}
+      {showShareModal && <SalesShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} />}
+      {showExportModal && (
+        <ExportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          onExport={handleExport}
+          totalCount={orders.length}
+          filteredCount={filteredOrders.length}
+          title="Export Orders to Excel"
+        />
+      )}
       {showHoldModal && selectedOrder && <OrderHoldModal order={selectedOrder} onClose={closeAll} />}
       {showBillModal && selectedOrder && <OrderBillModal order={selectedOrder} onClose={closeAll} />}
       {showCompleteModal && selectedOrder && <OrderCompleteModal order={selectedOrder} onClose={closeAll} />}
