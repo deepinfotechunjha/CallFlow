@@ -3958,7 +3958,7 @@ app.post('/orders/:id/cancel', authMiddleware, async (req: Request, res: Respons
 
 app.post('/orders/:id/revert', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
     const orderId = parseInt(req.params.id || '');
-    const { secretPassword, targetStatus } = req.body as { secretPassword: string; targetStatus: string };
+    const { secretPassword, targetStatus, remark } = req.body as { secretPassword: string; targetStatus: string; remark?: string };
     if (!secretPassword || !targetStatus) {
         return res.status(400).json({ error: 'secretPassword and targetStatus are required' });
     }
@@ -3979,13 +3979,31 @@ app.post('/orders/:id/revert', authMiddleware, requireRole(['HOST']), async (req
         const isValid = await bcrypt.compare(secretPassword, dbUser.secretPassword);
         if (!isValid) return res.status(401).json({ error: 'Invalid secret password' });
 
+        const updateData: any = {
+            status: targetStatus,
+            cancelledBy: null,
+            cancelledAt: null
+        };
+
+        if (targetStatus === 'ON_HOLD' && remark) {
+            await prisma.orderHold.create({
+                data: {
+                    orderId,
+                    remark: remark.trim(),
+                    heldBy: req.user!.username,
+                    heldById: req.user!.id
+                }
+            });
+        }
+        if (targetStatus === 'BILLED' && remark) {
+            updateData.billingRemark = remark.trim();
+            updateData.billedBy = req.user!.username;
+            updateData.billedAt = new Date();
+        }
+
         const updated = await prisma.order.update({
             where: { id: orderId },
-            data: {
-                status: targetStatus,
-                cancelledBy: null,
-                cancelledAt: null
-            },
+            data: updateData,
             include: {
                 salesEntry: { select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true } },
                 holds: { orderBy: { heldAt: 'asc' } }
