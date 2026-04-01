@@ -242,23 +242,6 @@ const OrdersPage = () => {
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6 space-y-4">
 
-        {/* Status buttons */}
-        <div className="flex flex-wrap gap-2">
-          {STATUS_BUTTONS.map(({ value, label }) => (
-            <button
-              key={value}
-              onClick={() => setStatusFilter(value)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                statusFilter === value
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
         {/* Search + Created By + Date Range */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-1">
@@ -301,13 +284,27 @@ const OrdersPage = () => {
           </div>
         </div>
 
-        {hasFilters && (
-          <div className="flex justify-end">
-            <button onClick={clearFilters} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">
+        {/* Status buttons */}
+        <div className="flex flex-wrap gap-2">
+          {STATUS_BUTTONS.map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => setStatusFilter(value)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                statusFilter === value
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+          {hasFilters && (
+            <button onClick={clearFilters} className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 ml-auto">
               Clear Filters
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Desktop Table */}
