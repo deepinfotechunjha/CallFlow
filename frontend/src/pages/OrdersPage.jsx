@@ -15,6 +15,15 @@ const ORDER_ACTION_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_ADMIN'];
 const ALL_ORDER_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_ADMIN'];
 const PERSONAL_ORDER_ROLES = ['SALES_EXECUTIVE', 'COMPANY_PAYROLL'];
 
+const STATUS_BUTTONS = [
+  { value: 'ALL', label: 'All' },
+  { value: 'PENDING', label: 'Pending' },
+  { value: 'ON_HOLD', label: 'On Hold' },
+  { value: 'BILLED', label: 'Billed' },
+  { value: 'COMPLETED', label: 'Completed' },
+  { value: 'CANCELLED', label: 'Cancelled' },
+];
+
 const STATUS_BADGE = {
   PENDING:   'bg-gray-100 text-gray-700',
   ON_HOLD:   'bg-yellow-100 text-yellow-700',
@@ -42,6 +51,7 @@ const OrdersPage = () => {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [createdByFilter, setCreatedByFilter] = useState('ALL');
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { orders, loading, fetchOrders, cancelOrder } = useOrderStore();
   const { user, users, fetchUsers } = useAuthStore();
@@ -119,6 +129,27 @@ const OrdersPage = () => {
 
   const filteredOrders = orders.filter(o => {
     if (createdByFilter !== 'ALL' && o.createdBy !== createdByFilter) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const inHolds = o.holds?.some(h => h.remark?.toLowerCase().includes(q) || h.heldBy?.toLowerCase().includes(q));
+      const match =
+        o.salesEntry?.firmName?.toLowerCase().includes(q) ||
+        o.salesEntry?.city?.toLowerCase().includes(q) ||
+        o.salesEntry?.area?.toLowerCase().includes(q) ||
+        o.salesEntry?.gstNo?.toLowerCase().includes(q) ||
+        o.salesEntry?.contactPerson1Name?.toLowerCase().includes(q) ||
+        o.salesEntry?.contactPerson1Number?.includes(q) ||
+        o.orderRemark?.toLowerCase().includes(q) ||
+        o.calledBy?.toLowerCase().includes(q) ||
+        o.createdBy?.toLowerCase().includes(q) ||
+        o.status?.toLowerCase().includes(q) ||
+        o.billingRemark?.toLowerCase().includes(q) ||
+        o.billedBy?.toLowerCase().includes(q) ||
+        o.completionRemark?.toLowerCase().includes(q) ||
+        o.completedBy?.toLowerCase().includes(q) ||
+        inHolds;
+      if (!match) return false;
+    }
     return true;
   });
 
@@ -137,12 +168,14 @@ const OrdersPage = () => {
     setStatusFilter('ALL');
     setCreatedByFilter('ALL');
     setDateRange({ startDate: '', endDate: '' });
+    setSearchQuery('');
   };
 
-  const hasFilters = statusFilter !== 'ALL' || createdByFilter !== 'ALL' || dateRange.startDate || dateRange.endDate;
+  const hasFilters = statusFilter !== 'ALL' || createdByFilter !== 'ALL' || dateRange.startDate || dateRange.endDate || searchQuery.trim();
 
   return (
     <div className="max-w-7xl mx-auto p-4">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">Orders 📦</h1>
@@ -177,6 +210,7 @@ const OrdersPage = () => {
         </div>
       </div>
 
+      {/* Stats */}
       <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-8">
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-center">
           <p className="text-xl font-bold text-blue-700">{stats.total}</p>
@@ -204,41 +238,73 @@ const OrdersPage = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">🔍 Filters</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">Status</label>
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white">
-              <option value="ALL">All Statuses</option>
-              <option value="PENDING">Pending</option>
-              <option value="ON_HOLD">On Hold</option>
-              <option value="BILLED">Billed</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
+      {/* Filters */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6 space-y-4">
+
+        {/* Status buttons */}
+        <div className="flex flex-wrap gap-2">
+          {STATUS_BUTTONS.map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => setStatusFilter(value)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                statusFilter === value
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Search + Created By + Date Range */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="lg:col-span-1">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search orders..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
+
           {canSeeAll && (
             <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">Created By</label>
-              <select value={createdByFilter} onChange={e => setCreatedByFilter(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white">
+              <select
+                value={createdByFilter}
+                onChange={e => setCreatedByFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+              >
                 <option value="ALL">All Users</option>
                 {uniqueCreators.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
           )}
-          <div className="sm:col-span-2">
-            <label className="text-xs font-medium text-gray-600 mb-1 block">Date Range</label>
-            <div className="flex items-center gap-2">
-              <input type="date" value={dateRange.startDate} onChange={e => setDateRange(p => ({ ...p, startDate: e.target.value }))} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" />
-              <span className="text-gray-400 text-sm">to</span>
-              <input type="date" value={dateRange.endDate} onChange={e => setDateRange(p => ({ ...p, endDate: e.target.value }))} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" />
-            </div>
+
+          <div className={`flex items-center gap-2 ${canSeeAll ? 'sm:col-span-2 lg:col-span-2' : 'sm:col-span-1 lg:col-span-3'}`}>
+            <input
+              type="date"
+              value={dateRange.startDate}
+              onChange={e => setDateRange(p => ({ ...p, startDate: e.target.value }))}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+            />
+            <span className="text-gray-400 text-sm">to</span>
+            <input
+              type="date"
+              value={dateRange.endDate}
+              onChange={e => setDateRange(p => ({ ...p, endDate: e.target.value }))}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+            />
           </div>
         </div>
+
         {hasFilters && (
-          <div className="mt-3 flex justify-end">
-            <button onClick={clearFilters} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">Clear Filters</button>
+          <div className="flex justify-end">
+            <button onClick={clearFilters} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">
+              Clear Filters
+            </button>
           </div>
         )}
       </div>
