@@ -128,6 +128,7 @@ const OrdersPage = () => {
   const toggleHolds = (id) => setExpandedHolds(prev => ({ ...prev, [id]: !prev[id] }));
 
   const filteredOrders = orders.filter(o => {
+    if (PERSONAL_ORDER_ROLES.includes(user?.role) && o.createdBy !== user?.username) return false;
     if (createdByFilter !== 'ALL' && o.createdBy !== createdByFilter) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();

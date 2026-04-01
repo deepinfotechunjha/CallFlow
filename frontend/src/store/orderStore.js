@@ -1,16 +1,23 @@
 import { create } from 'zustand';
 import apiClient from '../api/apiClient';
 import toast from 'react-hot-toast';
+import useAuthStore from './authStore';
 
 const useOrderStore = create((set, get) => ({
   orders: [],
   loading: false,
 
   handleOrderCreated: (order) => {
+    const { user } = useAuthStore.getState();
+    const isPersonalRole = ['SALES_EXECUTIVE', 'COMPANY_PAYROLL'].includes(user?.role);
+    if (isPersonalRole && order.createdBy !== user?.username) return;
     set(state => ({ orders: [order, ...state.orders.filter(o => o.id !== order.id)] }));
   },
 
   handleOrderUpdated: (order) => {
+    const { user } = useAuthStore.getState();
+    const isPersonalRole = ['SALES_EXECUTIVE', 'COMPANY_PAYROLL'].includes(user?.role);
+    if (isPersonalRole && order.createdBy !== user?.username) return;
     set(state => ({ orders: state.orders.map(o => o.id === order.id ? order : o) }));
   },
 
