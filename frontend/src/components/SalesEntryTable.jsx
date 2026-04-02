@@ -3,7 +3,7 @@ import useAuthStore from '../store/authStore';
 
 const SalesEntryTable = ({ entries, onVisitClick, onCallClick, onDetailsClick, onEditClick }) => {
   const { user } = useAuthStore();
-  const canEdit = user?.role === 'HOST' || user?.role === 'SALES_EXECUTIVE';
+  const canEdit = user?.role === 'HOST' || user?.role === 'SALES_ADMIN';
   const [confirmDialog, setConfirmDialog] = useState({ show: false, type: '', number: '' });
 
   const handleWhatsApp = (number) => {

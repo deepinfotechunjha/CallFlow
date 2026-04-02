@@ -30,6 +30,7 @@ const SalesDashboard = () => {
   const [logTypeFilter, setLogTypeFilter] = useState('ALL');
   const [filterField, setFilterField] = useState('firmName');
   const [showDropdown, setShowDropdown] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [dateRange, setDateRange] = useState({
     startDate: '',
     endDate: ''
@@ -71,7 +72,12 @@ const SalesDashboard = () => {
     }
   }, [dateRange.startDate, dateRange.endDate, fetchEntries]);
 
+  // For multi-field modes, no dropdown suggestions (too many combinations)
+  // For single-field modes, show unique values filtered by query
+  const MULTI_FIELD_MODES = ['anyName', 'anyNumber'];
+
   const getUniqueOptions = () => {
+    if (MULTI_FIELD_MODES.includes(filterField)) return [];
     const options = new Set();
     entries.forEach(entry => {
       const value = entry[filterField];
@@ -81,9 +87,46 @@ const SalesDashboard = () => {
   };
 
   const uniqueOptions = getUniqueOptions();
-  const filteredOptions = uniqueOptions.filter(option => 
-    option.toLowerCase().startsWith(searchQuery.toLowerCase())
-  );
+  const filteredOptions = uniqueOptions.filter(option => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    const v = option.toLowerCase();
+    // name fields: contains; number/gst/other fields: startsWith
+    if (['firmName', 'contactPerson1Name', 'contactPerson2Name', 'accountContactName', 'city', 'createdBy'].includes(filterField)) {
+      return v.includes(q);
+    }
+    return v.startsWith(q);
+  });
+
+  // Core match function used by both filteredEntries and stats
+  const matchesSearch = (entry) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    if (filterField === 'anyName') {
+      const names = [
+        entry.contactPerson1Name,
+        entry.contactPerson2Name,
+        entry.accountContactName
+      ].filter(Boolean).map(n => n.toLowerCase());
+      return names.some(n => n.includes(q));
+    }
+    if (filterField === 'anyNumber') {
+      const numbers = [
+        entry.contactPerson1Number,
+        entry.contactPerson2Number,
+        entry.accountContactNumber
+      ].filter(Boolean).map(n => n.toLowerCase());
+      return numbers.some(n => n.startsWith(q));
+    }
+    const value = entry[filterField];
+    if (!value) return false;
+    const v = value.toLowerCase();
+    // name-like fields: contains; others (numbers, gst, city, createdBy): startsWith
+    if (['firmName', 'contactPerson1Name', 'contactPerson2Name', 'accountContactName', 'city', 'createdBy'].includes(filterField)) {
+      return v.includes(q);
+    }
+    return v.startsWith(q);
+  };
 
   const isInDateRange = (dateString) => {
     const entryDate = new Date(dateString);
@@ -105,10 +148,7 @@ const SalesDashboard = () => {
 
   const filteredEntries = entries.filter(entry => {
     // Search filter
-    if (searchQuery.trim()) {
-      const value = entry[filterField];
-      if (!value || !value.toLowerCase().startsWith(searchQuery.toLowerCase())) return false;
-    }
+    if (!matchesSearch(entry)) return false;
     
     // City filter
     if (cityFilter !== 'ALL' && entry.city !== cityFilter) return false;
@@ -158,10 +198,7 @@ const SalesDashboard = () => {
   const getFilteredStats = () => {
     const filtered = entries.filter(entry => {
       // Search filter
-      if (searchQuery.trim()) {
-        const value = entry[filterField];
-        if (!value || !value.toLowerCase().startsWith(searchQuery.toLowerCase())) return false;
-      }
+      if (!matchesSearch(entry)) return false;
       
       // City filter
       if (cityFilter !== 'ALL' && entry.city !== cityFilter) return false;
@@ -349,14 +386,14 @@ const SalesDashboard = () => {
                 onChange={(e) => {
                   setFilterField(e.target.value);
                   setSearchQuery('');
+                  setHighlightedIndex(-1);
                 }}
                 className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
               >
                 <option value="firmName">Firm Name</option>
-                <option value="contactPerson1Name">Contact 1 Name</option>
-                <option value="contactPerson1Number">Contact 1 Number</option>
-                <option value="contactPerson2Name">Contact 2 Name</option>
-                <option value="contactPerson2Number">Contact 2 Number</option>
+                <option value="anyName">Any Name (All Contacts)</option>
+                <option value="anyNumber">Any Number (All Contacts)</option>
+                <option value="gstNo">GST Number</option>
                 <option value="accountContactName">Account Name</option>
                 <option value="accountContactNumber">Account Number</option>
                 <option value="city">City</option>
@@ -367,28 +404,43 @@ const SalesDashboard = () => {
                 <input
                   type="text"
                   placeholder={`Search by ${
-                    filterField === 'firmName'
-                      ? 'firm name'
-                      : filterField === 'contactPerson1Name'
-                      ? 'contact 1 name'
-                      : filterField === 'contactPerson1Number'
-                      ? 'contact 1 number'
-                      : filterField === 'contactPerson2Name'
-                      ? 'contact 2 name'
-                      : filterField === 'contactPerson2Number'
-                      ? 'contact 2 number'
-                      : filterField === 'accountContactName'
-                      ? 'account name'
-                      : filterField === 'accountContactNumber'
-                      ? 'account number'
-                      : filterField === 'city'
-                      ? 'city'
-                      : 'created by'
+                    filterField === 'firmName' ? 'firm name'
+                    : filterField === 'anyName' ? 'any contact name'
+                    : filterField === 'anyNumber' ? 'any contact number'
+                    : filterField === 'gstNo' ? 'GST number'
+                    : filterField === 'accountContactName' ? 'account name'
+                    : filterField === 'accountContactNumber' ? 'account number'
+                    : filterField === 'city' ? 'city'
+                    : 'created by'
                   }...`}
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => { setSearchQuery(e.target.value); setHighlightedIndex(-1); }}
                   onFocus={() => setShowDropdown(true)}
-                  onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                  onBlur={() => setShowDropdown(false)}
+                  onKeyDown={(e) => {
+                    if (!showDropdown || filteredOptions.length === 0) return;
+                    if (e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      setHighlightedIndex(i => Math.min(i + 1, filteredOptions.length - 1));
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      setHighlightedIndex(i => Math.max(i - 1, 0));
+                    } else if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const idx = highlightedIndex >= 0 ? highlightedIndex : 0;
+                      setSearchQuery(filteredOptions[idx]);
+                      setShowDropdown(false);
+                      setHighlightedIndex(-1);
+                    } else if (e.key === 'Tab' && filteredOptions.length === 1) {
+                      e.preventDefault();
+                      setSearchQuery(filteredOptions[0]);
+                      setShowDropdown(false);
+                      setHighlightedIndex(-1);
+                    } else if (e.key === 'Escape') {
+                      setShowDropdown(false);
+                      setHighlightedIndex(-1);
+                    }
+                  }}
                   className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
                 />
                 {searchQuery && (
@@ -404,11 +456,16 @@ const SalesDashboard = () => {
                     {filteredOptions.map((option, index) => (
                       <div
                         key={index}
-                        onClick={() => {
+                        onMouseDown={(e) => {
+                          e.preventDefault();
                           setSearchQuery(option);
                           setShowDropdown(false);
+                          setHighlightedIndex(-1);
                         }}
-                        className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm text-gray-700 border-b border-gray-100 last:border-b-0"
+                        onMouseEnter={() => setHighlightedIndex(index)}
+                        className={`px-4 py-2 cursor-pointer text-sm text-gray-700 border-b border-gray-100 last:border-b-0 ${
+                          index === highlightedIndex ? 'bg-blue-100' : 'hover:bg-blue-50'
+                        }`}
                       >
                         {option}
                       </div>
