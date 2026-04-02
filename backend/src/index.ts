@@ -3681,7 +3681,7 @@ app.post('/sales-entries/:id/call', authMiddleware, requireRole(['HOST', 'SALES_
     }
 });
 
-app.put('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (req: Request, res: Response) => {
+app.put('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_ADMIN']), async (req: Request, res: Response) => {
     const entryId = parseInt(req.params.id || '');
     const { firmName, gstNo, contactPerson1Name, contactPerson1Number, contactPerson2Name, contactPerson2Number, accountContactName, accountContactNumber, address, landmark, area, city, pincode, email, whatsappNumber } = req.body;
     
