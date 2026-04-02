@@ -37,12 +37,28 @@ const SalesDashboard = () => {
 
   const { user, users, fetchUsers } = useAuthStore();
   const { entries, fetchEntries, loading } = useSalesStore();
+  const [salesUsernames, setSalesUsernames] = useState([]);
 
   useEffect(() => {
     fetchEntries();
-    // Fetch users for sales executive filter (only for HOST)
-    if (user?.role === 'HOST') {
+    if (user?.role === 'HOST' || user?.role === 'SALES_ADMIN') {
       fetchUsers();
+      // Directly fetch users for the filter dropdown
+      const token = useAuthStore.getState().token;
+      fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/users`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            const names = data
+              .filter(u => ['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN'].includes(u.role))
+              .map(u => u.username)
+              .sort();
+            setSalesUsernames(names);
+          }
+        })
+        .catch(() => {});
     }
   }, [fetchEntries, fetchUsers, user?.role]);
 
@@ -133,11 +149,10 @@ const SalesDashboard = () => {
       .filter(Boolean)
   )].sort();
   
-  // Get unique sales executives (only SALES_EXECUTIVE role users)
-  const salesExecutives = users
-    .filter(u => u.role === 'SALES_EXECUTIVE' || u.role === 'HOST')
-    .map(u => u.username)
-    .sort();
+  const salesExecutives = [...new Set([
+    ...salesUsernames,
+    ...entries.map(e => e.createdBy).filter(Boolean)
+  ])].sort();
 
   // Get filtered stats based on current filters
   const getFilteredStats = () => {
@@ -443,7 +458,7 @@ const SalesDashboard = () => {
             </div>
           </div>
 
-          {user?.role === 'HOST' && (
+          {(user?.role === 'HOST' || user?.role === 'SALES_ADMIN') && (
             <div className="bg-white p-4 rounded-xl border border-gray-200">
               <label className="text-sm font-medium text-gray-700">👤 Sales Executive</label>
               <select
