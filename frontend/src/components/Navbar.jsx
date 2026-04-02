@@ -73,10 +73,6 @@ const Navbar = () => {
             <div className="hidden lg:flex space-x-1 xl:space-x-5">
               {!HIDE_MAIN_DASHBOARD.includes(user?.role) && navLink('/', 'Dashboard')}
 
-              {SALES_DASHBOARD_ROLES.includes(user?.role) && navLink('/sales-dashboard', 'Sales Dashboard')}
-
-              {ORDERS_ROLES.includes(user?.role) && navLink('/orders', 'Orders')}
-
               {user?.role !== 'SALES_EXECUTIVE' && user?.role !== 'TALLY_CALLER' && user?.role !== 'SALES_ADMIN' && user?.role !== 'ACCOUNTANT' && user?.role !== 'COMPANY_PAYROLL' && navLink('/carry-in-service', 'CarryInService')}
 
               {(user?.role === 'HOST' || user?.role === 'ADMIN') && navLink('/dc', 'DC')}
@@ -89,6 +85,10 @@ const Navbar = () => {
                   {navLink('/settings/categories', 'Categories')}
                 </>
               )}
+
+              {SALES_DASHBOARD_ROLES.includes(user?.role) && navLink('/sales-dashboard', 'Sales Dashboard')}
+
+              {ORDERS_ROLES.includes(user?.role) && navLink('/orders', 'Orders')}
             </div>
           </div>
 
@@ -126,12 +126,6 @@ const Navbar = () => {
             <div className="flex flex-col space-y-1">
               {!HIDE_MAIN_DASHBOARD.includes(user?.role) && mobileLink('/', 'Dashboard')}
 
-              {SALES_DASHBOARD_ROLES.includes(user?.role) && mobileLink('/sales-dashboard', 'Sales Dashboard')}
-
-              {ORDERS_ROLES.includes(user?.role) && mobileLink('/orders', 'Orders')}
-
-              {mobileLink('/profile', 'Profile')}
-
               {user?.role !== 'SALES_EXECUTIVE' && user?.role !== 'TALLY_CALLER' && user?.role !== 'SALES_ADMIN' && user?.role !== 'ACCOUNTANT' && user?.role !== 'COMPANY_PAYROLL' && mobileLink('/carry-in-service', 'CarryInService')}
 
               {(user?.role === 'HOST' || user?.role === 'ADMIN') && mobileLink('/dc', 'DC')}
@@ -144,6 +138,12 @@ const Navbar = () => {
                   {mobileLink('/settings/categories', 'Categories')}
                 </>
               )}
+
+              {SALES_DASHBOARD_ROLES.includes(user?.role) && mobileLink('/sales-dashboard', 'Sales Dashboard')}
+
+              {ORDERS_ROLES.includes(user?.role) && mobileLink('/orders', 'Orders')}
+
+              {mobileLink('/profile', 'Profile')}
             </div>
           </div>
         )}
