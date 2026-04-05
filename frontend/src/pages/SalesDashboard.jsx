@@ -27,7 +27,7 @@ const SalesDashboard = () => {
   const [cityFilter, setCityFilter] = useState('ALL');
   const [areaFilter, setAreaFilter] = useState('ALL');
   const [salesExecutiveFilter, setSalesExecutiveFilter] = useState('ALL');
-  const [logTypeFilter, setLogTypeFilter] = useState('ALL');
+  const [entryFilter, setEntryFilter] = useState('ALL');
   const [filterField, setFilterField] = useState('firmName');
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -63,14 +63,7 @@ const SalesDashboard = () => {
     }
   }, [fetchEntries, fetchUsers, user?.role]);
 
-  // Refetch entries when date range changes
-  useEffect(() => {
-    if (dateRange.startDate || dateRange.endDate) {
-      fetchEntries(dateRange);
-    } else {
-      fetchEntries();
-    }
-  }, [dateRange.startDate, dateRange.endDate, fetchEntries]);
+  // Remove the separate date range refetch - all filtering is now client-side
 
   // For multi-field modes, no dropdown suggestions (too many combinations)
   // For single-field modes, show unique values filtered by query
@@ -129,52 +122,53 @@ const SalesDashboard = () => {
   };
 
   const isInDateRange = (dateString) => {
-    const entryDate = new Date(dateString);
-    const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null;
-    const endDate = dateRange.endDate ? new Date(dateRange.endDate + 'T23:59:59') : null;
-
-    // If no date range is selected, default to showing today's entries
-    if (!startDate && !endDate) {
-      const today = new Date();
-      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
-      return entryDate >= startOfToday && entryDate <= endOfToday;
+    if (!dateString) return false;
+    if (!dateRange.startDate && !dateRange.endDate) return true;
+    const d = new Date(dateString);
+    if (dateRange.startDate) {
+      const start = new Date(dateRange.startDate);
+      start.setHours(0, 0, 0, 0);
+      if (d < start) return false;
     }
-
-    if (startDate && entryDate < startDate) return false;
-    if (endDate && entryDate > endDate) return false;
+    if (dateRange.endDate) {
+      const end = new Date(dateRange.endDate);
+      end.setHours(23, 59, 59, 999);
+      if (d > end) return false;
+    }
     return true;
   };
 
+  const isDateFilterActive = dateRange.startDate || dateRange.endDate;
+
   const filteredEntries = entries.filter(entry => {
+    const targetUser = salesExecutiveFilter !== 'ALL' ? salesExecutiveFilter : null;
+
+    // Entry tab filter
+    if (entryFilter === 'CREATED_BY') {
+      if (targetUser && entry.createdBy !== targetUser) return false;
+      if (isDateFilterActive && !isInDateRange(entry.createdAt)) return false;
+    }
+    if (entryFilter === 'VISITED_BY') {
+      if (!(entry.visitCount > 0)) return false;
+      if (targetUser && entry.createdBy !== targetUser) return false;
+      if (isDateFilterActive && !isInDateRange(entry.lastVisitDate)) return false;
+    }
+    if (entryFilter === 'CALLED_BY') {
+      if (!(entry.callCount > 0)) return false;
+      if (targetUser && entry.createdBy !== targetUser) return false;
+      if (isDateFilterActive && !isInDateRange(entry.lastCallDate)) return false;
+    }
+    if (entryFilter === 'ALL') {
+      if (salesExecutiveFilter !== 'ALL' && entry.createdBy !== salesExecutiveFilter) return false;
+      if (isDateFilterActive && !isInDateRange(entry.createdAt)) return false;
+    }
+
     // Search filter
     if (!matchesSearch(entry)) return false;
-    
     // City filter
     if (cityFilter !== 'ALL' && entry.city !== cityFilter) return false;
-    
-    // Area filter (cascading - depends on city)
+    // Area filter
     if (areaFilter !== 'ALL' && entry.area !== areaFilter) return false;
-    
-    // Sales Executive filter (only for ADMIN/HOST)
-    if (salesExecutiveFilter !== 'ALL' && entry.createdBy !== salesExecutiveFilter) return false;
-    
-    // Log type filter
-    if (logTypeFilter !== 'ALL') {
-      if (logTypeFilter === 'VISIT' && !(entry.visitCount > 0)) return false;
-      if (logTypeFilter === 'CALL' && !(entry.callCount > 0)) return false;
-      if (logTypeFilter === 'CREATED' && !isInDateRange(entry.createdAt)) return false;
-    }
-
-    // Date range filter (applies when not showing "Created" specifically)
-    if (logTypeFilter !== 'CREATED' && (dateRange.startDate || dateRange.endDate)) {
-      const entryDate = new Date(entry.createdAt);
-      const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null;
-      const endDate = dateRange.endDate ? new Date(dateRange.endDate + 'T23:59:59') : null;
-
-      if (startDate && entryDate < startDate) return false;
-      if (endDate && entryDate > endDate) return false;
-    }
 
     return true;
   });
@@ -197,38 +191,13 @@ const SalesDashboard = () => {
   // Get filtered stats based on current filters
   const getFilteredStats = () => {
     const filtered = entries.filter(entry => {
-      // Search filter
       if (!matchesSearch(entry)) return false;
-      
-      // City filter
       if (cityFilter !== 'ALL' && entry.city !== cityFilter) return false;
-      
-      // Area filter
       if (areaFilter !== 'ALL' && entry.area !== areaFilter) return false;
-      
-      // Sales Executive filter
       if (salesExecutiveFilter !== 'ALL' && entry.createdBy !== salesExecutiveFilter) return false;
-      
-      // Log type filter
-      if (logTypeFilter !== 'ALL') {
-        if (logTypeFilter === 'VISIT' && !(entry.visitCount > 0)) return false;
-        if (logTypeFilter === 'CALL' && !(entry.callCount > 0)) return false;
-        if (logTypeFilter === 'CREATED' && !isInDateRange(entry.createdAt)) return false;
-      }
-      
-      // Date range filter for stats (ignore when specifically filtering by created date)
-      if (logTypeFilter !== 'CREATED' && (dateRange.startDate || dateRange.endDate)) {
-        const entryDate = new Date(entry.createdAt);
-        const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null;
-        const endDate = dateRange.endDate ? new Date(dateRange.endDate + 'T23:59:59') : null;
-        
-        if (startDate && entryDate < startDate) return false;
-        if (endDate && entryDate > endDate) return false;
-      }
-      
+      if (isDateFilterActive && !isInDateRange(entry.createdAt)) return false;
       return true;
     });
-    
     return {
       totalEntries: filtered.length,
       visitsToday: filtered.reduce((sum, e) => sum + (e.visitCount || 0), 0),
@@ -396,8 +365,7 @@ const SalesDashboard = () => {
                 <option value="gstNo">GST Number</option>
                 <option value="accountContactName">Account Name</option>
                 <option value="accountContactNumber">Account Number</option>
-                <option value="city">City</option>
-                <option value="createdBy">Created By</option>
+
               </select>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">🔍</span>
@@ -532,53 +500,44 @@ const SalesDashboard = () => {
           )}
 
           <div className="bg-white p-4 rounded-xl border border-gray-200">
-            <label className="text-sm font-medium text-gray-700">🧭 Action Filter</label>
+            <label className="text-sm font-medium text-gray-700">📅 Date & Filter</label>
             <div className="mt-3 flex flex-col gap-3">
-              <div>
-                <p className="text-xs font-medium text-gray-500">Type</p>
-                <select
-                  value={logTypeFilter}
-                  onChange={(e) => setLogTypeFilter(e.target.value)}
-                  className="mt-2 w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
-                >
-                  <option value="ALL">All Logs</option>
-                  <option value="VISIT">Visited</option>
-                  <option value="CALL">Called</option>
-                  <option value="CREATED">Created</option>
-                </select>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-gray-500">Date range</p>
-                <div className="mt-2 flex flex-wrap items-center gap-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                  <input
-                    type="date"
-                    value={dateRange.startDate}
-                    onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-                    className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[120px]"
-                    placeholder="Start Date"
-                  />
-                  <span className="text-gray-400 text-sm">to</span>
-                  <input
-                    type="date"
-                    value={dateRange.endDate}
-                    onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-                    className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[120px]"
-                    placeholder="End Date"
-                  />
-                </div>
+              <select
+                value={entryFilter}
+                onChange={(e) => setEntryFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                <option value="ALL">All</option>
+                <option value="CREATED_BY">Created By</option>
+                <option value="VISITED_BY">Visited By</option>
+                <option value="CALLED_BY">Called By</option>
+              </select>
+              <div className="flex flex-wrap items-center gap-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                <input
+                  type="date"
+                  value={dateRange.startDate}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                  className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[120px]"
+                />
+                <span className="text-gray-400 text-sm">to</span>
+                <input
+                  type="date"
+                  value={dateRange.endDate}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                  className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[120px]"
+                />
               </div>
             </div>
           </div>
 
           <div className="sm:col-span-2 lg:col-span-4 flex justify-end">
-            {(searchQuery || cityFilter !== 'ALL' || areaFilter !== 'ALL' || salesExecutiveFilter !== 'ALL' || logTypeFilter !== 'ALL' || dateRange.startDate || dateRange.endDate) && (
+            {(searchQuery || cityFilter !== 'ALL' || areaFilter !== 'ALL' || salesExecutiveFilter !== 'ALL' || dateRange.startDate || dateRange.endDate) && (
               <button
                 onClick={() => {
                   setSearchQuery('');
                   setCityFilter('ALL');
                   setAreaFilter('ALL');
                   setSalesExecutiveFilter('ALL');
-                  setLogTypeFilter('ALL');
                   setDateRange({ startDate: '', endDate: '' });
                 }}
                 className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap"
