@@ -3473,49 +3473,22 @@ app.post('/share/:linkId/submit-service', async (req: Request, res: Response) =>
 });
 // Sales Executive endpoints
 app.get('/sales-entries', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (req: Request, res: Response) => {
-    const { startDate, endDate } = req.query as { startDate?: string; endDate?: string };
-    
     try {
-        // Build the base query
-        let baseQuery = `
+        const baseQuery = `
             SELECT 
                 se.*,
                 COUNT(CASE WHEN sl."logType" = 'VISIT' THEN 1 END)::int as "visitCount",
                 COUNT(CASE WHEN sl."logType" = 'CALL' THEN 1 END)::int as "callCount",
-                -- Latest log timestamp (if any)
                 (SELECT sl2."loggedAt" FROM "SalesLog" sl2 WHERE sl2."salesEntryId" = se.id ORDER BY sl2."loggedAt" DESC LIMIT 1) as "lastLoggedAt",
-                -- Latest log type (if any)
-                (SELECT sl2."logType" FROM "SalesLog" sl2 WHERE sl2."salesEntryId" = se.id ORDER BY sl2."loggedAt" DESC LIMIT 1) as "lastLogType"
+                (SELECT sl2."logType" FROM "SalesLog" sl2 WHERE sl2."salesEntryId" = se.id ORDER BY sl2."loggedAt" DESC LIMIT 1) as "lastLogType",
+                (SELECT sl2."loggedAt" FROM "SalesLog" sl2 WHERE sl2."salesEntryId" = se.id AND sl2."logType" = 'VISIT' ORDER BY sl2."loggedAt" DESC LIMIT 1) as "lastVisitDate",
+                (SELECT sl2."loggedAt" FROM "SalesLog" sl2 WHERE sl2."salesEntryId" = se.id AND sl2."logType" = 'CALL' ORDER BY sl2."loggedAt" DESC LIMIT 1) as "lastCallDate"
             FROM "SalesEntry" se
             LEFT JOIN "SalesLog" sl ON se.id = sl."salesEntryId"
-        `;
-        
-        // Add WHERE clause if date filters are provided
-        const conditions = [];
-        const params = [];
-        
-        if (startDate) {
-            conditions.push(`se."createdAt" >= $${params.length + 1}`);
-            params.push(new Date(startDate));
-        }
-        
-        if (endDate) {
-            const endDateTime = new Date(endDate);
-            endDateTime.setHours(23, 59, 59, 999);
-            conditions.push(`se."createdAt" <= $${params.length + 1}`);
-            params.push(endDateTime);
-        }
-        
-        if (conditions.length > 0) {
-            baseQuery += ` WHERE ${conditions.join(' AND ')}`;
-        }
-        
-        baseQuery += `
             GROUP BY se.id
             ORDER BY se."createdAt" DESC
         `;
-        
-        const entries = await prisma.$queryRawUnsafe(baseQuery, ...params);
+        const entries = await prisma.$queryRawUnsafe(baseQuery);
         res.json(entries);
     } catch (err: any) {
         console.error('Sales entries fetch error:', err);
