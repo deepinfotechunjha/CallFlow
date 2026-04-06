@@ -3194,9 +3194,6 @@ app.post('/share/sales/:linkId/submit', async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Invalid sales share link' });
         }
         
-        // Mark token as used
-        usedShareTokens.add(linkId);
-        
         // Mark public access token as used and delete cookie
         const publicToken = req.cookies?.publicAccessToken;
         if (publicToken) {
@@ -3214,7 +3211,6 @@ app.post('/share/sales/:linkId/submit', async (req: Request, res: Response) => {
         });
         
         if (!hostUser) {
-            // Fallback: find any user
             const anyUser = await prisma.user.findFirst({
                 select: { id: true }
             });
@@ -3223,7 +3219,6 @@ app.post('/share/sales/:linkId/submit', async (req: Request, res: Response) => {
                 return res.status(500).json({ error: 'No users found in system' });
             }
             
-            // Create the sales entry with fallback user
             const entry = await prisma.salesEntry.create({
                 data: {
                     firmName,
@@ -3246,6 +3241,7 @@ app.post('/share/sales/:linkId/submit', async (req: Request, res: Response) => {
                 }
             });
             
+            usedShareTokens.add(linkId);
             emitToAll('sales_entry_created', entry);
             
             return res.status(201).json({ 
@@ -3255,7 +3251,6 @@ app.post('/share/sales/:linkId/submit', async (req: Request, res: Response) => {
             });
         }
         
-        // Create the sales entry with HOST user
         const entry = await prisma.salesEntry.create({
             data: {
                 firmName,
@@ -3278,7 +3273,7 @@ app.post('/share/sales/:linkId/submit', async (req: Request, res: Response) => {
             }
         });
         
-        // Emit real-time update
+        usedShareTokens.add(linkId);
         emitToAll('sales_entry_created', entry);
         
         res.status(201).json({ 
@@ -3368,9 +3363,6 @@ app.post('/share/:linkId/submit', async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Invalid share link' });
         }
         
-        // Mark token as used
-        usedShareTokens.add(linkId);
-        
         // Create customer if doesn't exist
         let customer = null;
         if (phone) {
@@ -3417,7 +3409,7 @@ app.post('/share/:linkId/submit', async (req: Request, res: Response) => {
             }) : prisma.$queryRaw`SELECT 1`
         ]);
         
-        // Emit real-time update
+        usedShareTokens.add(linkId);
         emitToAll('call_created', call);
         
         res.status(201).json({ 
@@ -3469,9 +3461,6 @@ app.post('/share/:linkId/submit-service', async (req: Request, res: Response) =>
             return res.status(404).json({ error: 'Invalid share link' });
         }
         
-        // Mark token as used
-        usedShareTokens.add(linkId);
-        
         // Create customer if doesn't exist
         let customer = await prisma.customer.findUnique({ where: { phone } });
         if (!customer) {
@@ -3513,7 +3502,7 @@ app.post('/share/:linkId/submit-service', async (req: Request, res: Response) =>
             })
         ]);
         
-        // Emit real-time update
+        usedShareTokens.add(linkId);
         emitToAll('service_created', service);
         
         res.status(201).json({ 
@@ -3562,8 +3551,6 @@ app.post('/share-service/:linkId/submit', async (req: Request, res: Response) =>
             return res.status(404).json({ error: 'Invalid service share link' });
         }
         
-        usedShareTokens.add(linkId);
-        
         let customer = await prisma.customer.findUnique({ where: { phone } });
         if (!customer) {
             customer = await prisma.customer.create({
@@ -3603,6 +3590,7 @@ app.post('/share-service/:linkId/submit', async (req: Request, res: Response) =>
             })
         ]);
         
+        usedShareTokens.add(linkId);
         emitToAll('service_created', service);
         
         res.status(201).json({ 
