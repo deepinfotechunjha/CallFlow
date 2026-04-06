@@ -11,7 +11,7 @@ const ShareServiceModal = ({ isOpen, onClose }) => {
   const generateShareLink = async () => {
     setIsGenerating(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/share/create-link`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/share/create-service-link`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -22,9 +22,7 @@ const ShareServiceModal = ({ isOpen, onClose }) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Modify the URL to point to service form
-        const serviceUrl = data.shareUrl.replace('/share/', '/share-service/');
-        setShareUrl(serviceUrl);
+        setShareUrl(data.shareUrl);
         setLinkGenerated(true);
         toast.success('Service share link generated successfully!');
       } else {

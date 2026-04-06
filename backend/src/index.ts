@@ -3015,6 +3015,32 @@ app.post('/share/create-link', authMiddleware, async (req: Request, res: Respons
     }
 });
 
+app.post('/share/create-service-link', authMiddleware, async (req: Request, res: Response) => {
+    try {
+        const token = jwt.sign(
+            { 
+                type: 'service-share-link',
+                id: crypto.randomUUID(),
+                createdAt: Date.now(),
+                exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60)
+            }, 
+            JWT_SECRET
+        );
+        
+        const shareUrl = `${process.env.FRONTEND_ORIGIN || 'http://localhost:5173'}/share-service/${token}`;
+        
+        res.json({ 
+            success: true, 
+            shareUrl,
+            linkId: token,
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+        });
+    } catch (err: any) {
+        console.error('Create service share link error:', err);
+        res.status(500).json({ error: 'Failed to create service share link' });
+    }
+});
+
 app.post('/share/create-sales-link', authMiddleware, async (req: Request, res: Response) => {
     try {
         // Create JWT token with 1 hour expiry and unique ID
@@ -3275,6 +3301,41 @@ app.post('/share/sales/:linkId/submit', async (req: Request, res: Response) => {
     }
 });
 
+app.get('/share-service/:linkId', async (req: Request, res: Response) => {
+    const { linkId } = req.params;
+    
+    if (!linkId) {
+        return res.status(400).json({ error: 'Link ID is required' });
+    }
+    
+    try {
+        if (usedShareTokens.has(linkId)) {
+            return res.status(404).json({ error: 'Share link has already been used' });
+        }
+        
+        const decoded = jwt.verify(linkId, JWT_SECRET) as any;
+        
+        if (decoded.type !== 'service-share-link') {
+            return res.status(404).json({ error: 'Invalid service share link' });
+        }
+        
+        res.json({ 
+            success: true, 
+            valid: true,
+            createdAt: new Date(decoded.createdAt).toISOString(),
+            expiresAt: new Date(decoded.exp * 1000).toISOString()
+        });
+    } catch (err: any) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(404).json({ error: 'Share link has expired' });
+        }
+        if (err.name === 'JsonWebTokenError') {
+            return res.status(404).json({ error: 'Invalid share link' });
+        }
+        res.status(500).json({ error: 'Failed to validate share link' });
+    }
+});
+
 app.post('/share/:linkId/submit', async (req: Request, res: Response) => {
     const { linkId } = req.params;
     const { customerName, phone, email, address, problem, category } = req.body as {
@@ -3471,6 +3532,115 @@ app.post('/share/:linkId/submit-service', async (req: Request, res: Response) =>
         res.status(500).json({ error: 'Failed to submit service' });
     }
 });
+app.post('/share-service/:linkId/submit', async (req: Request, res: Response) => {
+    const { linkId } = req.params;
+    const { customerName, phone, email, address, category, serviceDescription } = req.body as {
+        customerName: string;
+        phone: string;
+        email?: string;
+        address: string;
+        category: string;
+        serviceDescription?: string;
+    };
+    
+    if (!linkId) {
+        return res.status(400).json({ error: 'Link ID is required' });
+    }
+    
+    if (!customerName || !phone || !address || !category) {
+        return res.status(400).json({ error: 'Customer name, phone, address, and category are required' });
+    }
+    
+    try {
+        if (usedShareTokens.has(linkId)) {
+            return res.status(404).json({ error: 'Share link has already been used' });
+        }
+        
+        const decoded = jwt.verify(linkId, JWT_SECRET) as any;
+        
+        if (decoded.type !== 'service-share-link') {
+            return res.status(404).json({ error: 'Invalid service share link' });
+        }
+        
+        usedShareTokens.add(linkId);
+        
+        let customer = await prisma.customer.findUnique({ where: { phone } });
+        if (!customer) {
+            customer = await prisma.customer.create({
+                data: { 
+                    name: customerName, 
+                    phone, 
+                    email: email || null, 
+                    address: address || null,
+                    outsideCalls: 0,
+                    carryInServices: 0,
+                    totalInteractions: 0
+                }
+            });
+        }
+        
+        const [service] = await prisma.$transaction([
+            prisma.carryInService.create({
+                data: {
+                    customerName,
+                    phone,
+                    email: email || null,
+                    address: address,
+                    category,
+                    serviceDescription: serviceDescription || null,
+                    customerId: customer.id,
+                    createdBy: 'Share Link'
+                }
+            }),
+            prisma.customer.update({
+                where: { id: customer.id },
+                data: {
+                    carryInServices: { increment: 1 },
+                    totalInteractions: { increment: 1 },
+                    lastServiceDate: new Date(),
+                    lastActivityDate: new Date()
+                }
+            })
+        ]);
+        
+        emitToAll('service_created', service);
+        
+        res.status(201).json({ 
+            success: true, 
+            service,
+            message: 'Service submitted successfully' 
+        });
+    } catch (err: any) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(404).json({ error: 'Share link has expired' });
+        }
+        if (err.name === 'JsonWebTokenError') {
+            return res.status(404).json({ error: 'Invalid share link' });
+        }
+        console.error('Submit service share link error:', err);
+        res.status(500).json({ error: 'Failed to submit service' });
+    }
+});
+
+
+app.get('/sales-logs', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (_req: Request, res: Response) => {
+    try {
+        const logs = await prisma.salesLog.findMany({
+            select: {
+                id: true,
+                salesEntryId: true,
+                logType: true,
+                loggedBy: true,
+                loggedAt: true
+            },
+            orderBy: { loggedAt: 'desc' }
+        });
+        res.json(logs);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
 // Sales Executive endpoints
 app.get('/sales-entries', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (req: Request, res: Response) => {
     try {
