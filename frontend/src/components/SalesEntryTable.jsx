@@ -1,10 +1,36 @@
 import React, { useState } from 'react';
 import useAuthStore from '../store/authStore';
 
-const SalesEntryTable = ({ entries, onVisitClick, onCallClick, onDetailsClick, onEditClick }) => {
+const SalesEntryTable = ({ entries, onVisitClick, onCallClick, onDetailsClick, onEditClick, salesLogs = [], salesExecutiveFilter = 'ALL', dateRange = {}, entryFilter = 'ALL' }) => {
   const { user } = useAuthStore();
   const canEdit = user?.role === 'HOST' || user?.role === 'SALES_ADMIN';
   const [confirmDialog, setConfirmDialog] = useState({ show: false, type: '', number: '' });
+
+  const isDateFilterActive = dateRange.startDate || dateRange.endDate;
+
+  const isInDateRange = (dateString) => {
+    if (!dateString || !isDateFilterActive) return true;
+    const d = new Date(dateString);
+    if (dateRange.startDate) {
+      const start = new Date(dateRange.startDate);
+      start.setHours(0, 0, 0, 0);
+      if (d < start) return false;
+    }
+    if (dateRange.endDate) {
+      const end = new Date(dateRange.endDate);
+      end.setHours(23, 59, 59, 999);
+      if (d > end) return false;
+    }
+    return true;
+  };
+
+  const getFilteredLogCount = (entryId, logType) =>
+    salesLogs.filter(l =>
+      l.salesEntryId === entryId &&
+      l.logType === logType &&
+      (entryFilter === 'CREATED_BY' || salesExecutiveFilter === 'ALL' || l.loggedBy === salesExecutiveFilter) &&
+      isInDateRange(l.loggedAt)
+    ).length;
 
   const handleWhatsApp = (number) => {
     setConfirmDialog({ show: true, type: 'whatsapp', number });
@@ -43,6 +69,7 @@ const SalesEntryTable = ({ entries, onVisitClick, onCallClick, onDetailsClick, o
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Contact</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">City</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Logs</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">LogF</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Quick Contact</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
             </tr>
@@ -66,6 +93,9 @@ const SalesEntryTable = ({ entries, onVisitClick, onCallClick, onDetailsClick, o
                 <td className="px-4 py-3 text-sm text-gray-600">{entry.city}</td>
                 <td className="px-4 py-3 text-sm font-medium text-gray-700">
                   {entry.visitCount || 0}V, {entry.callCount || 0}C
+                </td>
+                <td className="px-4 py-3 text-sm font-medium">
+                  <span className="text-teal-700">{getFilteredLogCount(entry.id, 'VISIT')}V</span>, <span className="text-pink-700">{getFilteredLogCount(entry.id, 'CALL')}C</span>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">

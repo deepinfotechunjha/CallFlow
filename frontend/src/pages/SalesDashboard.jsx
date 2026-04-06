@@ -39,16 +39,23 @@ const SalesDashboard = () => {
   const { user, users, fetchUsers } = useAuthStore();
   const { entries, fetchEntries, loading } = useSalesStore();
   const [salesUsernames, setSalesUsernames] = useState([]);
+  const [salesLogs, setSalesLogs] = useState([]);
 
   useEffect(() => {
     fetchEntries();
+    const token = useAuthStore.getState().token;
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+    const headers = { 'Authorization': `Bearer ${token}` };
+
+    // Fetch logs for accurate visited/called by filtering
+    fetch(`${baseUrl}/sales-logs`, { headers })
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setSalesLogs(data); })
+      .catch(() => {});
+
     if (user?.role === 'HOST' || user?.role === 'SALES_ADMIN') {
       fetchUsers();
-      // Directly fetch users for the filter dropdown
-      const token = useAuthStore.getState().token;
-      fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/users`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
+      fetch(`${baseUrl}/users`, { headers })
         .then(r => r.json())
         .then(data => {
           if (Array.isArray(data)) {
@@ -143,20 +150,31 @@ const SalesDashboard = () => {
   const filteredEntries = entries.filter(entry => {
     const targetUser = salesExecutiveFilter !== 'ALL' ? salesExecutiveFilter : null;
 
-    // Entry tab filter
     if (entryFilter === 'CREATED_BY') {
       if (targetUser && entry.createdBy !== targetUser) return false;
       if (isDateFilterActive && !isInDateRange(entry.createdAt)) return false;
     }
     if (entryFilter === 'VISITED_BY') {
-      if (!(entry.visitCount > 0)) return false;
-      if (targetUser && entry.createdBy !== targetUser) return false;
-      if (isDateFilterActive && !isInDateRange(entry.lastVisitDate)) return false;
+      const entryLogs = salesLogs.filter(l => l.salesEntryId === entry.id && l.logType === 'VISIT');
+      if (targetUser) {
+        const userLogs = entryLogs.filter(l => l.loggedBy === targetUser);
+        if (userLogs.length === 0) return false;
+        if (isDateFilterActive && !userLogs.some(l => isInDateRange(l.loggedAt))) return false;
+      } else {
+        if (entryLogs.length === 0) return false;
+        if (isDateFilterActive && !entryLogs.some(l => isInDateRange(l.loggedAt))) return false;
+      }
     }
     if (entryFilter === 'CALLED_BY') {
-      if (!(entry.callCount > 0)) return false;
-      if (targetUser && entry.createdBy !== targetUser) return false;
-      if (isDateFilterActive && !isInDateRange(entry.lastCallDate)) return false;
+      const entryLogs = salesLogs.filter(l => l.salesEntryId === entry.id && l.logType === 'CALL');
+      if (targetUser) {
+        const userLogs = entryLogs.filter(l => l.loggedBy === targetUser);
+        if (userLogs.length === 0) return false;
+        if (isDateFilterActive && !userLogs.some(l => isInDateRange(l.loggedAt))) return false;
+      } else {
+        if (entryLogs.length === 0) return false;
+        if (isDateFilterActive && !entryLogs.some(l => isInDateRange(l.loggedAt))) return false;
+      }
     }
     if (entryFilter === 'ALL') {
       if (salesExecutiveFilter !== 'ALL' && entry.createdBy !== salesExecutiveFilter) return false;
@@ -188,25 +206,22 @@ const SalesDashboard = () => {
     ...entries.map(e => e.createdBy).filter(Boolean)
   ])].sort();
 
-  // Get filtered stats based on current filters
-  const getFilteredStats = () => {
-    const filtered = entries.filter(entry => {
-      if (!matchesSearch(entry)) return false;
-      if (cityFilter !== 'ALL' && entry.city !== cityFilter) return false;
-      if (areaFilter !== 'ALL' && entry.area !== areaFilter) return false;
-      if (salesExecutiveFilter !== 'ALL' && entry.createdBy !== salesExecutiveFilter) return false;
-      if (isDateFilterActive && !isInDateRange(entry.createdAt)) return false;
-      return true;
-    });
-    return {
-      totalEntries: filtered.length,
-      visitsToday: filtered.reduce((sum, e) => sum + (e.visitCount || 0), 0),
-      callsToday: filtered.reduce((sum, e) => sum + (e.callCount || 0), 0),
-      logsThisMonth: filtered.reduce((sum, e) => sum + (e.visitCount || 0) + (e.callCount || 0), 0)
-    };
-  };
+  // Per-entry filtered log count (respects salesExecutive + date)
+  const getFilteredLogCount = (entryId, logType) =>
+    salesLogs.filter(l =>
+      l.salesEntryId === entryId &&
+      l.logType === logType &&
+      (entryFilter === 'CREATED_BY' || salesExecutiveFilter === 'ALL' || l.loggedBy === salesExecutiveFilter) &&
+      (!isDateFilterActive || isInDateRange(l.loggedAt))
+    ).length;
 
-  const stats = getFilteredStats();
+  const stats = {
+    totalEntries: filteredEntries.length,
+    totalVisits: filteredEntries.reduce((sum, e) => sum + (e.visitCount || 0), 0),
+    totalCalls:  filteredEntries.reduce((sum, e) => sum + (e.callCount  || 0), 0),
+    filteredVisits: filteredEntries.reduce((sum, e) => sum + getFilteredLogCount(e.id, 'VISIT'), 0),
+    filteredCalls:  filteredEntries.reduce((sum, e) => sum + getFilteredLogCount(e.id, 'CALL'),  0),
+  };
 
   const handleVisitClick = (entry) => {
     setSelectedEntry(entry);
@@ -302,7 +317,7 @@ const SalesDashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 sm:p-6 rounded-xl shadow-sm border border-blue-200">
           <div className="flex items-center justify-between">
             <div>
@@ -316,7 +331,7 @@ const SalesDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm sm:text-base font-medium text-green-700 mb-1">Total Visits</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-green-800">{stats.visitsToday}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-green-800">{stats.totalVisits}</p>
             </div>
             <div className="text-green-500 text-2xl">👁️</div>
           </div>
@@ -325,18 +340,27 @@ const SalesDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm sm:text-base font-medium text-purple-700 mb-1">Total Calls</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-purple-800">{stats.callsToday}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-purple-800">{stats.totalCalls}</p>
             </div>
             <div className="text-purple-500 text-2xl">📞</div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 sm:p-6 rounded-xl shadow-sm border border-orange-200">
+        <div className="bg-gradient-to-br from-teal-50 to-teal-100 p-4 sm:p-6 rounded-xl shadow-sm border border-teal-200">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm sm:text-base font-medium text-orange-700 mb-1">Total Logs</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-orange-800">{stats.logsThisMonth}</p>
+              <h3 className="text-sm sm:text-base font-medium text-teal-700 mb-1">Filtered Visits</h3>
+              <p className="text-2xl sm:text-3xl font-bold text-teal-800">{stats.filteredVisits}</p>
             </div>
-            <div className="text-orange-500 text-2xl">📋</div>
+            <div className="text-teal-500 text-2xl">🔍👁️</div>
+          </div>
+        </div>
+        <div className="bg-gradient-to-br from-pink-50 to-pink-100 p-4 sm:p-6 rounded-xl shadow-sm border border-pink-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm sm:text-base font-medium text-pink-700 mb-1">Filtered Calls</h3>
+              <p className="text-2xl sm:text-3xl font-bold text-pink-800">{stats.filteredCalls}</p>
+            </div>
+            <div className="text-pink-500 text-2xl">🔍📞</div>
           </div>
         </div>
       </div>
@@ -346,198 +370,209 @@ const SalesDashboard = () => {
         <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
           <span>🔍</span> Search & Filters
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="bg-white p-4 rounded-xl border border-gray-200">
-            <label className="text-sm font-medium text-gray-700">🔍 Search</label>
-            <div className="mt-3 flex flex-col gap-2">
-              <select
-                value={filterField}
-                onChange={(e) => {
-                  setFilterField(e.target.value);
-                  setSearchQuery('');
-                  setHighlightedIndex(-1);
-                }}
-                className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
-              >
-                <option value="firmName">Firm Name</option>
-                <option value="anyName">Any Name (All Contacts)</option>
-                <option value="anyNumber">Any Number (All Contacts)</option>
-                <option value="gstNo">GST Number</option>
-                <option value="accountContactName">Account Name</option>
-                <option value="accountContactNumber">Account Number</option>
-
-              </select>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">🔍</span>
-                <input
-                  type="text"
-                  placeholder={`Search by ${
-                    filterField === 'firmName' ? 'firm name'
-                    : filterField === 'anyName' ? 'any contact name'
-                    : filterField === 'anyNumber' ? 'any contact number'
-                    : filterField === 'gstNo' ? 'GST number'
-                    : filterField === 'accountContactName' ? 'account name'
-                    : filterField === 'accountContactNumber' ? 'account number'
-                    : filterField === 'city' ? 'city'
-                    : 'created by'
-                  }...`}
-                  value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); setHighlightedIndex(-1); }}
-                  onFocus={() => setShowDropdown(true)}
-                  onBlur={() => setShowDropdown(false)}
-                  onKeyDown={(e) => {
-                    if (!showDropdown || filteredOptions.length === 0) return;
-                    if (e.key === 'ArrowDown') {
-                      e.preventDefault();
-                      setHighlightedIndex(i => Math.min(i + 1, filteredOptions.length - 1));
-                    } else if (e.key === 'ArrowUp') {
-                      e.preventDefault();
-                      setHighlightedIndex(i => Math.max(i - 1, 0));
-                    } else if (e.key === 'Enter') {
-                      e.preventDefault();
-                      const idx = highlightedIndex >= 0 ? highlightedIndex : 0;
-                      setSearchQuery(filteredOptions[idx]);
-                      setShowDropdown(false);
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-4">
+            {/* Left half: Search + City & Area */}
+            <div className="flex gap-4 w-1/2">
+              <div className="bg-white p-4 rounded-xl border border-gray-200 flex-1">
+                <label className="text-sm font-medium text-gray-700">🔍 Search</label>
+                <div className="mt-3 flex flex-col gap-2">
+                  <select
+                    value={filterField}
+                    onChange={(e) => {
+                      setFilterField(e.target.value);
+                      setSearchQuery('');
                       setHighlightedIndex(-1);
-                    } else if (e.key === 'Tab' && filteredOptions.length === 1) {
-                      e.preventDefault();
-                      setSearchQuery(filteredOptions[0]);
-                      setShowDropdown(false);
-                      setHighlightedIndex(-1);
-                    } else if (e.key === 'Escape') {
-                      setShowDropdown(false);
-                      setHighlightedIndex(-1);
-                    }
-                  }}
-                  className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xl transition-colors"
+                    }}
+                    className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
                   >
-                    ×
-                  </button>
-                )}
-                {showDropdown && filteredOptions.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {filteredOptions.map((option, index) => (
-                      <div
-                        key={index}
-                        onMouseDown={(e) => {
+                    <option value="firmName">Firm Name</option>
+                    <option value="anyName">Any Name (All Contacts)</option>
+                    <option value="anyNumber">Any Number (All Contacts)</option>
+                    <option value="gstNo">GST Number</option>
+                    <option value="accountContactName">Account Name</option>
+                    <option value="accountContactNumber">Account Number</option>
+                  </select>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">🔍</span>
+                    <input
+                      type="text"
+                      placeholder={`Search by ${
+                        filterField === 'firmName' ? 'firm name'
+                        : filterField === 'anyName' ? 'any contact name'
+                        : filterField === 'anyNumber' ? 'any contact number'
+                        : filterField === 'gstNo' ? 'GST number'
+                        : filterField === 'accountContactName' ? 'account name'
+                        : filterField === 'accountContactNumber' ? 'account number'
+                        : filterField === 'city' ? 'city'
+                        : 'created by'
+                      }...`}
+                      value={searchQuery}
+                      onChange={(e) => { setSearchQuery(e.target.value); setHighlightedIndex(-1); }}
+                      onFocus={() => setShowDropdown(true)}
+                      onBlur={() => setShowDropdown(false)}
+                      onKeyDown={(e) => {
+                        if (!showDropdown || filteredOptions.length === 0) return;
+                        if (e.key === 'ArrowDown') {
                           e.preventDefault();
-                          setSearchQuery(option);
+                          setHighlightedIndex(i => Math.min(i + 1, filteredOptions.length - 1));
+                        } else if (e.key === 'ArrowUp') {
+                          e.preventDefault();
+                          setHighlightedIndex(i => Math.max(i - 1, 0));
+                        } else if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const idx = highlightedIndex >= 0 ? highlightedIndex : 0;
+                          setSearchQuery(filteredOptions[idx]);
                           setShowDropdown(false);
                           setHighlightedIndex(-1);
-                        }}
-                        onMouseEnter={() => setHighlightedIndex(index)}
-                        className={`px-4 py-2 cursor-pointer text-sm text-gray-700 border-b border-gray-100 last:border-b-0 ${
-                          index === highlightedIndex ? 'bg-blue-100' : 'hover:bg-blue-50'
-                        }`}
+                        } else if (e.key === 'Tab' && filteredOptions.length === 1) {
+                          e.preventDefault();
+                          setSearchQuery(filteredOptions[0]);
+                          setShowDropdown(false);
+                          setHighlightedIndex(-1);
+                        } else if (e.key === 'Escape') {
+                          setShowDropdown(false);
+                          setHighlightedIndex(-1);
+                        }
+                      }}
+                      className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xl transition-colors"
                       >
-                        {option}
+                        ×
+                      </button>
+                    )}
+                    {showDropdown && filteredOptions.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {filteredOptions.map((option, index) => (
+                          <div
+                            key={index}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setSearchQuery(option);
+                              setShowDropdown(false);
+                              setHighlightedIndex(-1);
+                            }}
+                            onMouseEnter={() => setHighlightedIndex(index)}
+                            className={`px-4 py-2 cursor-pointer text-sm text-gray-700 border-b border-gray-100 last:border-b-0 ${
+                              index === highlightedIndex ? 'bg-blue-100' : 'hover:bg-blue-50'
+                            }`}
+                          >
+                            {option}
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-xl border border-gray-200 flex-1">
+                <label className="text-sm font-medium text-gray-700">🏙️ City & Area</label>
+                <div className="mt-3 flex flex-col gap-3">
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 mb-2">City</p>
+                    <select
+                      value={cityFilter}
+                      onChange={(e) => {
+                        setCityFilter(e.target.value);
+                        if (e.target.value === 'ALL') setAreaFilter('ALL');
+                      }}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
+                    >
+                      <option value="ALL">All Cities</option>
+                      {uniqueCities.map((city, index) => (
+                        <option key={index} value={city}>{city}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 mb-2">Area</p>
+                    <select
+                      value={areaFilter}
+                      onChange={(e) => setAreaFilter(e.target.value)}
+                      disabled={cityFilter === 'ALL'}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    >
+                      <option value="ALL">{cityFilter === 'ALL' ? 'Select city first' : 'All Areas'}</option>
+                      {uniqueAreas.map((area, index) => (
+                        <option key={index} value={area}>{area}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right half: dropdown above + Sales Executive + Date & Filter */}
+            <div className="flex flex-col gap-3 w-1/2">
+              {(user?.role === 'HOST' || user?.role === 'SALES_ADMIN') && (
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">Visited By / Filter</label>
+                  <select
+                    value={entryFilter}
+                    onChange={(e) => setEntryFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="ALL">All</option>
+                    <option value="CREATED_BY">Created By</option>
+                    <option value="VISITED_BY">Visited By</option>
+                    <option value="CALLED_BY">Called By</option>
+                  </select>
+                </div>
+              )}
+              <div className="flex gap-4 flex-1">
+                {(user?.role === 'HOST' || user?.role === 'SALES_ADMIN') && (
+                  <div className="bg-white p-4 rounded-xl border border-gray-200 flex-1">
+                    <label className="text-sm font-medium text-gray-700">👤 Sales Executive</label>
+                    <select
+                      value={salesExecutiveFilter}
+                      onChange={(e) => setSalesExecutiveFilter(e.target.value)}
+                      className="mt-3 w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
+                    >
+                      <option value="ALL">All Sales Executives</option>
+                      {salesExecutives.map((executive, index) => (
+                        <option key={index} value={executive}>{executive}</option>
+                      ))}
+                    </select>
                   </div>
                 )}
+                <div className="bg-white p-4 rounded-xl border border-gray-200 flex-1">
+                  <label className="text-sm font-medium text-gray-700">📅 Date & Filter</label>
+                  <div className="mt-3 flex flex-col gap-3">
+                    <div className="flex flex-wrap items-center gap-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                      <input
+                        type="date"
+                        value={dateRange.startDate}
+                        onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                        className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[120px]"
+                      />
+                      <span className="text-gray-400 text-sm">to</span>
+                      <input
+                        type="date"
+                        value={dateRange.endDate}
+                        onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                        className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[120px]"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-gray-200">
-            <label className="text-sm font-medium text-gray-700">🏙️ City & Area</label>
-            <div className="mt-3 flex flex-col gap-3">
-              <div>
-                <p className="text-xs font-medium text-gray-500 mb-2">City</p>
-                <select
-                  value={cityFilter}
-                  onChange={(e) => {
-                    setCityFilter(e.target.value);
-                    // Reset area filter when city changes
-                    if (e.target.value === 'ALL') {
-                      setAreaFilter('ALL');
-                    }
-                  }}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
-                >
-                  <option value="ALL">All Cities</option>
-                  {uniqueCities.map((city, index) => (
-                    <option key={index} value={city}>{city}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-gray-500 mb-2">Area</p>
-                <select
-                  value={areaFilter}
-                  onChange={(e) => setAreaFilter(e.target.value)}
-                  disabled={cityFilter === 'ALL'}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
-                >
-                  <option value="ALL">{cityFilter === 'ALL' ? 'Select city first' : 'All Areas'}</option>
-                  {uniqueAreas.map((area, index) => (
-                    <option key={index} value={area}>{area}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {(user?.role === 'HOST' || user?.role === 'SALES_ADMIN') && (
-            <div className="bg-white p-4 rounded-xl border border-gray-200">
-              <label className="text-sm font-medium text-gray-700">👤 Sales Executive</label>
-              <select
-                value={salesExecutiveFilter}
-                onChange={(e) => setSalesExecutiveFilter(e.target.value)}
-                className="mt-3 w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
-              >
-                <option value="ALL">All Sales Executives</option>
-                {salesExecutives.map((executive, index) => (
-                  <option key={index} value={executive}>{executive}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <div className="bg-white p-4 rounded-xl border border-gray-200">
-            <label className="text-sm font-medium text-gray-700">📅 Date & Filter</label>
-            <div className="mt-3 flex flex-col gap-3">
-              <select
-                value={entryFilter}
-                onChange={(e) => setEntryFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
-              >
-                <option value="ALL">All</option>
-                <option value="CREATED_BY">Created By</option>
-                <option value="VISITED_BY">Visited By</option>
-                <option value="CALLED_BY">Called By</option>
-              </select>
-              <div className="flex flex-wrap items-center gap-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                <input
-                  type="date"
-                  value={dateRange.startDate}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-                  className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[120px]"
-                />
-                <span className="text-gray-400 text-sm">to</span>
-                <input
-                  type="date"
-                  value={dateRange.endDate}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-                  className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[120px]"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="sm:col-span-2 lg:col-span-4 flex justify-end">
-            {(searchQuery || cityFilter !== 'ALL' || areaFilter !== 'ALL' || salesExecutiveFilter !== 'ALL' || dateRange.startDate || dateRange.endDate) && (
+          <div className="flex justify-end">
+            {(searchQuery || cityFilter !== 'ALL' || areaFilter !== 'ALL' || salesExecutiveFilter !== 'ALL' || entryFilter !== 'ALL' || dateRange.startDate || dateRange.endDate) && (
               <button
                 onClick={() => {
                   setSearchQuery('');
                   setCityFilter('ALL');
                   setAreaFilter('ALL');
                   setSalesExecutiveFilter('ALL');
+                  setEntryFilter('ALL');
                   setDateRange({ startDate: '', endDate: '' });
                 }}
                 className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap"
@@ -567,6 +602,10 @@ const SalesDashboard = () => {
             onCallClick={handleCallClick}
             onDetailsClick={handleDetailsClick}
             onEditClick={handleEditClick}
+            salesLogs={salesLogs}
+            salesExecutiveFilter={salesExecutiveFilter}
+            dateRange={dateRange}
+            entryFilter={entryFilter}
           />
         )}
       </div>
