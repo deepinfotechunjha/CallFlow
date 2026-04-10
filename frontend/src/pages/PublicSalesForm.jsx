@@ -202,13 +202,13 @@ const PublicSalesForm = () => {
 
       if (response.ok && data.success) {
         setIsSubmitted(true);
-        toast.success('Sales entry submitted successfully!');
+        toast.success('Dealer data submitted successfully!');
       } else {
-        toast.error(data.error || 'Failed to submit sales entry');
+        toast.error(data.error || 'Failed to submit dealer data');
       }
     } catch (error) {
       console.error('Submit sales entry error:', error);
-      toast.error('Failed to submit sales entry. Please try again.');
+      toast.error('Failed to submit dealer data. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -259,9 +259,9 @@ const PublicSalesForm = () => {
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">✅</span>
           </div>
-          <h1 className="text-xl font-bold text-gray-800 mb-2">Sales Entry Submitted Successfully!</h1>
+          <h1 className="text-xl font-bold text-gray-800 mb-2">Dealer Data Submitted Successfully!</h1>
           <p className="text-gray-600 mb-4">
-            Your sales entry has been submitted and will be processed by our team.
+            Your dealer data has been submitted and will be processed by our team.
           </p>
           <p className="text-sm text-gray-500">
             This link has been deactivated and cannot be used again.
@@ -276,9 +276,9 @@ const PublicSalesForm = () => {
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-6 text-white">
-            <h1 className="text-2xl font-bold mb-2">Submit Sales Entry</h1>
+            <h1 className="text-2xl font-bold mb-2">Submit Dealer Data</h1>
             <p className="text-purple-100">
-              Please fill out the form below to submit your sales entry.
+              Please fill out the form below to submit your dealer data.
             </p>
           </div>
 
@@ -298,7 +298,7 @@ const PublicSalesForm = () => {
                     onChange={handleChange}
                     required
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    placeholder="Enter firm name"
+                    placeholder="Enter dealer / firm name"
                   />
                 </div>
 
@@ -678,7 +678,7 @@ const PublicSalesForm = () => {
                   Submitting...
                 </span>
               ) : (
-                'Submit Sales Entry'
+                'Submit Dealer Data'
               )}
             </button>
           </form>
