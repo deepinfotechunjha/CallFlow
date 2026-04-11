@@ -37,25 +37,18 @@ const SalesDashboard = () => {
   });
 
   const { user, users, fetchUsers } = useAuthStore();
-  const { entries, fetchEntries, loading } = useSalesStore();
+  const { entries, fetchEntries, fetchSalesLogs, salesLogs, loading } = useSalesStore();
   const [salesUsernames, setSalesUsernames] = useState([]);
-  const [salesLogs, setSalesLogs] = useState([]);
 
   useEffect(() => {
     fetchEntries();
-    const token = useAuthStore.getState().token;
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-    const headers = { 'Authorization': `Bearer ${token}` };
-
-    // Fetch logs for accurate visited/called by filtering
-    fetch(`${baseUrl}/sales-logs`, { headers })
-      .then(r => r.json())
-      .then(data => { if (Array.isArray(data)) setSalesLogs(data); })
-      .catch(() => {});
+    fetchSalesLogs();
 
     if (user?.role === 'HOST' || user?.role === 'SALES_ADMIN') {
       fetchUsers();
-      fetch(`${baseUrl}/users`, { headers })
+      const token = useAuthStore.getState().token;
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      fetch(`${baseUrl}/users`, { headers: { 'Authorization': `Bearer ${token}` } })
         .then(r => r.json())
         .then(data => {
           if (Array.isArray(data)) {
@@ -68,7 +61,7 @@ const SalesDashboard = () => {
         })
         .catch(() => {});
     }
-  }, [fetchEntries, fetchUsers, user?.role]);
+  }, []);
 
   // Remove the separate date range refetch - all filtering is now client-side
 

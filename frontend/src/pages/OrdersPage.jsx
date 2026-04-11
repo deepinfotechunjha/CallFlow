@@ -106,12 +106,12 @@ const OrdersPage = () => {
   }, []);
 
   useEffect(() => {
+    // Always fetch all orders; client-side filtering handles status
     const filters = {};
-    if (statusFilter !== 'ALL') filters.status = statusFilter;
     if (dateRange.startDate) filters.startDate = dateRange.startDate;
     if (dateRange.endDate) filters.endDate = dateRange.endDate;
     fetchOrders(filters);
-  }, [statusFilter, dateRange.startDate, dateRange.endDate]);
+  }, [dateRange.startDate, dateRange.endDate]);
 
   const openModal = (type, order) => {
     setSelectedOrder(order);
@@ -138,6 +138,7 @@ const OrdersPage = () => {
 
   const filteredOrders = orders.filter(o => {
     if (PERSONAL_ORDER_ROLES.includes(user?.role) && o.createdBy !== user?.username) return false;
+    if (statusFilter !== 'ALL' && o.status !== statusFilter) return false;
     if (createdByFilter !== 'ALL' && o.createdBy !== createdByFilter) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
