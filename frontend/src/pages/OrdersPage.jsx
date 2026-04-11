@@ -20,7 +20,7 @@ const STATUS_BUTTONS = [
   { value: 'PENDING', label: 'Pending' },
   { value: 'ON_HOLD', label: 'On Hold' },
   { value: 'BILLED', label: 'Billed' },
-  { value: 'COMPLETED', label: 'Completed' },
+  { value: 'COMPLETED', label: 'Transported' },
   { value: 'CANCELLED', label: 'Cancelled' },
 ];
 
@@ -30,6 +30,14 @@ const STATUS_BADGE = {
   BILLED:    'bg-blue-100 text-blue-700',
   COMPLETED: 'bg-green-100 text-green-700',
   CANCELLED: 'bg-red-100 text-red-700',
+};
+
+const STATUS_LABEL = {
+  PENDING:   'Pending',
+  ON_HOLD:   'On Hold',
+  BILLED:    'Billed',
+  COMPLETED: 'Transported',
+  CANCELLED: 'Cancelled',
 };
 
 const formatDate = (d) =>
@@ -266,7 +274,7 @@ const OrdersPage = () => {
         </div>
         <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-center">
           <p className="text-xl font-bold text-green-700">{stats.completed}</p>
-          <p className="text-xs text-green-600 mt-0.5">Completed</p>
+          <p className="text-xs text-green-600 mt-0.5">Transported</p>
         </div>
         <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
           <p className="text-xl font-bold text-red-700">{stats.cancelled}</p>
@@ -384,7 +392,7 @@ const OrdersPage = () => {
                         <td className="px-4 py-3 text-sm text-gray-600">{order.calledBy || '—'}</td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_BADGE[order.status] || 'bg-gray-100 text-gray-600'}`}>
-                            {order.status.replace('_', ' ')}
+                            {STATUS_LABEL[order.status] || order.status.replace('_', ' ')}
                           </span>
                           {order.holds?.length > 0 && (
                             <button
@@ -436,7 +444,7 @@ const OrdersPage = () => {
                               <span className="mr-4">🧾 <strong>Billing:</strong> {order.billingRemark} — {order.billedBy} @ {formatDate(order.billedAt)}</span>
                             )}
                             {order.status === 'COMPLETED' && order.completionRemark && (
-                              <span>✅ <strong>Completion:</strong> {order.completionRemark} — {order.completedBy} @ {formatDate(order.completedAt)}</span>
+                              <span>🚚 <strong>Transport:</strong> {order.completionRemark} — {order.completedBy} @ {formatDate(order.completedAt)}</span>
                             )}
                           </td>
                         </tr>
@@ -482,7 +490,7 @@ const OrdersPage = () => {
                   <p className="text-xs text-gray-500">{order.salesEntry?.city}{order.salesEntry?.area ? ` · ${order.salesEntry.area}` : ''}</p>
                 </div>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_BADGE[order.status] || ''}`}>
-                  {order.status.replace('_', ' ')}
+                  {STATUS_LABEL[order.status] || order.status.replace('_', ' ')}
                 </span>
               </div>
 
@@ -516,7 +524,7 @@ const OrdersPage = () => {
                 <div className="bg-blue-50 rounded-lg p-2 mb-2 text-xs text-gray-600">
                   🧾 <strong>Billing:</strong> {order.billingRemark} — {order.billedBy}
                   {order.status === 'COMPLETED' && order.completionRemark && (
-                    <div className="mt-1">✅ <strong>Completion:</strong> {order.completionRemark} — {order.completedBy}</div>
+                    <div className="mt-1">🚚 <strong>Transport:</strong> {order.completionRemark} — {order.completedBy}</div>
                   )}
                 </div>
               )}
@@ -598,7 +606,7 @@ const ActionButtons = ({ order, canAction, canCancel, onHold, onBill, onComplete
       )}
       {canAction && isBilled && (
         <button onClick={onComplete} className="px-2.5 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 text-xs font-medium">
-          ✅ Complete
+          🚚 Transport
         </button>
       )}
       {canCancel && !isCancelled && !isCompleted && (
