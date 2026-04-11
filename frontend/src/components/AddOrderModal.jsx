@@ -13,6 +13,7 @@ const AddOrderModal = ({ onClose }) => {
   const [selectedFirm, setSelectedFirm] = useState(null);
   const [orderRemark, setOrderRemark] = useState('');
   const [calledBy, setCalledBy] = useState('');
+  const [dispatchFrom, setDispatchFrom] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmCall, setConfirmCall] = useState(null); // { name, number }
 
@@ -56,6 +57,7 @@ const AddOrderModal = ({ onClose }) => {
     setStep(1);
     setOrderRemark('');
     setCalledBy('');
+    setDispatchFrom([]);
   };
 
   const handleConfirm = async () => {
@@ -65,7 +67,8 @@ const AddOrderModal = ({ onClose }) => {
       await createOrder({
         salesEntryId: selectedFirm.id,
         orderRemark: orderRemark.trim(),
-        calledBy: canSetCalledBy && calledBy ? calledBy : undefined
+        calledBy: canSetCalledBy && calledBy ? calledBy : undefined,
+        dispatchFrom: dispatchFrom.join(',')
       });
       onClose();
     } catch {
@@ -230,6 +233,42 @@ const AddOrderModal = ({ onClose }) => {
                 </div>
               )}
 
+              {/* Dispatch From */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Dispatch From <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {['UNJHA', 'MEHSANA'].map(loc => {
+                    const selected = dispatchFrom.includes(loc);
+                    return (
+                      <button
+                        key={loc}
+                        type="button"
+                        onClick={() => setDispatchFrom(prev =>
+                          selected ? prev.filter(x => x !== loc) : [...prev, loc]
+                        )}
+                        className={`flex items-center justify-center gap-2 py-3 rounded-lg border-2 text-sm font-semibold transition-all ${
+                          selected
+                            ? 'border-blue-600 bg-blue-50 text-blue-700'
+                            : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:bg-gray-100'
+                        }`}
+                      >
+                        <span className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                          selected ? 'border-blue-600 bg-blue-600' : 'border-gray-400'
+                        }`}>
+                          {selected && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                        </span>
+                        📦 {loc}
+                      </button>
+                    );
+                  })}
+                </div>
+                {dispatchFrom.length === 0 && (
+                  <p className="text-xs text-red-500 mt-1">Please select at least one dispatch location</p>
+                )}
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={handleBack}
@@ -240,7 +279,7 @@ const AddOrderModal = ({ onClose }) => {
                 </button>
                 <button
                   onClick={handleConfirm}
-                  disabled={!orderRemark.trim() || isSubmitting}
+                  disabled={!orderRemark.trim() || dispatchFrom.length === 0 || isSubmitting}
                   className="flex-1 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-green-300 text-sm font-medium"
                 >
                   {isSubmitting ? 'Creating...' : '✓ Confirm Order'}

@@ -281,6 +281,7 @@ model Order {
   cancelledBy      String?     @db.VarChar(50)
   cancelledAt      DateTime?   @db.Timestamptz(6)
   revertRemark     String?
+  dispatchFrom     String?     @db.VarChar(50)
   creator          User?       @relation(fields: [createdById], references: [id])
   salesEntry       SalesEntry  @relation(fields: [salesEntryId], references: [id])
   holds            OrderHold[]

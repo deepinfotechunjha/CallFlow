@@ -390,7 +390,18 @@ const OrdersPage = () => {
                         <td className="px-4 py-3 text-sm text-gray-700 max-w-xs">
                           <p className="truncate" title={order.orderRemark}>{order.orderRemark}</p>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{order.calledBy || '—'}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">
+                          <div>{order.calledBy || '—'}</div>
+                          {order.dispatchFrom && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {order.dispatchFrom.split(',').map(loc => (
+                                <span key={loc} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                                  📦 {loc}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_BADGE[order.status] || 'bg-gray-100 text-gray-600'}`}>
                             {STATUS_LABEL[order.status] || order.status.replace('_', ' ')}
@@ -497,6 +508,15 @@ const OrdersPage = () => {
 
               <p className="text-sm text-gray-700 mb-1"><span className="font-medium">Remark:</span> {order.orderRemark}</p>
               {order.calledBy && <p className="text-xs text-gray-500 mb-1">Called by: {order.calledBy}</p>}
+              {order.dispatchFrom && (
+                <div className="flex flex-wrap gap-1 mb-1">
+                  {order.dispatchFrom.split(',').map(loc => (
+                    <span key={loc} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                      📦 {loc}
+                    </span>
+                  ))}
+                </div>
+              )}
               <p className="text-xs text-gray-500 mb-3">By {order.createdBy} · {formatDate(order.createdAt)}</p>
 
               {order.holds?.length > 0 && (
@@ -594,7 +614,7 @@ const ActionButtons = ({ order, canAction, canCancel, onHold, onBill, onComplete
   const isBilled = status === 'BILLED';
 
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex gap-1.5">
       {canAction && !isCancelled && !isCompleted && !isBilled && (
         <button onClick={onHold} className="px-2.5 py-1.5 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 text-xs font-medium">
           ⏸ Hold
