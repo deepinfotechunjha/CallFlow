@@ -52,6 +52,7 @@ const OrdersPage = () => {
   const [createdByFilter, setCreatedByFilter] = useState('ALL');
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
 
   const { orders, loading, fetchOrders, cancelOrder } = useOrderStore();
   const { user, users, fetchUsers } = useAuthStore();
@@ -154,6 +155,22 @@ const OrdersPage = () => {
     return true;
   });
 
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key) {
+      if (sortConfig.direction === 'asc') direction = 'desc';
+      else if (sortConfig.direction === 'desc') direction = null;
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) return '↕️';
+    if (sortConfig.direction === 'asc') return '↑';
+    if (sortConfig.direction === 'desc') return '↓';
+    return '↕️';
+  };
+
   const uniqueCreators = [...new Set(orders.map(o => o.createdBy))].sort();
 
   const stats = {
@@ -173,6 +190,24 @@ const OrdersPage = () => {
   };
 
   const hasFilters = statusFilter !== 'ALL' || createdByFilter !== 'ALL' || dateRange.startDate || dateRange.endDate || searchQuery.trim();
+
+  let sortedOrders = [...filteredOrders];
+  if (sortConfig.key && sortConfig.direction) {
+    sortedOrders.sort((a, b) => {
+      let aVal, bVal;
+      switch (sortConfig.key) {
+        case 'firm': aVal = a.salesEntry?.firmName || ''; bVal = b.salesEntry?.firmName || ''; break;
+        case 'remark': aVal = a.orderRemark || ''; bVal = b.orderRemark || ''; break;
+        case 'calledBy': aVal = a.calledBy || ''; bVal = b.calledBy || ''; break;
+        case 'status': aVal = a.status || ''; bVal = b.status || ''; break;
+        case 'createdBy': aVal = a.createdBy || ''; bVal = b.createdBy || ''; break;
+        case 'date': aVal = new Date(a.createdAt); bVal = new Date(b.createdAt); break;
+        default: return 0;
+      }
+      if (aVal instanceof Date) return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
+      return sortConfig.direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+    });
+  }
 
   return (
     <div className="max-w-7xl mx-auto p-4">
@@ -322,15 +357,20 @@ const OrdersPage = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-gradient-to-r from-blue-600 to-purple-600">
                   <tr>
-                    {['#', 'Firm', 'Order Remark', 'Called By', 'Status', 'Created By', 'Created At', 'Actions'].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap">{h}</th>
-                    ))}
+                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500">#</th>
+                    <th onClick={() => handleSort('firm')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Firm {getSortIcon('firm')}</th>
+                    <th onClick={() => handleSort('remark')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Order Remark {getSortIcon('remark')}</th>
+                    <th onClick={() => handleSort('calledBy')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Called By {getSortIcon('calledBy')}</th>
+                    <th onClick={() => handleSort('status')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Status {getSortIcon('status')}</th>
+                    <th onClick={() => handleSort('createdBy')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Created By {getSortIcon('createdBy')}</th>
+                    <th onClick={() => handleSort('date')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Created At {getSortIcon('date')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {filteredOrders.map(order => (
+                  {sortedOrders.map(order => (
                     <React.Fragment key={order.id}>
                       <tr className={`hover:bg-gray-50 transition-colors ${order.status === 'CANCELLED' ? 'opacity-60' : ''}`}>
                         <td className="px-4 py-3 text-sm text-gray-500">{order.id}</td>
