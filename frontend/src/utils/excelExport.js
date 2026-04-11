@@ -442,17 +442,18 @@ export const exportOrdersToExcel = async (orders) => {
   }
 };
 
-export const exportSalesEntriesToExcel = async (entries) => {
+export const exportSalesEntriesToExcel = async (entries, logs = []) => {
   try {
     if (!entries || entries.length === 0) {
       throw new Error('No data to export');
     }
 
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Sales Entries');
 
-    // Define columns
-    worksheet.columns = [
+    // ── Sheet 1: Sales Entries ──────────────────────────────────────────
+    const ws1 = workbook.addWorksheet('Sales Entries');
+
+    ws1.columns = [
       { header: 'ID', key: 'id', width: 10 },
       { header: 'Firm Name', key: 'firmName', width: 30 },
       { header: 'GST Number', key: 'gstNo', width: 18 },
@@ -478,12 +479,87 @@ export const exportSalesEntriesToExcel = async (entries) => {
       { header: 'Last Activity Date', key: 'lastActivityDate', width: 20 },
       { header: 'Created By', key: 'createdBy', width: 20 },
       { header: 'Created At', key: 'createdAt', width: 20 },
-      { header: 'Updated At', key: 'updatedAt', width: 20 }
+      { header: 'Updated At', key: 'updatedAt', width: 20 },
     ];
 
-    // Add data
+    // Build a map: salesEntryId -> first row number in Sheet 2 for that firm
+    // We'll fill this after building Sheet 2
+    const firmRowMap = {}; // salesEntryId -> Sheet2 row number
+
+    // ── Sheet 2: Visit & Call Logs ──────────────────────────────────────
+    const ws2 = workbook.addWorksheet('Visit & Call Logs');
+
+    ws2.columns = [
+      { header: 'Firm Name', key: 'firmName', width: 30 },
+      { header: 'GST No', key: 'gstNo', width: 18 },
+      { header: 'City', key: 'city', width: 18 },
+      { header: 'Area', key: 'area', width: 18 },
+      { header: 'Log Type', key: 'logType', width: 12 },
+      { header: 'Call Type', key: 'callType', width: 12 },
+      { header: 'Logged By', key: 'loggedBy', width: 18 },
+      { header: 'Logged At', key: 'loggedAt', width: 22 },
+      { header: 'Remark', key: 'remark', width: 40 },
+      { header: 'Latitude', key: 'latitude', width: 15 },
+      { header: 'Longitude', key: 'longitude', width: 15 },
+      { header: 'Location Accuracy (m)', key: 'locationAccuracy', width: 22 },
+    ];
+
+    // Style Sheet 2 header
+    ws2.getRow(1).font = { bold: true };
+    ws2.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD0E8FF' } };
+    ws2.autoFilter = { from: 'A1', to: 'L1' };
+
+    // Group logs by salesEntryId for quick lookup
+    const logsByEntry = {};
+    logs.forEach(log => {
+      if (!logsByEntry[log.salesEntryId]) logsByEntry[log.salesEntryId] = [];
+      logsByEntry[log.salesEntryId].push(log);
+    });
+
+    // Write logs to Sheet 2, grouped by firm (same order as entries)
+    let currentSheet2Row = 2; // row 1 is header
     entries.forEach(entry => {
-      worksheet.addRow({
+      const entryLogs = logsByEntry[entry.id] || [];
+      if (entryLogs.length === 0) return;
+
+      firmRowMap[entry.id] = currentSheet2Row;
+
+      entryLogs.forEach(log => {
+        ws2.addRow({
+          firmName: entry.firmName || log.salesEntry?.firmName || '',
+          gstNo: entry.gstNo || log.salesEntry?.gstNo || '',
+          city: entry.city || log.salesEntry?.city || '',
+          area: entry.area || log.salesEntry?.area || '',
+          logType: log.logType || '',
+          callType: log.callType || '',
+          loggedBy: log.loggedBy || '',
+          loggedAt: log.loggedAt ? new Date(log.loggedAt).toLocaleString() : '',
+          remark: log.remark || '',
+          latitude: log.latitude ?? '',
+          longitude: log.longitude ?? '',
+          locationAccuracy: log.locationAccuracy ?? '',
+        });
+        currentSheet2Row++;
+      });
+    });
+
+    // Style Sheet 2 data rows alternating
+    for (let r = 2; r < currentSheet2Row; r++) {
+      const row = ws2.getRow(r);
+      const logType = row.getCell('logType').value;
+      row.fill = {
+        type: 'pattern', pattern: 'solid',
+        fgColor: { argb: logType === 'VISIT' ? 'FFE8F5E9' : 'FFFFF3E0' }
+      };
+    }
+
+    // ── Now write Sheet 1 rows with hyperlinks ──────────────────────────
+    entries.forEach(entry => {
+      const visitCount = entry.visitCount || 0;
+      const callCount = entry.callCount || 0;
+      const sheet2Row = firmRowMap[entry.id];
+
+      const rowData = {
         id: entry.id || '',
         firmName: entry.firmName || '',
         gstNo: entry.gstNo || '',
@@ -500,30 +576,44 @@ export const exportSalesEntriesToExcel = async (entries) => {
         area: entry.area || '',
         city: entry.city || '',
         pincode: entry.pincode || '',
-        visitCount: entry.visitCount || 0,
-        callCount: entry.callCount || 0,
-        totalLogs: (entry.visitCount || 0) + (entry.callCount || 0),
+        visitCount,
+        callCount,
+        totalLogs: visitCount + callCount,
         delayCount: entry.delayCount || 0,
         delayedBy: entry.delayedBy ? entry.delayedBy.join(', ') : '',
         reminderDate: entry.reminderDate ? new Date(entry.reminderDate).toLocaleString() : '',
         lastActivityDate: entry.lastActivityDate ? new Date(entry.lastActivityDate).toLocaleString() : '',
         createdBy: entry.createdBy || '',
         createdAt: entry.createdAt ? new Date(entry.createdAt).toLocaleString() : '',
-        updatedAt: entry.updatedAt ? new Date(entry.updatedAt).toLocaleString() : ''
-      });
+        updatedAt: entry.updatedAt ? new Date(entry.updatedAt).toLocaleString() : '',
+      };
+
+      const addedRow = ws1.addRow(rowData);
+
+      // Add hyperlinks on Visit Count and Call Count cells if logs exist
+      if (sheet2Row) {
+        const visitCell = addedRow.getCell('visitCount');
+        visitCell.value = {
+          text: String(visitCount),
+          hyperlink: `#'Visit & Call Logs'!A${sheet2Row}`,
+        };
+        visitCell.font = { color: { argb: 'FF0563C1' }, underline: true };
+
+        const callCell = addedRow.getCell('callCount');
+        callCell.value = {
+          text: String(callCount),
+          hyperlink: `#'Visit & Call Logs'!A${sheet2Row}`,
+        };
+        callCell.font = { color: { argb: 'FF0563C1' }, underline: true };
+      }
     });
 
-    // Style header row
-    worksheet.getRow(1).font = { bold: true };
-    worksheet.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFE0E0E0' }
-    };
+    // Style Sheet 1 header
+    ws1.getRow(1).font = { bold: true };
+    ws1.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
 
     const fileName = `Sales_Entries_Export_${new Date().toISOString().split('T')[0]}.xlsx`;
     const buffer = await workbook.xlsx.writeBuffer();
-    
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -531,7 +621,7 @@ export const exportSalesEntriesToExcel = async (entries) => {
     a.download = fileName;
     a.click();
     window.URL.revokeObjectURL(url);
-    
+
     return true;
   } catch (error) {
     console.error('Export error:', error);
