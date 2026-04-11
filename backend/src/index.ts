@@ -3935,13 +3935,14 @@ app.post('/orders', authMiddleware, async (req: Request, res: Response) => {
     if (!req.user || !ORDER_PAGE_ROLES.includes(req.user.role)) {
         return res.status(403).json({ error: 'Insufficient permissions' });
     }
-    const { salesEntryId, orderRemark, calledBy } = req.body as {
+    const { salesEntryId, orderRemark, calledBy, dispatchFrom } = req.body as {
         salesEntryId: number;
         orderRemark: string;
         calledBy?: string;
+        dispatchFrom?: string;
     };
-    if (!salesEntryId || !orderRemark || !orderRemark.trim()) {
-        return res.status(400).json({ error: 'salesEntryId and orderRemark are required' });
+    if (!salesEntryId || !orderRemark || !orderRemark.trim() || !dispatchFrom || !dispatchFrom.trim()) {
+        return res.status(400).json({ error: 'salesEntryId, orderRemark and dispatchFrom are required' });
     }
     try {
         const entry = await prisma.salesEntry.findUnique({ where: { id: Number(salesEntryId) } });
@@ -3952,6 +3953,7 @@ app.post('/orders', authMiddleware, async (req: Request, res: Response) => {
                 salesEntryId: Number(salesEntryId),
                 orderRemark: orderRemark.trim(),
                 calledBy: ORDER_ACTION_ROLES.includes(req.user.role) ? (calledBy || null) : null,
+                dispatchFrom: dispatchFrom || null,
                 status: 'PENDING',
                 createdBy: req.user.username,
                 createdById: req.user.id

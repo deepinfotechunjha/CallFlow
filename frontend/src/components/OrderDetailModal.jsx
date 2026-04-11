@@ -61,6 +61,18 @@ const OrderDetailModal = ({ order, onClose }) => {
             <Row label="Order #" value={`#${order.id}`} />
             <Row label="Order Remark" value={order.orderRemark} />
             <Row label="Called By" value={order.calledBy} />
+            {order.dispatchFrom && (
+              <div className="flex gap-2 text-sm">
+                <span className="font-medium text-gray-600 min-w-[130px]">Dispatch From:</span>
+                <div className="flex flex-wrap gap-1">
+                  {order.dispatchFrom.split(',').map(loc => (
+                    <span key={loc} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                      📦 {loc}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             <Row label="Created By" value={order.createdBy} />
             <Row label="Created At" value={formatDate(order.createdAt)} />
           </div>
