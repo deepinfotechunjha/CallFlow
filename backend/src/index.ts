@@ -3629,6 +3629,22 @@ app.get('/sales-logs', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', '
     }
 });
 
+app.get('/sales-logs/full', authMiddleware, requireRole(['HOST', 'SALES_ADMIN']), async (_req: Request, res: Response) => {
+    try {
+        const logs = await prisma.salesLog.findMany({
+            include: {
+                salesEntry: {
+                    select: { firmName: true, city: true, area: true, gstNo: true }
+                }
+            },
+            orderBy: { loggedAt: 'desc' }
+        });
+        res.json(logs);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
 // Sales Executive endpoints
 app.get('/sales-entries', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (req: Request, res: Response) => {
     try {

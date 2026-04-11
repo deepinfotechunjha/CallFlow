@@ -265,8 +265,15 @@ const SalesDashboard = () => {
           toast.error('No data to export');
           return;
         }
-        
-        await exportSalesEntriesToExcel(dataToExport);
+
+        // Fetch full logs for Sheet 2
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+        const logsRes = await fetch(`${baseUrl}/sales-logs/full`, {
+          headers: { 'Authorization': `Bearer ${useAuthStore.getState().token}` }
+        });
+        const fullLogs = logsRes.ok ? await logsRes.json() : [];
+
+        await exportSalesEntriesToExcel(dataToExport, fullLogs);
         toast.success(`Successfully exported ${dataToExport.length} sales entries to Excel`);
         setShowExportModal(false);
       } else {
