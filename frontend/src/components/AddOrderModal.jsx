@@ -18,7 +18,7 @@ const AddOrderModal = ({ onClose }) => {
 
   const { searchFirms, createOrder } = useOrderStore();
   const { user, users, fetchUsers } = useAuthStore();
-  const modalRef = useClickOutside(onClose);
+  const modalRef = useClickOutside(confirmCall ? () => {} : onClose);
   const searchTimeout = useRef(null);
 
   const canSetCalledBy = CALLED_BY_ROLES.includes(user?.role);
@@ -254,7 +254,7 @@ const AddOrderModal = ({ onClose }) => {
       {/* Call confirmation dialog */}
       {confirmCall && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-4" onClick={e => e.stopPropagation()}>
-          <div className="bg-white rounded-xl p-6 max-w-xs w-full shadow-xl">
+          <div className="bg-white rounded-xl p-6 max-w-xs w-full shadow-xl" onClick={e => e.stopPropagation()}>
             <p className="text-base font-bold text-gray-800 mb-1">📞 Are you sure you want to call?</p>
             <p className="text-sm text-gray-700 mb-5 font-medium">{confirmCall.name} ({confirmCall.number})</p>
             <div className="flex gap-3">
