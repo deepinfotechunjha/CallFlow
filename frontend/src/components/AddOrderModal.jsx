@@ -14,6 +14,7 @@ const AddOrderModal = ({ onClose }) => {
   const [orderRemark, setOrderRemark] = useState('');
   const [calledBy, setCalledBy] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmCall, setConfirmCall] = useState(null); // { name, number }
 
   const { searchFirms, createOrder } = useOrderStore();
   const { user, users, fetchUsers } = useAuthStore();
@@ -77,10 +78,23 @@ const AddOrderModal = ({ onClose }) => {
       <div ref={modalRef} className="bg-white rounded-xl w-full max-w-2xl shadow-xl min-h-[520px]">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b">
-          <h3 className="text-lg font-bold text-gray-800">
-            {step === 1 ? '🔍 Search Firm' : '📋 Review & Confirm Order'}
-          </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+          <div>
+            {step === 1 ? (
+              <h3 className="text-lg font-bold text-gray-800">🔍 Search Firm</h3>
+            ) : (
+              <>
+                <h3 className="text-xl font-bold text-gray-800">{selectedFirm?.firmName}</h3>
+                <p className="text-sm text-gray-500 mt-0.5 truncate max-w-lg">
+                  {[selectedFirm?.gstNo, selectedFirm?.city && selectedFirm?.area ? `${selectedFirm.city} · ${selectedFirm.area}` : selectedFirm?.city].filter(Boolean).join(' · ')}
+                  {selectedFirm?.contactPerson1Number && <> · {selectedFirm.contactPerson1Number} <button type="button" onClick={() => setConfirmCall({ name: selectedFirm.contactPerson1Name || 'Contact 1', number: selectedFirm.contactPerson1Number })} className="inline text-green-600 hover:text-green-800">📞</button></>}
+                  {selectedFirm?.contactPerson2Number && <> · {selectedFirm.contactPerson2Number} <button type="button" onClick={() => setConfirmCall({ name: selectedFirm.contactPerson2Name || 'Contact 2', number: selectedFirm.contactPerson2Number })} className="inline text-green-600 hover:text-green-800">📞</button></>}
+                </p>
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+          </div>
         </div>
 
         <div className="p-5">
@@ -137,10 +151,24 @@ const AddOrderModal = ({ onClose }) => {
                     {selectedFirm.panNo && <span><span className="font-medium text-gray-500">PAN:</span> {selectedFirm.panNo}</span>}
                     {(selectedFirm.city || selectedFirm.area) && <span><span className="font-medium text-gray-500">Location:</span> {selectedFirm.city}{selectedFirm.area ? ` · ${selectedFirm.area}` : ''}</span>}
                     {selectedFirm.address && <span><span className="font-medium text-gray-500">Address:</span> {selectedFirm.address}</span>}
-                    {selectedFirm.contactPerson1Name && <span><span className="font-medium text-gray-500">Contact 1:</span> {selectedFirm.contactPerson1Name}</span>}
-                    {selectedFirm.contactPerson1Number && <span><span className="font-medium text-gray-500">Mobile 1:</span> {selectedFirm.contactPerson1Number}</span>}
-                    {selectedFirm.contactPerson2Name && <span><span className="font-medium text-gray-500">Contact 2:</span> {selectedFirm.contactPerson2Name}</span>}
-                    {selectedFirm.contactPerson2Number && <span><span className="font-medium text-gray-500">Mobile 2:</span> {selectedFirm.contactPerson2Number}</span>}
+                    {selectedFirm.contactPerson1Name && (
+                      <span className="flex items-center gap-1">
+                        <span className="font-medium text-gray-500">C1:</span> {selectedFirm.contactPerson1Name}
+                        {selectedFirm.contactPerson1Number && <> ({selectedFirm.contactPerson1Number}) <button type="button" onClick={() => setConfirmCall({ name: selectedFirm.contactPerson1Name, number: selectedFirm.contactPerson1Number })} className="text-green-600 hover:text-green-800">📞</button></>}
+                      </span>
+                    )}
+                    {selectedFirm.contactPerson2Name && (
+                      <span className="flex items-center gap-1">
+                        <span className="font-medium text-gray-500">C2:</span> {selectedFirm.contactPerson2Name}
+                        {selectedFirm.contactPerson2Number && <> ({selectedFirm.contactPerson2Number}) <button type="button" onClick={() => setConfirmCall({ name: selectedFirm.contactPerson2Name, number: selectedFirm.contactPerson2Number })} className="text-green-600 hover:text-green-800">📞</button></>}
+                      </span>
+                    )}
+                    {selectedFirm.accountContactName && (
+                      <span className="flex items-center gap-1">
+                        <span className="font-medium text-gray-500">Acc:</span> {selectedFirm.accountContactName}
+                        {selectedFirm.accountContactNumber && <> ({selectedFirm.accountContactNumber}) <button type="button" onClick={() => setConfirmCall({ name: selectedFirm.accountContactName, number: selectedFirm.accountContactNumber })} className="text-green-600 hover:text-green-800">📞</button></>}
+                      </span>
+                    )}
                     {selectedFirm.email && <span className="col-span-2"><span className="font-medium text-gray-500">Email:</span> {selectedFirm.email}</span>}
                   </div>
                 </div>
@@ -166,17 +194,6 @@ const AddOrderModal = ({ onClose }) => {
 
           {step === 2 && selectedFirm && (
             <div className="space-y-4">
-              {/* Firm details review */}
-              <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Firm Details</p>
-                <p className="text-xs text-gray-700 truncate">
-                  <span className="font-semibold text-gray-800">{selectedFirm.firmName}</span>
-                  {selectedFirm.gstNo && <> &nbsp;·&nbsp; GST: {selectedFirm.gstNo}</>}
-                  {(selectedFirm.city || selectedFirm.area) && <> &nbsp;·&nbsp; {selectedFirm.city}{selectedFirm.area ? ` · ${selectedFirm.area}` : ''}</>}
-                  {selectedFirm.contactPerson1Number && <> &nbsp;·&nbsp; 📞 {selectedFirm.contactPerson1Number}</>}
-                </p>
-              </div>
-
               {/* Order Remark */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -185,7 +202,7 @@ const AddOrderModal = ({ onClose }) => {
                 <textarea
                   value={orderRemark}
                   onChange={e => setOrderRemark(e.target.value)}
-                  rows={10}
+                  rows={14}
                   placeholder="Enter order remarks..."
                   autoFocus
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -233,6 +250,30 @@ const AddOrderModal = ({ onClose }) => {
           )}
         </div>
       </div>
+
+      {/* Call confirmation dialog */}
+      {confirmCall && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl p-6 max-w-xs w-full shadow-xl">
+            <p className="text-base font-bold text-gray-800 mb-1">📞 Are you sure you want to call?</p>
+            <p className="text-sm text-gray-700 mb-5 font-medium">{confirmCall.name} ({confirmCall.number})</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmCall(null)}
+                className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { window.location.href = `tel:${confirmCall.number}`; setConfirmCall(null); }}
+                className="flex-1 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+              >
+                Yes, Call
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
