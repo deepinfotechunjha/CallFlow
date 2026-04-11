@@ -3695,6 +3695,10 @@ app.get('/sales-entries/search', authMiddleware, async (req: Request, res: Respo
                 gstNo: true,
                 contactPerson1Name: true,
                 contactPerson1Number: true,
+                contactPerson2Name: true,
+                contactPerson2Number: true,
+                accountContactName: true,
+                accountContactNumber: true,
                 city: true,
                 area: true,
                 address: true
