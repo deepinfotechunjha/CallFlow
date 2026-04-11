@@ -28,6 +28,11 @@ const useSocket = () => {
         socket.emit('register', user.id);
       });
 
+      socket.on('reconnect', () => {
+        console.log('Reconnected to server, re-registering...');
+        socket.emit('register', user.id);
+      });
+
       socket.on('connect_error', (error) => {
         console.error('Socket connection error:', error);
       });

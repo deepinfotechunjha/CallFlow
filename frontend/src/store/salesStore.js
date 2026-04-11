@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 
 const useSalesStore = create((set, get) => ({
   entries: [],
+   salesLogs: [],
   loading: false,
 
   handleSalesEntryCreated: (entry) => {
@@ -20,6 +21,7 @@ const useSalesStore = create((set, get) => ({
 
   handleSalesLogCreated: (data) => {
     set(state => ({
+      salesLogs: [{ ...data.log, salesEntryId: data.salesEntryId }, ...state.salesLogs],
       entries: state.entries.map(entry => {
         if (entry.id === data.salesEntryId) {
           const isVisit = data.log.logType === 'VISIT';
@@ -39,23 +41,23 @@ const useSalesStore = create((set, get) => ({
     try {
       let url = '/sales-entries';
       const params = new URLSearchParams();
-      
-      if (dateRange?.startDate) {
-        params.append('startDate', dateRange.startDate);
-      }
-      if (dateRange?.endDate) {
-        params.append('endDate', dateRange.endDate);
-      }
-      
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
-      
+      if (dateRange?.startDate) params.append('startDate', dateRange.startDate);
+      if (dateRange?.endDate) params.append('endDate', dateRange.endDate);
+      if (params.toString()) url += `?${params.toString()}`;
       const response = await apiClient.get(url);
       set({ entries: response.data, loading: false });
     } catch (error) {
       toast.error('Failed to fetch sales entries');
       set({ loading: false });
+    }
+  },
+
+  fetchSalesLogs: async () => {
+    try {
+      const response = await apiClient.get('/sales-logs');
+      if (Array.isArray(response.data)) set({ salesLogs: response.data });
+    } catch (error) {
+      console.error('Failed to fetch sales logs', error);
     }
   },
 

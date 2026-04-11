@@ -37,6 +37,7 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
     "ts-node": "^1.7.1",
     "tsx": "^4.21.0"
   }

@@ -3859,7 +3859,7 @@ app.put('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_ADMIN'
             data: updateData
         });
         
-        const [entryWithCounts] = await prisma.$queryRaw`
+        const rows = await prisma.$queryRaw<any[]>`
             SELECT 
                 se.*,
                 COUNT(CASE WHEN sl."logType" = 'VISIT' THEN 1 END)::int as "visitCount",
@@ -3869,6 +3869,7 @@ app.put('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_ADMIN'
             WHERE se.id = ${entryId}
             GROUP BY se.id
         `;
+        const entryWithCounts = rows[0];
         
         emitToAll('sales_entry_updated', entryWithCounts);
         res.json(entryWithCounts);
