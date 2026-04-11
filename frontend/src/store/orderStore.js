@@ -86,10 +86,10 @@ const useOrderStore = create((set, get) => ({
   completeOrder: async (id, completionRemark) => {
     try {
       const response = await apiClient.post(`/orders/${id}/complete`, { completionRemark });
-      toast.success('Order completed successfully');
+      toast.success('Order transported successfully');
       return response.data;
     } catch (err) {
-      const msg = err.response?.data?.error || 'Failed to complete order';
+      const msg = err.response?.data?.error || 'Failed to transport order';
       toast.error(msg);
       throw err;
     }

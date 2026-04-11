@@ -9,6 +9,14 @@ const STATUS_BADGE = {
   CANCELLED: 'bg-red-100 text-red-700',
 };
 
+const STATUS_LABEL = {
+  PENDING:   'Pending',
+  ON_HOLD:   'On Hold',
+  BILLED:    'Billed',
+  COMPLETED: 'Transported',
+  CANCELLED: 'Cancelled',
+};
+
 const formatDate = (d) =>
   d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
@@ -29,7 +37,7 @@ const OrderDetailModal = ({ order, onClose }) => {
           <div>
             <h3 className="text-lg font-bold text-gray-800">{order.salesEntry?.firmName}</h3>
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${STATUS_BADGE[order.status]}`}>
-              {order.status.replace('_', ' ')}
+              {STATUS_LABEL[order.status] || order.status.replace('_', ' ')}
             </span>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
@@ -82,13 +90,13 @@ const OrderDetailModal = ({ order, onClose }) => {
             </div>
           )}
 
-          {/* Completion Info */}
+          {/* Transport Info */}
           {order.completionRemark && (
             <div className="bg-green-50 rounded-lg p-4 space-y-2">
-              <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-2">Completion</p>
-              <Row label="Completion Remark" value={order.completionRemark} />
-              <Row label="Completed By" value={order.completedBy} />
-              <Row label="Completed At" value={formatDate(order.completedAt)} />
+              <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-2">Transport</p>
+              <Row label="Transport Remark" value={order.completionRemark} />
+              <Row label="Transported By" value={order.completedBy} />
+              <Row label="Transported At" value={formatDate(order.completedAt)} />
             </div>
           )}
 
