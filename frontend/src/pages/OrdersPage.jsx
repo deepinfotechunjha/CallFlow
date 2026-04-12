@@ -220,7 +220,7 @@ const OrdersPage = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4">
+    <div className="w-full p-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-3">
         <div>
@@ -369,7 +369,6 @@ const OrdersPage = () => {
           </div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-blue-600 to-purple-600">
                   <tr>
@@ -378,6 +377,7 @@ const OrdersPage = () => {
                     {user?.role === 'HOST' && <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 whitespace-nowrap">Brand</th>}
                     <th onClick={() => handleSort('remark')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Order Remark {getSortIcon('remark')}</th>
                     <th onClick={() => handleSort('calledBy')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Called By {getSortIcon('calledBy')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 whitespace-nowrap">Dispatch From</th>
                     <th onClick={() => handleSort('status')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Status {getSortIcon('status')}</th>
                     <th onClick={() => handleSort('createdBy')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Created By {getSortIcon('createdBy')}</th>
                     <th onClick={() => handleSort('date')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Created At {getSortIcon('date')}</th>
@@ -401,17 +401,17 @@ const OrdersPage = () => {
                         <td className="px-4 py-3 text-sm text-gray-700 max-w-xs">
                           <p className="truncate" title={order.orderRemark}>{order.orderRemark}</p>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">
-                          <div>{order.calledBy || '—'}</div>
-                          {order.dispatchFrom && (
-                            <div className="flex flex-wrap gap-1 mt-1">
+                        <td className="px-4 py-3 text-sm text-gray-600">{order.calledBy || '—'}</td>
+                        <td className="px-4 py-3">
+                          {order.dispatchFrom ? (
+                            <div className="flex flex-wrap gap-1">
                               {order.dispatchFrom.split(',').map(loc => (
                                 <span key={loc} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
                                   📦 {loc}
                                 </span>
                               ))}
                             </div>
-                          )}
+                          ) : '—'}
                         </td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_BADGE[order.status] || 'bg-gray-100 text-gray-600'}`}>
@@ -446,7 +446,7 @@ const OrdersPage = () => {
 
                       {expandedHolds[order.id] && order.holds?.length > 0 && (
                         <tr className="bg-yellow-50">
-                          <td colSpan={user?.role === 'HOST' ? 9 : 8} className="px-6 py-3">
+                          <td colSpan={user?.role === 'HOST' ? 10 : 9} className="px-6 py-3">
                             <p className="text-xs font-semibold text-yellow-700 mb-2">Hold History</p>
                             <div className="space-y-1">
                               {order.holds.map(h => (
@@ -463,7 +463,7 @@ const OrdersPage = () => {
 
                       {(order.status === 'BILLED' || order.status === 'COMPLETED') && (
                         <tr className="bg-blue-50">
-                          <td colSpan={user?.role === 'HOST' ? 9 : 8} className="px-6 py-2 text-xs text-gray-600">
+                          <td colSpan={user?.role === 'HOST' ? 10 : 9} className="px-6 py-2 text-xs text-gray-600">
                             {order.billingRemark && (
                               <span className="mr-4">🧾 <strong>Billing:</strong> {order.billingRemark} — {order.billedBy} @ {formatDate(order.billedAt)}</span>
                             )}
@@ -477,7 +477,7 @@ const OrdersPage = () => {
                       {/* Cancelled By info row */}
                       {order.status === 'CANCELLED' && order.cancelledBy && (
                         <tr className="bg-red-50">
-                          <td colSpan={user?.role === 'HOST' ? 9 : 8} className="px-6 py-2 text-xs text-red-700">
+                          <td colSpan={user?.role === 'HOST' ? 10 : 9} className="px-6 py-2 text-xs text-red-700">
                             ✕ <strong>Cancelled by:</strong> {order.cancelledBy} @ {formatDate(order.cancelledAt)}
                           </td>
                         </tr>
@@ -486,7 +486,6 @@ const OrdersPage = () => {
                   ))}
                 </tbody>
               </table>
-            </div>
           </div>
         )}
       </div>

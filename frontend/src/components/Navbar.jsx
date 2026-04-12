@@ -111,9 +111,16 @@ const Navbar = () => {
                         <Link
                           to="/settings/brands"
                           onClick={() => setShowSettingsDropdown(false)}
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-lg"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         >
                           Brands
+                        </Link>
+                        <Link
+                          to="/settings/locations"
+                          onClick={() => setShowSettingsDropdown(false)}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-lg"
+                        >
+                          Locations
                         </Link>
                       </div>
                     )}
@@ -172,6 +179,7 @@ const Navbar = () => {
                   {mobileLink('/analytics', 'Engineer Analytics')}
                   {mobileLink('/settings/categories', 'Categories')}
                   {mobileLink('/settings/brands', 'Brands')}
+                  {mobileLink('/settings/locations', 'Locations')}
                 </>
               )}
 

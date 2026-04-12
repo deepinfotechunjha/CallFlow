@@ -308,6 +308,16 @@ model Brand {
   @@index([name])
 }
 
+model Location {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+}
+
 model OrderHold {
   id         Int      @id @default(autoincrement())
   orderId    Int
