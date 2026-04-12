@@ -36,18 +36,21 @@ const CarryInService = () => {
   });
   const [customerFound, setCustomerFound] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(null);
+  const [completeAction, setCompleteAction] = useState('complete');
   const [showDeliverConfirm, setShowDeliverConfirm] = useState(null);
   const [showEditModal, setShowEditModal] = useState(null);
   const [completeRemark, setCompleteRemark] = useState('');
+  const [checkRemark, setCheckRemark] = useState('');
   const [deliverRemark, setDeliverRemark] = useState('');
   const [editFormData, setEditFormData] = useState({});
   const [selectedService, setSelectedService] = useState(null);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
   const [isDelivering, setIsDelivering] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const { services, fetchServices, addService, updateService, completeService, deliverService, findCustomerByPhone, bulkDeleteServices } = useCarryInServiceStore();
+  const { services, fetchServices, addService, updateService, completeService, deliverService, checkService, findCustomerByPhone, bulkDeleteServices } = useCarryInServiceStore();
   const { serviceCategories, fetchServiceCategories } = useServiceCategoryStore();
   const { user, token } = useAuthStore();
   
@@ -60,9 +63,11 @@ const CarryInService = () => {
     }
   });
   const completeConfirmRef = useClickOutside(() => {
-    if (!isCompleting) {
+    if (!isCompleting && !isChecking) {
       setShowCompleteConfirm(null);
       setCompleteRemark('');
+      setCheckRemark('');
+      setCompleteAction('complete');
     }
   });
   const deliverConfirmRef = useClickOutside(() => {
@@ -134,15 +139,30 @@ const CarryInService = () => {
   const handleCompleteService = async (serviceId) => {
     if (isCompleting) return;
     setIsCompleting(true);
-    
     try {
       await completeService(serviceId, completeRemark);
       setShowCompleteConfirm(null);
       setCompleteRemark('');
+      setCompleteAction('complete');
       setIsCompleting(false);
     } catch (error) {
       console.error('Error completing service:', error);
       setIsCompleting(false);
+    }
+  };
+
+  const handleCheckService = async (serviceId) => {
+    if (isChecking || !checkRemark.trim()) return;
+    setIsChecking(true);
+    try {
+      await checkService(serviceId, checkRemark);
+      setShowCompleteConfirm(null);
+      setCheckRemark('');
+      setCompleteAction('complete');
+      setIsChecking(false);
+    } catch (error) {
+      console.error('Error checking service:', error);
+      setIsChecking(false);
     }
   };
 
@@ -741,12 +761,19 @@ const CarryInService = () => {
                         </button>
                       )}
                       {service.status === 'PENDING' && (
-                        <button
-                          onClick={() => setShowCompleteConfirm(service.id)}
-                          className="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors flex-1 sm:flex-none"
-                        >
-                          Complete
-                        </button>
+                        <>
+                          {service.checkRemark && (
+                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 self-center">
+                              Checks: {service.checkRemark.split('\n').length}
+                            </span>
+                          )}
+                          <button
+                            onClick={() => { setCompleteAction('complete'); setShowCompleteConfirm(service.id); }}
+                            className="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors flex-1 sm:flex-none"
+                          >
+                            Complete
+                          </button>
+                        </>
                       )}
                       {service.status === 'COMPLETED_NOT_COLLECTED' && (
                         <button
@@ -878,12 +905,13 @@ const CarryInService = () => {
                       <td className="px-2 py-3 text-xs text-gray-500 w-24">
                         <div className="space-y-1">
                           <div className="truncate" title={`Created: ${service.createdBy || 'N/A'}`}>C: {service.createdBy || 'N/A'}</div>
+                          {service.checkedBy && <div className="truncate text-purple-600" title={`Checked: ${service.checkedBy}`}>✓: {service.checkedBy}</div>}
                           {service.completedBy && <div className="truncate" title={`Completed: ${service.completedBy}`}>✓: {service.completedBy}</div>}
                           {service.deliveredBy && <div className="truncate" title={`Delivered: ${service.deliveredBy}`}>D: {service.deliveredBy}</div>}
                         </div>
                       </td>
                     <td className="px-2 py-3 whitespace-nowrap text-sm font-medium w-32" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 flex-wrap items-center">
                           {(['HOST', 'ADMIN'].includes(user?.role)) && service.status === 'PENDING' && (
                             <button
                               onClick={() => openEditModal(service)}
@@ -893,12 +921,19 @@ const CarryInService = () => {
                             </button>
                           )}
                           {service.status === 'PENDING' && (
-                            <button
-                              onClick={() => setShowCompleteConfirm(service.id)}
-                              className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 transition-colors"
-                            >
-                              Complete
-                            </button>
+                            <>
+                              {service.checkRemark && (
+                                <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                  {service.checkRemark.split('\n').length}✓
+                                </span>
+                              )}
+                              <button
+                                onClick={() => { setCompleteAction('complete'); setShowCompleteConfirm(service.id); }}
+                                className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 transition-colors"
+                              >
+                                Complete
+                              </button>
+                            </>
                           )}
                           {service.status === 'COMPLETED_NOT_COLLECTED' && (
                             <button
@@ -1144,39 +1179,76 @@ const CarryInService = () => {
         </div>
       )}
 
-      {/* Complete Service Confirmation Modal */}
+      {/* Complete / Check Service Modal */}
       {showCompleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div ref={completeConfirmRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <h2 className="text-lg sm:text-xl font-bold mb-4">Complete Service</h2>
-            <p className="text-gray-600 mb-4">
-              Are you sure you want to mark this service as completed?
-            </p>
+            
+            <div className="flex gap-4 mb-4">
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="completeAction"
+                  value="complete"
+                  checked={completeAction === 'complete'}
+                  onChange={(e) => setCompleteAction(e.target.value)}
+                  className="mr-2"
+                />
+                Complete
+              </label>
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="completeAction"
+                  value="check"
+                  checked={completeAction === 'check'}
+                  onChange={(e) => setCompleteAction(e.target.value)}
+                  className="mr-2"
+                />
+                Check
+              </label>
+            </div>
+
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Complete Remark (optional)</label>
+              <label className="block text-sm font-medium mb-1">
+                {completeAction === 'complete' ? 'Complete Remark (optional)' : 'Check Remark *'}
+              </label>
               <textarea
-                value={completeRemark}
-                onChange={(e) => setCompleteRemark(e.target.value)}
+                value={completeAction === 'complete' ? completeRemark : checkRemark}
+                onChange={(e) => completeAction === 'complete' ? setCompleteRemark(e.target.value) : setCheckRemark(e.target.value)}
                 className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
                 rows="3"
-                placeholder="Add any notes about the completion..."
+                placeholder={completeAction === 'complete' ? 'Add any notes about the completion...' : 'Describe what was checked...'}
+                required={completeAction === 'check'}
               />
             </div>
+
             <div className="flex flex-col sm:flex-row gap-2">
               <button
-                onClick={() => handleCompleteService(showCompleteConfirm)}
-                disabled={isCompleting}
+                onClick={() => completeAction === 'complete' ? handleCompleteService(showCompleteConfirm) : handleCheckService(showCompleteConfirm)}
+                disabled={completeAction === 'complete' ? isCompleting : (isChecking || !checkRemark.trim())}
                 className={`flex-1 py-2 rounded font-medium text-sm ${
-                  isCompleting
-                    ? 'bg-blue-400 text-white cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                  (completeAction === 'complete' ? isCompleting : (isChecking || !checkRemark.trim()))
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : completeAction === 'complete'
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-purple-600 text-white hover:bg-purple-700'
                 }`}
               >
-                {isCompleting ? 'Processing...' : 'Yes, Complete'}
+                {completeAction === 'complete'
+                  ? (isCompleting ? 'Processing...' : 'Yes, Complete')
+                  : (isChecking ? 'Processing...' : 'Mark as Checked')}
               </button>
               <button
-                onClick={() => setShowCompleteConfirm(null)}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 text-sm"
+                onClick={() => {
+                  setShowCompleteConfirm(null);
+                  setCompleteRemark('');
+                  setCheckRemark('');
+                  setCompleteAction('complete');
+                }}
+                disabled={isCompleting || isChecking}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 text-sm disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -1335,8 +1407,18 @@ const CarryInService = () => {
               </div>
             )}
             
-            {(selectedService.completeRemark || selectedService.deliverRemark) && (
+            {(selectedService.completeRemark || selectedService.deliverRemark || selectedService.checkRemark) && (
               <div className="mt-6 space-y-4">
+                {selectedService.checkRemark && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Check History</label>
+                    <div className="p-3 bg-purple-50 rounded-lg border border-purple-200 max-h-32 overflow-y-auto">
+                      {selectedService.checkRemark.split('\n').map((entry, index) => (
+                        <div key={index} className="text-sm text-purple-800 mb-1 last:mb-0">{entry}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {selectedService.completeRemark && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Complete Remark</label>

@@ -2786,6 +2786,60 @@ app.post('/carry-in-services/:id/deliver', authMiddleware, async (req: Request, 
     }
 });
 
+app.post('/carry-in-services/:id/check', authMiddleware, async (req: Request, res: Response) => {
+    const serviceId = parseInt(req.params.id || '');
+    const { checkRemark } = req.body as { checkRemark: string };
+    
+    if (!req.user?.username) {
+        return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    if (!['HOST', 'ADMIN', 'ENGINEER'].includes(req.user.role)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    
+    if (!checkRemark || !checkRemark.trim()) {
+        return res.status(400).json({ error: 'Check remark is required' });
+    }
+    
+    try {
+        const existingService = await prisma.carryInService.findUnique({ where: { id: serviceId } });
+        if (!existingService) {
+            return res.status(404).json({ error: 'Service not found' });
+        }
+        
+        if (existingService.status !== 'PENDING') {
+            return res.status(400).json({ error: 'Can only check services in PENDING status' });
+        }
+        
+        const timestamp = new Date().toLocaleString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+        const newCheckEntry = `${req.user.username} (${timestamp}): ${checkRemark.trim()}`;
+        const updatedCheckRemark = existingService.checkRemark
+            ? `${existingService.checkRemark}\n${newCheckEntry}`
+            : newCheckEntry;
+        
+        const service = await prisma.carryInService.update({
+            where: { id: serviceId },
+            data: {
+                checkRemark: updatedCheckRemark,
+                checkedBy: req.user.username,
+                checkedAt: new Date()
+            }
+        });
+        
+        emitToAll('service_updated', service);
+        res.json(service);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
 // Bulk Delete Carry-In Services endpoint
 app.post('/carry-in-services/bulk-delete', authMiddleware, async (req: Request, res: Response) => {
     const { serviceIds, secretPassword } = req.body as { serviceIds: number[]; secretPassword: string };

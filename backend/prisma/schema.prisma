@@ -150,6 +150,9 @@ model CarryInService {
   deliveredBy        String?
   deliveredAt        DateTime?
   deliverRemark      String?
+  checkRemark        String?
+  checkedBy          String?
+  checkedAt          DateTime?
   customer           Customer? @relation(fields: [customerId], references: [id])
 
   @@index([phone])

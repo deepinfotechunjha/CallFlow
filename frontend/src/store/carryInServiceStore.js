@@ -80,6 +80,17 @@ const useCarryInServiceStore = create((set, get) => ({
     }
   },
 
+  checkService: async (serviceId, checkRemark) => {
+    try {
+      const response = await apiClient.post(`/carry-in-services/${serviceId}/check`, { checkRemark });
+      toast.success('Service checked successfully');
+      return response.data;
+    } catch (error) {
+      toast.error('Failed to check service');
+      throw error;
+    }
+  },
+
   findCustomerByPhone: async (phone) => {
     try {
       const response = await apiClient.get(`/carry-in-customers/phone/${phone}`);
