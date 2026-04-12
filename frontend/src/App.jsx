@@ -10,6 +10,7 @@ import Profile from './pages/Profile';
 import EngineerAnalytics from './pages/EngineerAnalytics';
 import CategorySettings from './pages/CategorySettings';
 import BrandSettings from './pages/BrandSettings';
+import LocationSettings from './pages/LocationSettings';
 import CustomerDirectory from './pages/CustomerDirectory';
 import CarryInService from './pages/CarryInService';
 import DCPage from './pages/DCPage';
@@ -36,6 +37,19 @@ function App() {
   
   // Initialize WebSocket connection for real-time notifications
   useSocket();
+
+  // Global scroll lock: lock body scroll whenever any modal overlay is present
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const hasModal = !!document.querySelector('.fixed.inset-0.bg-black');
+      document.body.style.overflow = hasModal ? 'hidden' : '';
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      observer.disconnect();
+      document.body.style.overflow = '';
+    };
+  }, []);
 
   // Show loading while initializing
   if (!isInitialized) {
@@ -80,6 +94,7 @@ function App() {
           <Route path="/dc" element={<ProtectedRoute allowedRoles={['HOST', 'ADMIN']}><DCPage /></ProtectedRoute>} />
           <Route path="/settings/categories" element={<ProtectedRoute allowedRoles={['HOST']}><CategorySettings /></ProtectedRoute>} />
           <Route path="/settings/brands" element={<ProtectedRoute allowedRoles={['HOST']}><BrandSettings /></ProtectedRoute>} />
+          <Route path="/settings/locations" element={<ProtectedRoute allowedRoles={['HOST']}><LocationSettings /></ProtectedRoute>} />
         </Routes>
       </main>
       <Toaster position="top-right" />

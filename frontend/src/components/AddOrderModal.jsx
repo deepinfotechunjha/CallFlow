@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import useOrderStore from '../store/orderStore';
 import useAuthStore from '../store/authStore';
 import useBrandStore from '../store/brandStore';
+import useLocationStore from '../store/locationStore';
 import useClickOutside from '../hooks/useClickOutside';
 
 const CALLED_BY_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_ADMIN'];
@@ -16,21 +17,37 @@ const AddOrderModal = ({ onClose }) => {
   const [calledBy, setCalledBy] = useState('');
   const [brandName, setBrandName] = useState('');
   const [dispatchFrom, setDispatchFrom] = useState([]);
+  const [dispatchDropdownOpen, setDispatchDropdownOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmCall, setConfirmCall] = useState(null); // { name, number }
+
+  const dispatchDropdownRef = useRef(null);
 
   const { searchFirms, createOrder } = useOrderStore();
   const { user, users, fetchUsers } = useAuthStore();
   const { brands, fetchBrands } = useBrandStore();
+  const { locations, fetchLocations } = useLocationStore();
   const modalRef = useClickOutside(confirmCall ? () => {} : onClose);
   const searchTimeout = useRef(null);
+
+  useEffect(() => {
+    if (!dispatchDropdownOpen) return;
+    const handler = (e) => {
+      if (dispatchDropdownRef.current && !dispatchDropdownRef.current.contains(e.target)) {
+        setDispatchDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [dispatchDropdownOpen]);
 
   const canSetCalledBy = CALLED_BY_ROLES.includes(user?.role);
 
   useEffect(() => {
     if (canSetCalledBy) fetchUsers();
     fetchBrands();
-  }, [canSetCalledBy, fetchUsers, fetchBrands]);
+    fetchLocations();
+  }, [canSetCalledBy, fetchUsers, fetchBrands, fetchLocations]);
 
   const handleSearchChange = (e) => {
     const val = e.target.value;
@@ -63,6 +80,11 @@ const AddOrderModal = ({ onClose }) => {
     setCalledBy('');
     setBrandName('');
     setDispatchFrom([]);
+    setDispatchDropdownOpen(false);
+  };
+
+  const toggleDispatchLocation = (name) => {
+    setDispatchFrom(prev => prev.includes(name) ? prev.filter(x => x !== name) : [...prev, name]);
   };
 
   const handleConfirm = async () => {
@@ -84,7 +106,7 @@ const AddOrderModal = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div ref={modalRef} className="bg-white rounded-xl w-full max-w-2xl shadow-xl min-h-[520px]">
+      <div ref={modalRef} className="bg-white rounded-xl w-full max-w-2xl shadow-xl flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b">
           <div>
@@ -106,7 +128,7 @@ const AddOrderModal = ({ onClose }) => {
           </div>
         </div>
 
-        <div className="p-5">
+        <div className="p-5 overflow-y-auto flex-1">
           {step === 1 && (
             <div className="space-y-4">
               <div>
@@ -259,37 +281,53 @@ const AddOrderModal = ({ onClose }) => {
               )}
 
               {/* Dispatch From */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div ref={dispatchDropdownRef} className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Dispatch From <span className="text-red-500">*</span>
                 </label>
-                <div className="grid grid-cols-2 gap-3">
-                  {['UNJHA', 'MEHSANA'].map(loc => {
-                    const selected = dispatchFrom.includes(loc);
-                    return (
-                      <button
-                        key={loc}
-                        type="button"
-                        onClick={() => setDispatchFrom(prev =>
-                          selected ? prev.filter(x => x !== loc) : [...prev, loc]
-                        )}
-                        className={`flex items-center justify-center gap-2 py-3 rounded-lg border-2 text-sm font-semibold transition-all ${
-                          selected
-                            ? 'border-blue-600 bg-blue-50 text-blue-700'
-                            : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:bg-gray-100'
-                        }`}
-                      >
-                        <span className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-                          selected ? 'border-blue-600 bg-blue-600' : 'border-gray-400'
-                        }`}>
-                          {selected && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                        </span>
-                        📦 {loc}
-                      </button>
-                    );
-                  })}
-                </div>
-                {dispatchFrom.length === 0 && (
+                {locations.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic">No locations configured. Add locations in Settings → Locations.</p>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setDispatchDropdownOpen(prev => !prev)}
+                      className={`w-full px-3 py-2 border rounded-lg text-sm text-left flex items-center justify-between bg-white transition-all ${
+                        dispatchFrom.length === 0 ? 'border-gray-300 text-gray-400' : 'border-blue-500 text-gray-800'
+                      }`}
+                    >
+                      <span className="truncate">
+                        {dispatchFrom.length === 0
+                          ? '— Select locations —'
+                          : dispatchFrom.map(n => `📦 ${n}`).join(', ')}
+                      </span>
+                      <svg className={`w-4 h-4 ml-2 flex-shrink-0 text-gray-400 transition-transform ${dispatchDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    {dispatchDropdownOpen && (
+                      <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                        {locations.map(loc => {
+                          const selected = dispatchFrom.includes(loc.name);
+                          return (
+                            <button
+                              key={loc.id}
+                              type="button"
+                              onClick={() => toggleDispatchLocation(loc.name)}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-sm text-left transition-colors"
+                            >
+                              <span className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                selected ? 'border-blue-600 bg-blue-600' : 'border-gray-300'
+                              }`}>
+                                {selected && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                              </span>
+                              <span className={selected ? 'font-medium text-blue-700' : 'text-gray-700'}>📦 {loc.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
+                )}
+                {dispatchFrom.length === 0 && locations.length > 0 && (
                   <p className="text-xs text-red-500 mt-1">Please select at least one dispatch location</p>
                 )}
               </div>

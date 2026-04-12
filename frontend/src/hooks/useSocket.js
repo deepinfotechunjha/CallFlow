@@ -10,6 +10,7 @@ import useSalesStore from '../store/salesStore';
 import useOrderStore from '../store/orderStore';
 
 import useBrandStore from '../store/brandStore';
+import useLocationStore from '../store/locationStore';
 
 let socket = null;
 
@@ -182,6 +183,19 @@ const useSocket = () => {
 
       socket.on('brand_deleted', (data) => {
         useBrandStore.getState().handleBrandDeleted(data);
+      });
+
+      // Location events
+      socket.on('location_created', (location) => {
+        useLocationStore.getState().handleLocationCreated(location);
+      });
+
+      socket.on('location_updated', (location) => {
+        useLocationStore.getState().handleLocationUpdated(location);
+      });
+
+      socket.on('location_deleted', (data) => {
+        useLocationStore.getState().handleLocationDeleted(data);
       });
 
       // Order events

@@ -4041,6 +4041,79 @@ app.delete('/brands/:id', authMiddleware, requireRole(['HOST']), async (req: Req
 });
 // ─── End Brands ────────────────────────────────────────────────────────────
 
+// ─── Locations ────────────────────────────────────────────────────────────
+app.get('/locations', authMiddleware, async (_req: Request, res: Response) => {
+    try {
+        const locations = await prisma.location.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } });
+        res.json(locations);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/locations', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const { name, secretPassword: sp } = req.body as { name: string; secretPassword: string };
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Location name is required' });
+    if (!sp) return res.status(400).json({ error: 'Secret password is required' });
+    try {
+        const dbUser = await prisma.user.findUnique({ where: { id: req.user!.id }, select: { secretPassword: true } });
+        if (!dbUser || !await bcrypt.compare(sp, dbUser.secretPassword)) {
+            return res.status(401).json({ error: 'Invalid secret password' });
+        }
+        const existing = await prisma.location.findUnique({ where: { name: name.trim() } });
+        if (existing) {
+            if (existing.isActive) return res.status(400).json({ error: 'Location already exists' });
+            const location = await prisma.location.update({ where: { id: existing.id }, data: { isActive: true } });
+            emitToAll('location_created', location);
+            return res.status(201).json(location);
+        }
+        const location = await prisma.location.create({ data: { name: name.trim() } });
+        emitToAll('location_created', location);
+        res.status(201).json(location);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.put('/locations/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const locationId = parseInt(req.params.id || '');
+    const { name, secretPassword: sp } = req.body as { name: string; secretPassword: string };
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Location name is required' });
+    if (!sp) return res.status(400).json({ error: 'Secret password is required' });
+    try {
+        const dbUser = await prisma.user.findUnique({ where: { id: req.user!.id }, select: { secretPassword: true } });
+        if (!dbUser || !await bcrypt.compare(sp, dbUser.secretPassword)) {
+            return res.status(401).json({ error: 'Invalid secret password' });
+        }
+        const location = await prisma.location.update({ where: { id: locationId }, data: { name: name.trim() } });
+        emitToAll('location_updated', location);
+        res.json(location);
+    } catch (err: any) {
+        if (err.code === 'P2002') return res.status(400).json({ error: 'Location already exists' });
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.delete('/locations/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const locationId = parseInt(req.params.id || '');
+    const { secretPassword: sp } = req.body as { secretPassword: string };
+    if (!sp) return res.status(400).json({ error: 'Secret password is required' });
+    try {
+        const dbUser = await prisma.user.findUnique({ where: { id: req.user!.id }, select: { secretPassword: true } });
+        if (!dbUser || !await bcrypt.compare(sp, dbUser.secretPassword)) {
+            return res.status(401).json({ error: 'Invalid secret password' });
+        }
+        const location = await prisma.location.findUnique({ where: { id: locationId } });
+        if (!location) return res.status(404).json({ error: 'Location not found' });
+        const updated = await prisma.location.update({ where: { id: locationId }, data: { isActive: false } });
+        emitToAll('location_deleted', { id: locationId });
+        res.json({ success: true, location: updated });
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+// ─── End Locations ─────────────────────────────────────────────────────────
+
 // ─── Orders ───────────────────────────────────────────────────────────────
 const ORDER_PAGE_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_EXECUTIVE', 'COMPANY_PAYROLL', 'SALES_ADMIN', 'COMPANY_BASED_ACCESS'];
 const ORDER_ACTION_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_ADMIN'];
