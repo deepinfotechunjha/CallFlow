@@ -357,7 +357,7 @@ const OrdersPage = () => {
       </div>
 
       {/* Desktop Table */}
-      <div className="hidden lg:block">
+      <div className="hidden wide:block">
         {loading ? (
           <div className="text-center py-16">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
@@ -491,7 +491,7 @@ const OrdersPage = () => {
       </div>
 
       {/* Mobile Cards */}
-      <div className="lg:hidden space-y-4">
+      <div className="wide:hidden space-y-4">
         {loading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
