@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useOrderStore from '../store/orderStore';
 import useAuthStore from '../store/authStore';
+import useBrandStore from '../store/brandStore';
 import useClickOutside from '../hooks/useClickOutside';
 
 const CALLED_BY_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_ADMIN'];
@@ -13,12 +14,14 @@ const AddOrderModal = ({ onClose }) => {
   const [selectedFirm, setSelectedFirm] = useState(null);
   const [orderRemark, setOrderRemark] = useState('');
   const [calledBy, setCalledBy] = useState('');
+  const [brandName, setBrandName] = useState('');
   const [dispatchFrom, setDispatchFrom] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmCall, setConfirmCall] = useState(null); // { name, number }
 
   const { searchFirms, createOrder } = useOrderStore();
   const { user, users, fetchUsers } = useAuthStore();
+  const { brands, fetchBrands } = useBrandStore();
   const modalRef = useClickOutside(confirmCall ? () => {} : onClose);
   const searchTimeout = useRef(null);
 
@@ -26,7 +29,8 @@ const AddOrderModal = ({ onClose }) => {
 
   useEffect(() => {
     if (canSetCalledBy) fetchUsers();
-  }, [canSetCalledBy, fetchUsers]);
+    fetchBrands();
+  }, [canSetCalledBy, fetchUsers, fetchBrands]);
 
   const handleSearchChange = (e) => {
     const val = e.target.value;
@@ -57,16 +61,18 @@ const AddOrderModal = ({ onClose }) => {
     setStep(1);
     setOrderRemark('');
     setCalledBy('');
+    setBrandName('');
     setDispatchFrom([]);
   };
 
   const handleConfirm = async () => {
-    if (!orderRemark.trim() || isSubmitting) return;
+    if (!orderRemark.trim() || !brandName || isSubmitting) return;
     setIsSubmitting(true);
     try {
       await createOrder({
         salesEntryId: selectedFirm.id,
         orderRemark: orderRemark.trim(),
+        brandName,
         calledBy: canSetCalledBy && calledBy ? calledBy : undefined,
         dispatchFrom: dispatchFrom.join(',')
       });
@@ -197,6 +203,25 @@ const AddOrderModal = ({ onClose }) => {
 
           {step === 2 && selectedFirm && (
             <div className="space-y-4">
+              {/* Brand */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Brand <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={brandName}
+                  onChange={e => setBrandName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+                  required
+                >
+                  <option value="">— Select brand —</option>
+                  {brands.map(b => (
+                    <option key={b.id} value={b.name}>{b.name}</option>
+                  ))}
+                </select>
+                {!brandName && <p className="text-xs text-red-500 mt-1">Please select a brand</p>}
+              </div>
+
               {/* Order Remark */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -279,7 +304,7 @@ const AddOrderModal = ({ onClose }) => {
                 </button>
                 <button
                   onClick={handleConfirm}
-                  disabled={!orderRemark.trim() || dispatchFrom.length === 0 || isSubmitting}
+                  disabled={!orderRemark.trim() || !brandName || dispatchFrom.length === 0 || isSubmitting}
                   className="flex-1 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-green-300 text-sm font-medium"
                 >
                   {isSubmitting ? 'Creating...' : '✓ Confirm Order'}

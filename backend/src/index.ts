@@ -23,6 +23,7 @@ declare global {
                 id: number;
                 username: string;
                 role: string;
+                brandName?: string;
             };
         }
     }
@@ -33,6 +34,7 @@ interface AuthenticatedRequest extends Request {
         id: number;
         username: string;
         role: string;
+        brandName?: string;
     };
 }
 
@@ -528,11 +530,11 @@ app.post('/auth/login', async (req: Request, res: Response) => {
 
         if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
 
-        const token = signToken({ 
-            id: user.id, 
-            username: user.username, 
-            role: user.role 
-        });
+            const tokenPayload: any = { id: user.id, username: user.username, role: user.role };
+        if (user.role === 'COMPANY_BASED_ACCESS' && user.brandName) {
+            tokenPayload.brandName = user.brandName;
+        }
+        const token = signToken(tokenPayload);
 
         res.json({ 
             token, 
@@ -541,7 +543,8 @@ app.post('/auth/login', async (req: Request, res: Response) => {
                 username: user.username, 
                 email: user.email,
                 phone: user.phone,
-                role: user.role, 
+                role: user.role,
+                brandName: user.brandName || null,
                 createdAt: user.createdAt 
             } 
         });
@@ -559,7 +562,7 @@ app.get('/auth/me', authMiddleware, async (req: Request, res: Response) => {
         
         const user = await withRetry(() => prisma.user.findUnique({ 
             where: { id: req.user!.id },
-            select: { id: true, username: true, email: true, phone: true, role: true, createdAt: true }
+            select: { id: true, username: true, email: true, phone: true, role: true, brandName: true, createdAt: true }
         }));
         
         if (!user) {
@@ -1023,7 +1026,7 @@ app.post('/auth/reset-password', authMiddleware, async (req: Request, res: Respo
 app.get("/users", authMiddleware, requireRole(['HOST', 'ADMIN', 'SPECIAL_ADMIN', 'SALES_ADMIN', 'ACCOUNTANT']), async (_req: Request, res: Response) => {
     try {
         const users = await prisma.user.findMany({ 
-            select: { id: true, username: true, email: true, phone: true, role: true, createdAt: true } 
+            select: { id: true, username: true, email: true, phone: true, role: true, brandName: true, createdAt: true } 
         });
         res.json(users);
     } catch (err: any) {
@@ -1039,8 +1042,17 @@ app.post("/users", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), async
         return res.status(400).json({ error: "username, password, email, phone, and role are required" });
     }
     
-    if (!['HOST', 'ADMIN', 'ENGINEER', 'SALES_EXECUTIVE', 'ACCOUNTANT', 'COMPANY_PAYROLL', 'TALLY_CALLER', 'SALES_ADMIN'].includes(role)) {
+    if (!['HOST', 'ADMIN', 'ENGINEER', 'SALES_EXECUTIVE', 'ACCOUNTANT', 'COMPANY_PAYROLL', 'TALLY_CALLER', 'SALES_ADMIN', 'COMPANY_BASED_ACCESS'].includes(role)) {
         return res.status(400).json({ error: "Invalid role" });
+    }
+
+    const { brandName } = req.body as { brandName?: string };
+    if (role === 'COMPANY_BASED_ACCESS') {
+        if (!brandName || !brandName.trim()) {
+            return res.status(400).json({ error: 'brandName is required for COMPANY_BASED_ACCESS role' });
+        }
+        const brand = await prisma.brand.findFirst({ where: { name: brandName.trim(), isActive: true } });
+        if (!brand) return res.status(400).json({ error: 'Invalid or inactive brand name' });
     }
     
     try {
@@ -1048,7 +1060,7 @@ app.post("/users", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), async
         const hashedSecretPassword = await bcrypt.hash(secretPassword || 'DEFAULTSECRET', 10);
         
         const user = await prisma.user.create({ 
-            data: { username, password: hashed, email, phone, role, secretPassword: hashedSecretPassword } 
+            data: { username, password: hashed, email, phone, role, secretPassword: hashedSecretPassword, brandName: role === 'COMPANY_BASED_ACCESS' ? brandName!.trim() : null } 
         });
         
         const userResponse = { 
@@ -1056,7 +1068,8 @@ app.post("/users", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), async
             username: user.username, 
             email: user.email,
             phone: user.phone,
-            role: user.role, 
+            role: user.role,
+            brandName: user.brandName || null,
             createdAt: user.createdAt 
         };
         
@@ -1105,7 +1118,8 @@ app.put("/users/:id", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), as
             updateData.password = await bcrypt.hash(password, 10);
         }
         
-        if (role && ['HOST', 'ADMIN', 'ENGINEER', 'SALES_EXECUTIVE', 'ACCOUNTANT', 'COMPANY_PAYROLL', 'TALLY_CALLER', 'SALES_ADMIN'].includes(role)) {
+        const { brandName: updateBrandName } = req.body as { brandName?: string };
+        if (role && ['HOST', 'ADMIN', 'ENGINEER', 'SALES_EXECUTIVE', 'ACCOUNTANT', 'COMPANY_PAYROLL', 'TALLY_CALLER', 'SALES_ADMIN', 'COMPANY_BASED_ACCESS'].includes(role)) {
             updateData.role = role;
             
             if (role === 'HOST' && currentUser.role !== 'HOST') {
@@ -1113,12 +1127,28 @@ app.put("/users/:id", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), as
             } else if (role !== 'HOST' && currentUser.role === 'HOST') {
                 updateData.secretPassword = await bcrypt.hash('DEFAULTSECRET', 10);
             }
+
+            if (role === 'COMPANY_BASED_ACCESS') {
+                const bn = updateBrandName?.trim();
+                if (!bn) return res.status(400).json({ error: 'brandName is required for COMPANY_BASED_ACCESS role' });
+                const brand = await prisma.brand.findFirst({ where: { name: bn, isActive: true } });
+                if (!brand) return res.status(400).json({ error: 'Invalid or inactive brand name' });
+                updateData.brandName = bn;
+            } else {
+                updateData.brandName = null;
+            }
+        } else if (updateBrandName !== undefined && currentUser.role === 'COMPANY_BASED_ACCESS') {
+            const bn = updateBrandName.trim();
+            if (!bn) return res.status(400).json({ error: 'brandName is required for COMPANY_BASED_ACCESS role' });
+            const brand = await prisma.brand.findFirst({ where: { name: bn, isActive: true } });
+            if (!brand) return res.status(400).json({ error: 'Invalid or inactive brand name' });
+            updateData.brandName = bn;
         }
         
         const user = await prisma.user.update({
             where: { id: userId },
             data: updateData,
-            select: { id: true, username: true, email: true, phone: true, role: true, createdAt: true }
+            select: { id: true, username: true, email: true, phone: true, role: true, brandName: true, createdAt: true }
         });
         
         // Force logout the updated user via WebSocket
@@ -3882,8 +3912,83 @@ app.put('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_ADMIN'
 });
 
 
+// ─── Brands ───────────────────────────────────────────────────────────────
+app.get('/brands', authMiddleware, async (_req: Request, res: Response) => {
+    try {
+        const brands = await prisma.brand.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } });
+        res.json(brands);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/brands', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const { name, secretPassword: sp } = req.body as { name: string; secretPassword: string };
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Brand name is required' });
+    if (!sp) return res.status(400).json({ error: 'Secret password is required' });
+    try {
+        const dbUser = await prisma.user.findUnique({ where: { id: req.user!.id }, select: { secretPassword: true } });
+        if (!dbUser || !await bcrypt.compare(sp, dbUser.secretPassword)) {
+            return res.status(401).json({ error: 'Invalid secret password' });
+        }
+        const existing = await prisma.brand.findUnique({ where: { name: name.trim() } });
+        if (existing) {
+            if (existing.isActive) return res.status(400).json({ error: 'Brand already exists' });
+            const brand = await prisma.brand.update({ where: { id: existing.id }, data: { isActive: true } });
+            emitToAll('brand_created', brand);
+            return res.status(201).json(brand);
+        }
+        const brand = await prisma.brand.create({ data: { name: name.trim() } });
+        emitToAll('brand_created', brand);
+        res.status(201).json(brand);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.put('/brands/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const brandId = parseInt(req.params.id || '');
+    const { name, secretPassword: sp } = req.body as { name: string; secretPassword: string };
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Brand name is required' });
+    if (!sp) return res.status(400).json({ error: 'Secret password is required' });
+    try {
+        const dbUser = await prisma.user.findUnique({ where: { id: req.user!.id }, select: { secretPassword: true } });
+        if (!dbUser || !await bcrypt.compare(sp, dbUser.secretPassword)) {
+            return res.status(401).json({ error: 'Invalid secret password' });
+        }
+        const brand = await prisma.brand.update({ where: { id: brandId }, data: { name: name.trim() } });
+        emitToAll('brand_updated', brand);
+        res.json(brand);
+    } catch (err: any) {
+        if (err.code === 'P2002') return res.status(400).json({ error: 'Brand already exists' });
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.delete('/brands/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const brandId = parseInt(req.params.id || '');
+    const { secretPassword: sp } = req.body as { secretPassword: string };
+    if (!sp) return res.status(400).json({ error: 'Secret password is required' });
+    try {
+        const dbUser = await prisma.user.findUnique({ where: { id: req.user!.id }, select: { secretPassword: true } });
+        if (!dbUser || !await bcrypt.compare(sp, dbUser.secretPassword)) {
+            return res.status(401).json({ error: 'Invalid secret password' });
+        }
+        const brand = await prisma.brand.findUnique({ where: { id: brandId } });
+        if (!brand) return res.status(404).json({ error: 'Brand not found' });
+        // Check if any users are assigned this brand
+        const assignedUsers = await prisma.user.findMany({ where: { brandName: brand.name, role: 'COMPANY_BASED_ACCESS' }, select: { username: true } });
+        const updated = await prisma.brand.update({ where: { id: brandId }, data: { isActive: false } });
+        emitToAll('brand_deleted', { id: brandId, assignedUsers: assignedUsers.map(u => u.username) });
+        res.json({ success: true, brand: updated, warning: assignedUsers.length > 0 ? `${assignedUsers.length} user(s) still assigned to this brand: ${assignedUsers.map(u => u.username).join(', ')}` : null });
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+// ─── End Brands ────────────────────────────────────────────────────────────
+
 // ─── Orders ───────────────────────────────────────────────────────────────
-const ORDER_PAGE_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_EXECUTIVE', 'COMPANY_PAYROLL', 'SALES_ADMIN'];
+const ORDER_PAGE_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_EXECUTIVE', 'COMPANY_PAYROLL', 'SALES_ADMIN', 'COMPANY_BASED_ACCESS'];
 const ORDER_ACTION_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_ADMIN'];
 
 app.get('/orders', authMiddleware, async (req: Request, res: Response) => {
@@ -3896,6 +4001,10 @@ app.get('/orders', authMiddleware, async (req: Request, res: Response) => {
         // Scoping: SALES_EXECUTIVE and COMPANY_PAYROLL see only their own orders
         if (['SALES_EXECUTIVE', 'COMPANY_PAYROLL'].includes(req.user.role)) {
             where.createdById = req.user.id;
+        }
+        // COMPANY_BASED_ACCESS sees only orders matching their brand
+        if (req.user.role === 'COMPANY_BASED_ACCESS') {
+            where.brandName = (req.user as any).brandName || '';
         }
         if (status && status !== 'ALL') where.status = status;
         if (startDate || endDate) {
@@ -3935,15 +4044,21 @@ app.post('/orders', authMiddleware, async (req: Request, res: Response) => {
     if (!req.user || !ORDER_PAGE_ROLES.includes(req.user.role)) {
         return res.status(403).json({ error: 'Insufficient permissions' });
     }
-    const { salesEntryId, orderRemark, calledBy, dispatchFrom } = req.body as {
+    const { salesEntryId, orderRemark, calledBy, dispatchFrom, brandName: orderBrandName } = req.body as {
         salesEntryId: number;
         orderRemark: string;
         calledBy?: string;
         dispatchFrom?: string;
+        brandName?: string;
     };
     if (!salesEntryId || !orderRemark || !orderRemark.trim() || !dispatchFrom || !dispatchFrom.trim()) {
         return res.status(400).json({ error: 'salesEntryId, orderRemark and dispatchFrom are required' });
     }
+    if (!orderBrandName || !orderBrandName.trim()) {
+        return res.status(400).json({ error: 'brandName is required' });
+    }
+    const brandExists = await prisma.brand.findFirst({ where: { name: orderBrandName.trim(), isActive: true } });
+    if (!brandExists) return res.status(400).json({ error: 'Invalid or inactive brand' });
     try {
         const entry = await prisma.salesEntry.findUnique({ where: { id: Number(salesEntryId) } });
         if (!entry) return res.status(404).json({ error: 'Sales entry not found' });
@@ -3954,6 +4069,7 @@ app.post('/orders', authMiddleware, async (req: Request, res: Response) => {
                 orderRemark: orderRemark.trim(),
                 calledBy: ORDER_ACTION_ROLES.includes(req.user.role) ? (calledBy || null) : null,
                 dispatchFrom: dispatchFrom || null,
+                brandName: orderBrandName!.trim(),
                 status: 'PENDING',
                 createdBy: req.user.username,
                 createdById: req.user.id

@@ -4,14 +4,18 @@ import useAuthStore from '../store/authStore';
 import NotificationBell from './NotificationBell';
 
 const SALES_DASHBOARD_ROLES = ['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN'];
-const ORDERS_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_EXECUTIVE', 'COMPANY_PAYROLL', 'SALES_ADMIN'];
-const HIDE_MAIN_DASHBOARD = ['SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN', 'ACCOUNTANT', 'COMPANY_PAYROLL'];
+const ORDERS_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_EXECUTIVE', 'COMPANY_PAYROLL', 'SALES_ADMIN', 'COMPANY_BASED_ACCESS'];
+const HIDE_MAIN_DASHBOARD = ['SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN', 'ACCOUNTANT', 'COMPANY_PAYROLL', 'COMPANY_BASED_ACCESS'];
 
 const Navbar = () => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
+
+  // Close settings dropdown on outside click
+  const handleNavClick = () => setShowSettingsDropdown(false);
 
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
@@ -73,7 +77,7 @@ const Navbar = () => {
             <div className="hidden lg:flex space-x-1 xl:space-x-5">
               {!HIDE_MAIN_DASHBOARD.includes(user?.role) && navLink('/', 'Dashboard')}
 
-              {user?.role !== 'SALES_EXECUTIVE' && user?.role !== 'TALLY_CALLER' && user?.role !== 'SALES_ADMIN' && user?.role !== 'ACCOUNTANT' && user?.role !== 'COMPANY_PAYROLL' && navLink('/carry-in-service', 'CarryInService')}
+              {user?.role !== 'SALES_EXECUTIVE' && user?.role !== 'TALLY_CALLER' && user?.role !== 'SALES_ADMIN' && user?.role !== 'ACCOUNTANT' && user?.role !== 'COMPANY_PAYROLL' && user?.role !== 'COMPANY_BASED_ACCESS' && navLink('/carry-in-service', 'CarryInService')}
 
               {(user?.role === 'HOST' || user?.role === 'ADMIN') && navLink('/dc', 'DC')}
 
@@ -82,7 +86,38 @@ const Navbar = () => {
                   {navLink('/users', 'Role Management')}
                   {navLink('/customers', 'Customers')}
                   {navLink('/analytics', 'Engineer Analytics')}
-                  {navLink('/settings/categories', 'Categories')}
+                  {/* Settings dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowSettingsDropdown(prev => !prev)}
+                      className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                        isActive('/settings') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'
+                      }`}
+                    >
+                      Settings ▾
+                      {isActive('/settings') && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
+                      )}
+                    </button>
+                    {showSettingsDropdown && (
+                      <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[160px]">
+                        <Link
+                          to="/settings/categories"
+                          onClick={() => setShowSettingsDropdown(false)}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg"
+                        >
+                          Categories
+                        </Link>
+                        <Link
+                          to="/settings/brands"
+                          onClick={() => setShowSettingsDropdown(false)}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-lg"
+                        >
+                          Brands
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
 
@@ -126,7 +161,7 @@ const Navbar = () => {
             <div className="flex flex-col space-y-1">
               {!HIDE_MAIN_DASHBOARD.includes(user?.role) && mobileLink('/', 'Dashboard')}
 
-              {user?.role !== 'SALES_EXECUTIVE' && user?.role !== 'TALLY_CALLER' && user?.role !== 'SALES_ADMIN' && user?.role !== 'ACCOUNTANT' && user?.role !== 'COMPANY_PAYROLL' && mobileLink('/carry-in-service', 'CarryInService')}
+              {user?.role !== 'SALES_EXECUTIVE' && user?.role !== 'TALLY_CALLER' && user?.role !== 'SALES_ADMIN' && user?.role !== 'ACCOUNTANT' && user?.role !== 'COMPANY_PAYROLL' && user?.role !== 'COMPANY_BASED_ACCESS' && mobileLink('/carry-in-service', 'CarryInService')}
 
               {(user?.role === 'HOST' || user?.role === 'ADMIN') && mobileLink('/dc', 'DC')}
 
@@ -136,6 +171,7 @@ const Navbar = () => {
                   {mobileLink('/customers', 'Customers')}
                   {mobileLink('/analytics', 'Engineer Analytics')}
                   {mobileLink('/settings/categories', 'Categories')}
+                  {mobileLink('/settings/brands', 'Brands')}
                 </>
               )}
 

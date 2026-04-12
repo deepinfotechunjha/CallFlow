@@ -9,6 +9,7 @@ import UserManagement from './pages/UserManagement';
 import Profile from './pages/Profile';
 import EngineerAnalytics from './pages/EngineerAnalytics';
 import CategorySettings from './pages/CategorySettings';
+import BrandSettings from './pages/BrandSettings';
 import CustomerDirectory from './pages/CustomerDirectory';
 import CarryInService from './pages/CarryInService';
 import DCPage from './pages/DCPage';
@@ -64,13 +65,13 @@ function App() {
             <ProtectedRoute>
               {['SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN'].includes(user?.role)
               ? <Navigate to="/sales-dashboard" replace />
-              : ['ACCOUNTANT', 'COMPANY_PAYROLL'].includes(user?.role)
+              : ['ACCOUNTANT', 'COMPANY_PAYROLL', 'COMPANY_BASED_ACCESS'].includes(user?.role)
               ? <Navigate to="/orders" replace />
               : <Dashboard />}
             </ProtectedRoute>
           } />
           <Route path="/sales-dashboard" element={<ProtectedRoute allowedRoles={['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']}><SalesDashboard /></ProtectedRoute>} />
-          <Route path="/orders" element={<ProtectedRoute allowedRoles={['HOST', 'ACCOUNTANT', 'SALES_EXECUTIVE', 'COMPANY_PAYROLL', 'SALES_ADMIN']}><OrdersPage /></ProtectedRoute>} />
+          <Route path="/orders" element={<ProtectedRoute allowedRoles={['HOST', 'ACCOUNTANT', 'SALES_EXECUTIVE', 'COMPANY_PAYROLL', 'SALES_ADMIN', 'COMPANY_BASED_ACCESS']}><OrdersPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute allowedRoles={['HOST']}><UserManagement /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute allowedRoles={['HOST']}><EngineerAnalytics /></ProtectedRoute>} />
@@ -78,6 +79,7 @@ function App() {
           <Route path="/carry-in-service" element={<ProtectedRoute><CarryInService /></ProtectedRoute>} />
           <Route path="/dc" element={<ProtectedRoute allowedRoles={['HOST', 'ADMIN']}><DCPage /></ProtectedRoute>} />
           <Route path="/settings/categories" element={<ProtectedRoute allowedRoles={['HOST']}><CategorySettings /></ProtectedRoute>} />
+          <Route path="/settings/brands" element={<ProtectedRoute allowedRoles={['HOST']}><BrandSettings /></ProtectedRoute>} />
         </Routes>
       </main>
       <Toaster position="top-right" />

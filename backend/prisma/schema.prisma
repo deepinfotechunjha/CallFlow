@@ -16,6 +16,7 @@ model User {
   createdAt              DateTime                 @default(now())
   role                   String
   secretPassword         String                   @default("DEFAULTSECRET")
+  brandName              String?                  @db.VarChar(100)
   deletionHistory        DeletionHistory[]
   salesEntries           SalesEntry[]
   salesLogs              SalesLog[]
@@ -282,6 +283,7 @@ model Order {
   cancelledAt      DateTime?   @db.Timestamptz(6)
   revertRemark     String?
   dispatchFrom     String?     @db.VarChar(50)
+  brandName        String      @default("") @db.VarChar(100)
   creator          User?       @relation(fields: [createdById], references: [id])
   salesEntry       SalesEntry  @relation(fields: [salesEntryId], references: [id])
   holds            OrderHold[]
@@ -290,6 +292,17 @@ model Order {
   @@index([status])
   @@index([createdById])
   @@index([createdAt])
+  @@index([brandName])
+}
+
+model Brand {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
 }
 
 model OrderHold {
