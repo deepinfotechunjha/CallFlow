@@ -365,6 +365,7 @@ export const exportOrdersToExcel = async (orders) => {
 
     worksheet.columns = [
       { header: 'Order ID', key: 'id', width: 10 },
+      { header: 'Brand', key: 'brandName', width: 18 },
       { header: 'Firm Name', key: 'firmName', width: 30 },
       { header: 'GST No', key: 'gstNo', width: 18 },
       { header: 'City', key: 'city', width: 18 },
@@ -395,6 +396,7 @@ export const exportOrdersToExcel = async (orders) => {
 
       worksheet.addRow({
         id: order.id || '',
+        brandName: order.brandName || '',
         firmName: order.salesEntry?.firmName || '',
         gstNo: order.salesEntry?.gstNo || '',
         city: order.salesEntry?.city || '',

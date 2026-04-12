@@ -11,6 +11,7 @@ const useOrderStore = create((set, get) => ({
     const { user } = useAuthStore.getState();
     const isPersonalRole = ['SALES_EXECUTIVE', 'COMPANY_PAYROLL'].includes(user?.role);
     if (isPersonalRole && order.createdBy !== user?.username) return;
+    if (user?.role === 'COMPANY_BASED_ACCESS' && order.brandName !== user?.brandName) return;
     set(state => ({ orders: [order, ...state.orders.filter(o => o.id !== order.id)] }));
   },
 
@@ -18,6 +19,7 @@ const useOrderStore = create((set, get) => ({
     const { user } = useAuthStore.getState();
     const isPersonalRole = ['SALES_EXECUTIVE', 'COMPANY_PAYROLL'].includes(user?.role);
     if (isPersonalRole && order.createdBy !== user?.username) return;
+    if (user?.role === 'COMPANY_BASED_ACCESS' && order.brandName !== user?.brandName) return;
     set(state => ({ orders: state.orders.map(o => o.id === order.id ? order : o) }));
   },
 

@@ -67,7 +67,8 @@ const OrdersPage = () => {
 
   const canAction = ORDER_ACTION_ROLES.includes(user?.role);
   const canSeeAll = ALL_ORDER_ROLES.includes(user?.role);
-  const canCancel = true;
+  const canCancel = user?.role !== 'COMPANY_BASED_ACCESS';
+  const isReadOnly = user?.role === 'COMPANY_BASED_ACCESS';
 
   const handleExport = async (exportType, password) => {
     if (isExporting) return;
@@ -240,18 +241,22 @@ const OrdersPage = () => {
               {isExporting ? '⏳ Exporting...' : '📊 Export'}
             </button>
           )}
-          <button
-            onClick={() => setShowShareModal(true)}
-            className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-5 py-3 rounded-xl hover:from-purple-700 hover:to-purple-800 font-medium text-sm shadow-sm transition-all flex items-center gap-2"
-          >
-            🔗 Share
-          </button>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium text-sm shadow-sm transition-all"
-          >
-            + Add Entry
-          </button>
+          {!isReadOnly && (
+            <button
+              onClick={() => setShowShareModal(true)}
+              className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-5 py-3 rounded-xl hover:from-purple-700 hover:to-purple-800 font-medium text-sm shadow-sm transition-all flex items-center gap-2"
+            >
+              🔗 Share
+            </button>
+          )}
+          {!isReadOnly && (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium text-sm shadow-sm transition-all"
+            >
+              + Add Entry
+            </button>
+          )}
         </div>
       </div>
 
@@ -370,6 +375,7 @@ const OrdersPage = () => {
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500">#</th>
                     <th onClick={() => handleSort('firm')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Firm {getSortIcon('firm')}</th>
+                    {user?.role === 'HOST' && <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 whitespace-nowrap">Brand</th>}
                     <th onClick={() => handleSort('remark')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Order Remark {getSortIcon('remark')}</th>
                     <th onClick={() => handleSort('calledBy')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Called By {getSortIcon('calledBy')}</th>
                     <th onClick={() => handleSort('status')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Status {getSortIcon('status')}</th>
@@ -387,6 +393,11 @@ const OrdersPage = () => {
                           <p className={`font-medium text-sm text-gray-800 ${order.status === 'CANCELLED' ? 'line-through' : ''}`}>{order.salesEntry?.firmName}</p>
                           <p className="text-xs text-gray-500">{order.salesEntry?.city}{order.salesEntry?.area ? ` · ${order.salesEntry.area}` : ''}</p>
                         </td>
+                        {user?.role === 'HOST' && (
+                          <td className="px-4 py-3 text-xs font-medium text-teal-700">
+                            {order.brandName || '—'}
+                          </td>
+                        )}
                         <td className="px-4 py-3 text-sm text-gray-700 max-w-xs">
                           <p className="truncate" title={order.orderRemark}>{order.orderRemark}</p>
                         </td>
@@ -428,13 +439,14 @@ const OrdersPage = () => {
                             onCancel={() => setConfirmCancel(order)}
                             onRevert={() => openModal('revert', order)}
                             isHost={user?.role === 'HOST'}
+                            isReadOnly={isReadOnly}
                           />
                         </td>
                       </tr>
 
                       {expandedHolds[order.id] && order.holds?.length > 0 && (
                         <tr className="bg-yellow-50">
-                          <td colSpan={8} className="px-6 py-3">
+                          <td colSpan={user?.role === 'HOST' ? 9 : 8} className="px-6 py-3">
                             <p className="text-xs font-semibold text-yellow-700 mb-2">Hold History</p>
                             <div className="space-y-1">
                               {order.holds.map(h => (
@@ -451,7 +463,7 @@ const OrdersPage = () => {
 
                       {(order.status === 'BILLED' || order.status === 'COMPLETED') && (
                         <tr className="bg-blue-50">
-                          <td colSpan={8} className="px-6 py-2 text-xs text-gray-600">
+                          <td colSpan={user?.role === 'HOST' ? 9 : 8} className="px-6 py-2 text-xs text-gray-600">
                             {order.billingRemark && (
                               <span className="mr-4">🧾 <strong>Billing:</strong> {order.billingRemark} — {order.billedBy} @ {formatDate(order.billedAt)}</span>
                             )}
@@ -465,7 +477,7 @@ const OrdersPage = () => {
                       {/* Cancelled By info row */}
                       {order.status === 'CANCELLED' && order.cancelledBy && (
                         <tr className="bg-red-50">
-                          <td colSpan={8} className="px-6 py-2 text-xs text-red-700">
+                          <td colSpan={user?.role === 'HOST' ? 9 : 8} className="px-6 py-2 text-xs text-red-700">
                             ✕ <strong>Cancelled by:</strong> {order.cancelledBy} @ {formatDate(order.cancelledAt)}
                           </td>
                         </tr>
@@ -507,6 +519,7 @@ const OrdersPage = () => {
               </div>
 
               <p className="text-sm text-gray-700 mb-1"><span className="font-medium">Remark:</span> {order.orderRemark}</p>
+              {order.brandName && user?.role === 'HOST' && <p className="text-xs text-teal-700 font-medium mb-1">Brand: {order.brandName}</p>}
               {order.calledBy && <p className="text-xs text-gray-500 mb-1">Called by: {order.calledBy}</p>}
               {order.dispatchFrom && (
                 <div className="flex flex-wrap gap-1 mb-1">
@@ -558,16 +571,17 @@ const OrdersPage = () => {
               )}
 
               <ActionButtons
-                  order={order}
-                  canAction={canAction}
-                  canCancel={canCancel}
-                  onHold={() => openModal('hold', order)}
-                  onBill={() => openModal('bill', order)}
-                  onComplete={() => openModal('complete', order)}
-                  onCancel={() => setConfirmCancel(order)}
-                  onRevert={() => openModal('revert', order)}
-                  isHost={user?.role === 'HOST'}
-                />
+                order={order}
+                canAction={canAction}
+                canCancel={canCancel}
+                onHold={() => openModal('hold', order)}
+                onBill={() => openModal('bill', order)}
+                onComplete={() => openModal('complete', order)}
+                onCancel={() => setConfirmCancel(order)}
+                onRevert={() => openModal('revert', order)}
+                isHost={user?.role === 'HOST'}
+                isReadOnly={isReadOnly}
+              />
             </div>
           ))
         )}
@@ -607,7 +621,8 @@ const OrdersPage = () => {
   );
 };
 
-const ActionButtons = ({ order, canAction, canCancel, onHold, onBill, onComplete, onCancel, onRevert, isHost }) => {
+const ActionButtons = ({ order, canAction, canCancel, onHold, onBill, onComplete, onCancel, onRevert, isHost, isReadOnly }) => {
+  if (isReadOnly) return null;
   const { status } = order;
   const isCancelled = status === 'CANCELLED';
   const isCompleted = status === 'COMPLETED';

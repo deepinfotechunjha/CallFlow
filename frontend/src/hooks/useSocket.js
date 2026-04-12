@@ -9,6 +9,8 @@ import useDCStore from '../store/dcStore';
 import useSalesStore from '../store/salesStore';
 import useOrderStore from '../store/orderStore';
 
+import useBrandStore from '../store/brandStore';
+
 let socket = null;
 
 const useSocket = () => {
@@ -167,6 +169,19 @@ const useSocket = () => {
 
       socket.on('sales_log_created', (data) => {
         useSalesStore.getState().handleSalesLogCreated(data);
+      });
+
+      // Brand events
+      socket.on('brand_created', (brand) => {
+        useBrandStore.getState().handleBrandCreated(brand);
+      });
+
+      socket.on('brand_updated', (brand) => {
+        useBrandStore.getState().handleBrandUpdated(brand);
+      });
+
+      socket.on('brand_deleted', (data) => {
+        useBrandStore.getState().handleBrandDeleted(data);
       });
 
       // Order events
