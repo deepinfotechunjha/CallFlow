@@ -95,8 +95,8 @@ model City {
   id        Int      @id @default(autoincrement())
   name      String   @unique
   isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt @db.Timestamp(6)
   areas     Area[]
 
   @@index([name])
@@ -107,8 +107,8 @@ model Area {
   name      String
   cityId    Int
   isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt @db.Timestamp(6)
   city      City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
 
   @@unique([name, cityId])
@@ -127,9 +127,9 @@ model Category {
 model ServiceCategory {
   id        Int      @id @default(autoincrement())
   name      String   @unique
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  isActive  Boolean  @default(true)
 }
 
 model CarryInService {
@@ -151,23 +151,14 @@ model CarryInService {
   deliveredAt        DateTime?
   deliverRemark      String?
   checkRemark        String?
-  checkedAt          DateTime?
-<<<<<<< Updated upstream
-  warrantyRemark     String?
-  warrantyBy         String?
-  warrantyAt         DateTime?
-  repairingRemark    String?
-  repairingBy        String?
-  repairingAt        DateTime?
-=======
   checkedBy          String?
-  repairingAt        DateTime?
+  checkedAt          DateTime? @db.Timestamp(6)
+  repairingAt        DateTime? @db.Timestamp(6)
   repairingBy        String?
   repairingRemark    String?
-  warrantyAt         DateTime?
+  warrantyAt         DateTime? @db.Timestamp(6)
   warrantyBy         String?
   warrantyRemark     String?
->>>>>>> Stashed changes
   customer           Customer? @relation(fields: [customerId], references: [id])
 
   @@index([phone])
@@ -262,8 +253,8 @@ model SalesLog {
   latitude         Float?
   locationAccuracy Float?
   longitude        Float?
-  logger           User?      @relation(fields: [loggedById], references: [id])
-  salesEntry       SalesEntry @relation(fields: [salesEntryId], references: [id], onDelete: Cascade)
+  salesEntry       SalesEntry @relation(fields: [salesEntryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "SalesLog_salesEntry_fkey")
+  logger           User?      @relation(fields: [loggedById], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "SalesLog_user_fkey")
 
   @@index([salesEntryId, loggedAt(sort: Desc)])
   @@index([logType])
@@ -274,9 +265,9 @@ model SalesLog {
 model PublicAccessToken {
   id        Int      @id @default(autoincrement())
   token     String   @unique
-  expiresAt DateTime
+  expiresAt DateTime @db.Timestamp(6)
   used      Boolean  @default(false)
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamp(6)
 
   @@index([token])
   @@index([expiresAt])
@@ -299,8 +290,8 @@ model Order {
   completedAt      DateTime?   @db.Timestamptz(6)
   cancelledBy      String?     @db.VarChar(50)
   cancelledAt      DateTime?   @db.Timestamptz(6)
-  dispatchFrom     String?     @db.VarChar(50)
   revertRemark     String?
+  dispatchFrom     String?     @db.VarChar(50)
   brandName        String      @default("") @db.VarChar(100)
   creator          User?       @relation(fields: [createdById], references: [id])
   salesEntry       SalesEntry  @relation(fields: [salesEntryId], references: [id])
@@ -317,8 +308,8 @@ model Brand {
   id        Int      @id @default(autoincrement())
   name      String   @unique
   isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt @db.Timestamp(6)
 
   @@index([name])
 }
@@ -327,8 +318,8 @@ model Location {
   id        Int      @id @default(autoincrement())
   name      String   @unique
   isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt @db.Timestamp(6)
 
   @@index([name])
 }
