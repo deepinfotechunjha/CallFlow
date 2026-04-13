@@ -109,6 +109,18 @@ const useOrderStore = create((set, get) => ({
     }
   },
 
+  updateOrder: async (id, data) => {
+    try {
+      const response = await apiClient.put(`/orders/${id}`, data);
+      toast.success('Order updated successfully');
+      return response.data;
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Failed to update order';
+      toast.error(msg);
+      throw err;
+    }
+  },
+
   revertOrder: async (id, secretPassword, targetStatus, remark) => {
     try {
       const response = await apiClient.post(`/orders/${id}/revert`, { secretPassword, targetStatus, remark });

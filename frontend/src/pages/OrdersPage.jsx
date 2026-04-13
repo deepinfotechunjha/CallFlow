@@ -6,6 +6,7 @@ import OrderHoldModal from '../components/OrderHoldModal';
 import OrderBillModal from '../components/OrderBillModal';
 import OrderCompleteModal from '../components/OrderCompleteModal';
 import OrderRevertModal from '../components/OrderRevertModal';
+import OrderEditModal from '../components/OrderEditModal';
 import SalesShareModal from '../components/SalesShareModal';
 import ExportModal from '../components/ExportModal';
 import { exportOrdersToExcel } from '../utils/excelExport';
@@ -52,6 +53,7 @@ const OrdersPage = () => {
   const [showBillModal, setShowBillModal] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showRevertModal, setShowRevertModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [expandedHolds, setExpandedHolds] = useState({});
   const [confirmCancel, setConfirmCancel] = useState(null);
@@ -121,6 +123,7 @@ const OrdersPage = () => {
     else if (type === 'bill') setShowBillModal(true);
     else if (type === 'complete') setShowCompleteModal(true);
     else if (type === 'revert') setShowRevertModal(true);
+    else if (type === 'edit') setShowEditModal(true);
   };
 
   const closeAll = () => {
@@ -128,6 +131,7 @@ const OrdersPage = () => {
     setShowBillModal(false);
     setShowCompleteModal(false);
     setShowRevertModal(false);
+    setShowEditModal(false);
     setSelectedOrder(null);
   };
 
@@ -441,6 +445,7 @@ const OrdersPage = () => {
                             onComplete={() => openModal('complete', order)}
                             onCancel={() => setConfirmCancel(order)}
                             onRevert={() => openModal('revert', order)}
+                            onEdit={() => openModal('edit', order)}
                             isHost={user?.role === 'HOST'}
                             isReadOnly={isReadOnly}
                           />
@@ -581,6 +586,7 @@ const OrdersPage = () => {
                 onComplete={() => openModal('complete', order)}
                 onCancel={() => setConfirmCancel(order)}
                 onRevert={() => openModal('revert', order)}
+                onEdit={() => openModal('edit', order)}
                 isHost={user?.role === 'HOST'}
                 isReadOnly={isReadOnly}
               />
@@ -621,11 +627,12 @@ const OrdersPage = () => {
       {showBillModal && selectedOrder && <OrderBillModal order={selectedOrder} onClose={closeAll} />}
       {showCompleteModal && selectedOrder && <OrderCompleteModal order={selectedOrder} onClose={closeAll} />}
       {showRevertModal && selectedOrder && <OrderRevertModal order={selectedOrder} onClose={closeAll} />}
+      {showEditModal && selectedOrder && <OrderEditModal order={selectedOrder} onClose={closeAll} />}
     </div>
   );
 };
 
-const ActionButtons = ({ order, canAction, canCancel, onHold, onBill, onComplete, onCancel, onRevert, isHost, isReadOnly }) => {
+const ActionButtons = ({ order, canAction, canCancel, onHold, onBill, onComplete, onCancel, onRevert, onEdit, isHost, isReadOnly }) => {
   if (isReadOnly) return null;
   const { status } = order;
   const isCancelled = status === 'CANCELLED';
@@ -633,7 +640,12 @@ const ActionButtons = ({ order, canAction, canCancel, onHold, onBill, onComplete
   const isBilled = status === 'BILLED';
 
   return (
-    <div className="flex gap-1.5">
+    <div className="flex gap-1.5 flex-wrap">
+      {isHost && (
+        <button onClick={onEdit} className="px-2.5 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium">
+          ✏️ Edit
+        </button>
+      )}
       {canAction && !isCancelled && !isCompleted && !isBilled && (
         <button onClick={onHold} className="px-2.5 py-1.5 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 text-xs font-medium">
           ⏸ Hold
