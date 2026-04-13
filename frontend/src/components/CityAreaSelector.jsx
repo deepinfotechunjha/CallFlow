@@ -85,12 +85,14 @@ const CityAreaSelector = ({
     }
   };
 
+  const capitalize = (s) => s.trim().charAt(0).toUpperCase() + s.trim().slice(1).toLowerCase();
+
   const handleAddCity = async () => {
     if (!newCityName.trim()) return;
     
     setIsSubmitting(true);
     try {
-      const newCity = await addCity(newCityName.trim());
+      const newCity = await addCity(capitalize(newCityName));
       onCityChange(newCity);
       setNewCityName('');
       setShowAddCityModal(false);
@@ -107,7 +109,7 @@ const CityAreaSelector = ({
     
     setIsSubmitting(true);
     try {
-      const newArea = await addArea(newAreaName.trim(), selectedCity.id);
+      const newArea = await addArea(capitalize(newAreaName), selectedCity.id);
       onAreaChange(newArea);
       setNewAreaName('');
       setShowAddAreaModal(false);

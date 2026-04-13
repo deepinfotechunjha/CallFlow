@@ -349,6 +349,8 @@ async function sendServiceDeletionNotificationEmail(
   }
 }
 
+const capitalize = (s: string) => s.trim() ? s.trim().charAt(0).toUpperCase() + s.trim().slice(1).toLowerCase() : s.trim();
+
 function signToken(payload: object) {
     return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
@@ -3875,8 +3877,8 @@ app.post('/sales-entries', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE
                 accountContactNumber,
                 address,
                 landmark,
-                area,
-                city,
+                area: area ? capitalize(area) : area,
+                city: capitalize(city),
                 pincode,
                 email,
                 whatsappNumber: whatsappNumber || null,
@@ -3968,8 +3970,8 @@ app.put('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_ADMIN'
         if (accountContactNumber !== undefined) updateData.accountContactNumber = accountContactNumber;
         if (address) updateData.address = address;
         if (landmark !== undefined) updateData.landmark = landmark;
-        if (area !== undefined) updateData.area = area;
-        if (city) updateData.city = city;
+        if (area !== undefined) updateData.area = area ? capitalize(area) : area;
+        if (city) updateData.city = capitalize(city);
         if (pincode) updateData.pincode = pincode;
         if (email !== undefined) updateData.email = email;
         if (whatsappNumber !== undefined) updateData.whatsappNumber = whatsappNumber || null;
@@ -4021,14 +4023,15 @@ app.post('/brands', authMiddleware, requireRole(['HOST']), async (req: Request, 
         if (!dbUser || !await bcrypt.compare(sp, dbUser.secretPassword)) {
             return res.status(401).json({ error: 'Invalid secret password' });
         }
-        const existing = await prisma.brand.findUnique({ where: { name: name.trim() } });
+        const normalizedName = capitalize(name);
+        const existing = await prisma.brand.findFirst({ where: { name: { equals: normalizedName, mode: 'insensitive' } } });
         if (existing) {
             if (existing.isActive) return res.status(400).json({ error: 'Brand already exists' });
-            const brand = await prisma.brand.update({ where: { id: existing.id }, data: { isActive: true } });
+            const brand = await prisma.brand.update({ where: { id: existing.id }, data: { isActive: true, name: normalizedName } });
             emitToAll('brand_created', brand);
             return res.status(201).json(brand);
         }
-        const brand = await prisma.brand.create({ data: { name: name.trim() } });
+        const brand = await prisma.brand.create({ data: { name: normalizedName } });
         emitToAll('brand_created', brand);
         res.status(201).json(brand);
     } catch (err: any) {
@@ -4046,7 +4049,8 @@ app.put('/brands/:id', authMiddleware, requireRole(['HOST']), async (req: Reques
         if (!dbUser || !await bcrypt.compare(sp, dbUser.secretPassword)) {
             return res.status(401).json({ error: 'Invalid secret password' });
         }
-        const brand = await prisma.brand.update({ where: { id: brandId }, data: { name: name.trim() } });
+        const normalizedName = capitalize(name);
+        const brand = await prisma.brand.update({ where: { id: brandId }, data: { name: normalizedName } });
         emitToAll('brand_updated', brand);
         res.json(brand);
     } catch (err: any) {
@@ -4096,14 +4100,15 @@ app.post('/locations', authMiddleware, requireRole(['HOST']), async (req: Reques
         if (!dbUser || !await bcrypt.compare(sp, dbUser.secretPassword)) {
             return res.status(401).json({ error: 'Invalid secret password' });
         }
-        const existing = await prisma.location.findUnique({ where: { name: name.trim() } });
+        const normalizedName = capitalize(name);
+        const existing = await prisma.location.findFirst({ where: { name: { equals: normalizedName, mode: 'insensitive' } } });
         if (existing) {
             if (existing.isActive) return res.status(400).json({ error: 'Location already exists' });
-            const location = await prisma.location.update({ where: { id: existing.id }, data: { isActive: true } });
+            const location = await prisma.location.update({ where: { id: existing.id }, data: { isActive: true, name: normalizedName } });
             emitToAll('location_created', location);
             return res.status(201).json(location);
         }
-        const location = await prisma.location.create({ data: { name: name.trim() } });
+        const location = await prisma.location.create({ data: { name: normalizedName } });
         emitToAll('location_created', location);
         res.status(201).json(location);
     } catch (err: any) {
@@ -4121,7 +4126,8 @@ app.put('/locations/:id', authMiddleware, requireRole(['HOST']), async (req: Req
         if (!dbUser || !await bcrypt.compare(sp, dbUser.secretPassword)) {
             return res.status(401).json({ error: 'Invalid secret password' });
         }
-        const location = await prisma.location.update({ where: { id: locationId }, data: { name: name.trim() } });
+        const normalizedName = capitalize(name);
+        const location = await prisma.location.update({ where: { id: locationId }, data: { name: normalizedName } });
         emitToAll('location_updated', location);
         res.json(location);
     } catch (err: any) {
