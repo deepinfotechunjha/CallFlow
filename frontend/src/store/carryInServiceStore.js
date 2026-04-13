@@ -91,6 +91,28 @@ const useCarryInServiceStore = create((set, get) => ({
     }
   },
 
+  warrantyService: async (serviceId, warrantyRemark) => {
+    try {
+      const response = await apiClient.post(`/carry-in-services/${serviceId}/warranty`, { warrantyRemark });
+      toast.success('Service marked as warranty');
+      return response.data;
+    } catch (error) {
+      toast.error('Failed to mark warranty');
+      throw error;
+    }
+  },
+
+  repairingService: async (serviceId, repairingRemark) => {
+    try {
+      const response = await apiClient.post(`/carry-in-services/${serviceId}/repairing`, { repairingRemark });
+      toast.success('Service marked as repairing');
+      return response.data;
+    } catch (error) {
+      toast.error('Failed to mark repairing');
+      throw error;
+    }
+  },
+
   findCustomerByPhone: async (phone) => {
     try {
       const response = await apiClient.get(`/carry-in-customers/phone/${phone}`);
