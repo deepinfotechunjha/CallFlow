@@ -63,10 +63,14 @@ const useServiceCategoryStore = create((set, get) => ({
   
   deleteServiceCategory: async (id) => {
     try {
-      await apiClient.delete(`/service-categories/${id}`);
+      await apiClient.delete(`/service-categories/${id}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      set(state => ({ serviceCategories: state.serviceCategories.filter(c => c.id !== id) }));
       toast.success('Service category deleted successfully');
     } catch (error) {
-      toast.error('Failed to delete service category');
+      const message = error.response?.data?.error || 'Failed to delete service category';
+      toast.error(message);
       throw error;
     }
   }

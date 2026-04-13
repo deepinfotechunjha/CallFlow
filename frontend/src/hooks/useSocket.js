@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { io } from 'socket.io-client';
 import useAuthStore from '../store/authStore';
 import useCallStore from '../store/callStore';
@@ -50,13 +51,13 @@ const useSocket = () => {
 
       // User management events
       socket.on('user_deleted', (data) => {
-        alert(data.message || 'Your account has been removed. You will be logged out.');
+        toast.error(data.message || 'Your account has been removed. You will be logged out.');
         logout();
         window.location.href = '/login';
       });
 
       socket.on('force_logout', (data) => {
-        alert(data.message || 'Your account has been updated. Please log in again.');
+        toast.error(data.message || 'Your account has been updated. Please log in again.');
         logout();
         window.location.href = '/login';
       });
