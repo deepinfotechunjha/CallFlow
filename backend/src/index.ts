@@ -4073,8 +4073,15 @@ app.delete('/brands/:id', authMiddleware, requireRole(['HOST']), async (req: Req
         // Check if any users are assigned this brand
         const assignedUsers = await prisma.user.findMany({ where: { brandName: brand.name, role: 'COMPANY_BASED_ACCESS' }, select: { username: true } });
         const updated = await prisma.brand.update({ where: { id: brandId }, data: { isActive: false } });
+
+        // Clear brandName from COMPANY_BASED_ACCESS users
+        await prisma.user.updateMany({
+            where: { brandName: brand.name, role: 'COMPANY_BASED_ACCESS' },
+            data: { brandName: null }
+        });
+
         emitToAll('brand_deleted', { id: brandId, assignedUsers: assignedUsers.map(u => u.username) });
-        res.json({ success: true, brand: updated, warning: assignedUsers.length > 0 ? `${assignedUsers.length} user(s) still assigned to this brand: ${assignedUsers.map(u => u.username).join(', ')}` : null });
+        res.json({ success: true, brand: updated });
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
     }
@@ -4148,6 +4155,28 @@ app.delete('/locations/:id', authMiddleware, requireRole(['HOST']), async (req: 
         const location = await prisma.location.findUnique({ where: { id: locationId } });
         if (!location) return res.status(404).json({ error: 'Location not found' });
         const updated = await prisma.location.update({ where: { id: locationId }, data: { isActive: false } });
+
+        // Remove this location from all orders' dispatchFrom
+        const ordersWithLocation = await prisma.order.findMany({
+            where: { dispatchFrom: { contains: location.name } },
+            include: {
+                salesEntry: { select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true } },
+                holds: { orderBy: { heldAt: 'asc' } }
+            }
+        });
+        for (const order of ordersWithLocation) {
+            const remaining = (order.dispatchFrom || '').split(',').filter(l => l.trim() !== location.name).join(',');
+            const updatedOrder = await prisma.order.update({
+                where: { id: order.id },
+                data: { dispatchFrom: remaining || null },
+                include: {
+                    salesEntry: { select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true } },
+                    holds: { orderBy: { heldAt: 'asc' } }
+                }
+            });
+            emitToAll('order_updated', updatedOrder);
+        }
+
         emitToAll('location_deleted', { id: locationId });
         res.json({ success: true, location: updated });
     } catch (err: any) {
@@ -4252,6 +4281,41 @@ app.post('/orders', authMiddleware, async (req: Request, res: Response) => {
         });
         emitToAll('order_created', order);
         res.status(201).json(order);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.put('/orders/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const orderId = parseInt(req.params.id || '');
+    const { orderRemark, calledBy, brandName, dispatchFrom } = req.body as {
+        orderRemark?: string;
+        calledBy?: string;
+        brandName?: string;
+        dispatchFrom?: string;
+    };
+    try {
+        const order = await prisma.order.findUnique({ where: { id: orderId } });
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        if (brandName) {
+            const brandExists = await prisma.brand.findFirst({ where: { name: brandName.trim(), isActive: true } });
+            if (!brandExists) return res.status(400).json({ error: 'Invalid or inactive brand' });
+        }
+        const updated = await prisma.order.update({
+            where: { id: orderId },
+            data: {
+                ...(orderRemark !== undefined && { orderRemark: orderRemark.trim() }),
+                ...(calledBy !== undefined && { calledBy: calledBy || null }),
+                ...(brandName !== undefined && { brandName: brandName.trim() }),
+                ...(dispatchFrom !== undefined && { dispatchFrom: dispatchFrom || null }),
+            },
+            include: {
+                salesEntry: { select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true } },
+                holds: { orderBy: { heldAt: 'asc' } }
+            }
+        });
+        emitToAll('order_updated', updated);
+        res.json(updated);
     } catch (err: any) {
         res.status(500).json({ error: String(err) });
     }
