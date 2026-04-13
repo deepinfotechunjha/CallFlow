@@ -6,6 +6,9 @@ export default {
   ],
   theme: {
     extend: {
+      screens: {
+        'wide': '1464px',
+      },
       spacing: {
         'fluid-xs': 'clamp(0.25rem, 1vw, 0.5rem)',
         'fluid-sm': 'clamp(0.5rem, 2vw, 1rem)',

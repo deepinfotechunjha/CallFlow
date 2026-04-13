@@ -16,7 +16,12 @@ model User {
   createdAt              DateTime                 @default(now())
   role                   String
   secretPassword         String                   @default("DEFAULTSECRET")
+  brandName              String?                  @db.VarChar(100)
   deletionHistory        DeletionHistory[]
+  orders                 Order[]
+  orderHolds             OrderHold[]
+  salesEntries           SalesEntry[]
+  salesLogs              SalesLog[]
   serviceDeletionHistory ServiceDeletionHistory[]
 }
 
@@ -41,14 +46,14 @@ model Call {
   assignedBy     String?
   callCount      Int       @default(1)
   lastCalledAt   DateTime  @default(now())
-  visitedRemark  String?
-  visitedBy      String?
   visitedAt      DateTime?
-  dcRequired     Boolean   @default(false)
-  dcRemark       String?
-  dcStatus       String?
-  dcCompletedBy  String?
+  visitedBy      String?
+  visitedRemark  String?
   dcCompletedAt  DateTime?
+  dcCompletedBy  String?
+  dcRemark       String?
+  dcRequired     Boolean   @default(false)
+  dcStatus       String?
   customer       Customer? @relation(fields: [customerId], references: [id])
 
   @@index([assignedTo])
@@ -86,6 +91,31 @@ model Notification {
   @@index([userId, isRead])
 }
 
+model City {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt @db.Timestamp(6)
+  areas     Area[]
+
+  @@index([name])
+}
+
+model Area {
+  id        Int      @id @default(autoincrement())
+  name      String
+  cityId    Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt @db.Timestamp(6)
+  city      City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@unique([name, cityId])
+  @@index([cityId])
+  @@index([name])
+}
+
 model Category {
   id        Int      @id @default(autoincrement())
   name      String   @unique
@@ -120,6 +150,15 @@ model CarryInService {
   deliveredBy        String?
   deliveredAt        DateTime?
   deliverRemark      String?
+  checkRemark        String?
+  checkedBy          String?
+  checkedAt          DateTime? @db.Timestamp(6)
+  repairingAt        DateTime? @db.Timestamp(6)
+  repairingBy        String?
+  repairingRemark    String?
+  warrantyAt         DateTime? @db.Timestamp(6)
+  warrantyBy         String?
+  warrantyRemark     String?
   customer           Customer? @relation(fields: [customerId], references: [id])
 
   @@index([phone])
@@ -162,4 +201,139 @@ model ServiceDeletionHistory {
 
   @@index([deletedBy])
   @@index([deletedAt])
+}
+
+model SalesEntry {
+  id                   Int        @id @default(autoincrement())
+  firmName             String     @db.VarChar(255)
+  gstNo                String     @unique @db.VarChar(15)
+  contactPerson1Name   String     @db.VarChar(100)
+  contactPerson1Number String     @db.VarChar(15)
+  contactPerson2Name   String?    @db.VarChar(100)
+  contactPerson2Number String?    @db.VarChar(15)
+  accountContactName   String?    @db.VarChar(100)
+  accountContactNumber String?    @db.VarChar(15)
+  address              String     @db.VarChar(500)
+  landmark             String?    @db.VarChar(200)
+  pincode              String     @db.VarChar(6)
+  email                String?    @db.VarChar(255)
+  createdBy            String     @db.VarChar(50)
+  createdById          Int?
+  createdAt            DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt            DateTime   @updatedAt @db.Timestamptz(6)
+  delayCount           Int        @default(0)
+  delayedBy            String[]   @default([])
+  lastActivityDate     DateTime?  @db.Timestamptz(6)
+  reminderDate         DateTime?  @db.Timestamptz(6)
+  area                 String?    @db.VarChar(100)
+  city                 String     @db.VarChar(100)
+  whatsappNumber       String?    @db.VarChar(15)
+  orders               Order[]
+  creator              User?      @relation(fields: [createdById], references: [id])
+  logs                 SalesLog[]
+
+  @@index([firmName])
+  @@index([city])
+  @@index([gstNo])
+  @@index([createdBy])
+  @@index([createdAt])
+  @@index([contactPerson1Number])
+  @@index([reminderDate])
+}
+
+model SalesLog {
+  id               Int        @id @default(autoincrement())
+  salesEntryId     Int
+  logType          String     @db.VarChar(10)
+  callType         String?    @db.VarChar(10)
+  remark           String?
+  loggedBy         String     @db.VarChar(50)
+  loggedById       Int?
+  loggedAt         DateTime   @default(now()) @db.Timestamptz(6)
+  latitude         Float?
+  locationAccuracy Float?
+  longitude        Float?
+  salesEntry       SalesEntry @relation(fields: [salesEntryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "SalesLog_salesEntry_fkey")
+  logger           User?      @relation(fields: [loggedById], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "SalesLog_user_fkey")
+
+  @@index([salesEntryId, loggedAt(sort: Desc)])
+  @@index([logType])
+  @@index([loggedBy])
+  @@index([loggedAt(sort: Desc)])
+}
+
+model PublicAccessToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  expiresAt DateTime @db.Timestamp(6)
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+
+  @@index([token])
+  @@index([expiresAt])
+}
+
+model Order {
+  id               Int         @id @default(autoincrement())
+  salesEntryId     Int
+  orderRemark      String
+  calledBy         String?     @db.VarChar(50)
+  status           String      @default("PENDING")
+  createdBy        String      @db.VarChar(50)
+  createdById      Int?
+  createdAt        DateTime    @default(now()) @db.Timestamptz(6)
+  billingRemark    String?
+  billedBy         String?     @db.VarChar(50)
+  billedAt         DateTime?   @db.Timestamptz(6)
+  completionRemark String?
+  completedBy      String?     @db.VarChar(50)
+  completedAt      DateTime?   @db.Timestamptz(6)
+  cancelledBy      String?     @db.VarChar(50)
+  cancelledAt      DateTime?   @db.Timestamptz(6)
+  revertRemark     String?
+  dispatchFrom     String?     @db.VarChar(50)
+  brandName        String      @default("") @db.VarChar(100)
+  creator          User?       @relation(fields: [createdById], references: [id])
+  salesEntry       SalesEntry  @relation(fields: [salesEntryId], references: [id])
+  holds            OrderHold[]
+
+  @@index([salesEntryId])
+  @@index([status])
+  @@index([createdById])
+  @@index([createdAt])
+  @@index([brandName])
+}
+
+model Brand {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt @db.Timestamp(6)
+
+  @@index([name])
+}
+
+model Location {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt @db.Timestamp(6)
+
+  @@index([name])
+}
+
+model OrderHold {
+  id       Int      @id @default(autoincrement())
+  orderId  Int
+  remark   String
+  heldBy   String   @db.VarChar(50)
+  heldById Int?
+  heldAt   DateTime @default(now()) @db.Timestamptz(6)
+  holder   User?    @relation(fields: [heldById], references: [id])
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([heldAt])
 }

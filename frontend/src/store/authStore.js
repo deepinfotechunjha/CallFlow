@@ -66,7 +66,7 @@ const useAuthStore = create(
       
       fetchUsers: async () => {
         const state = get();
-        if (!state.user || !['HOST', 'ADMIN'].includes(state.user.role)) {
+        if (!state.user || !['HOST', 'ADMIN', 'SALES_ADMIN', 'ACCOUNTANT'].includes(state.user.role)) {
           return;
         }
         try {

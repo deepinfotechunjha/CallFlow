@@ -26,7 +26,7 @@ const PublicServiceForm = () => {
 
   const validateLink = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/share/${linkId}`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/share-service/${linkId}`);
       const data = await response.json();
 
       if (response.ok && data.success) {
@@ -46,7 +46,7 @@ const PublicServiceForm = () => {
 
   const fetchServiceCategories = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/service-categories`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/service-categories`);
       if (response.ok) {
         const data = await response.json();
         setServiceCategories(data);
@@ -66,7 +66,7 @@ const PublicServiceForm = () => {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/share/${linkId}/submit-service`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/share-service/${linkId}/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

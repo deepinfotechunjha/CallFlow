@@ -353,3 +353,280 @@ export const exportToExcel = async (data, filename, password = null) => {
   a.click();
   window.URL.revokeObjectURL(url);
 };
+
+export const exportOrdersToExcel = async (orders) => {
+  try {
+    if (!orders || orders.length === 0) {
+      throw new Error('No data to export');
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Orders');
+
+    worksheet.columns = [
+      { header: 'Order ID', key: 'id', width: 10 },
+      { header: 'Brand', key: 'brandName', width: 18 },
+      { header: 'Firm Name', key: 'firmName', width: 30 },
+      { header: 'GST No', key: 'gstNo', width: 18 },
+      { header: 'City', key: 'city', width: 18 },
+      { header: 'Area', key: 'area', width: 18 },
+      { header: 'Contact Person', key: 'contactPerson', width: 25 },
+      { header: 'Contact Number', key: 'contactNumber', width: 18 },
+      { header: 'Order Remark', key: 'orderRemark', width: 35 },
+      { header: 'Called By', key: 'calledBy', width: 18 },
+      { header: 'Status', key: 'status', width: 14 },
+      { header: 'Created By', key: 'createdBy', width: 18 },
+      { header: 'Created At', key: 'createdAt', width: 22 },
+      { header: 'Billing Remark', key: 'billingRemark', width: 35 },
+      { header: 'Billed By', key: 'billedBy', width: 18 },
+      { header: 'Billed At', key: 'billedAt', width: 22 },
+      { header: 'Transport Remark', key: 'completionRemark', width: 35 },
+      { header: 'Transported By', key: 'completedBy', width: 18 },
+      { header: 'Transported At', key: 'completedAt', width: 22 },
+      { header: 'Cancelled By', key: 'cancelledBy', width: 18 },
+      { header: 'Cancelled At', key: 'cancelledAt', width: 22 },
+      { header: 'Hold Count', key: 'holdCount', width: 12 },
+      { header: 'Hold History', key: 'holdHistory', width: 50 },
+    ];
+
+    orders.forEach(order => {
+      const holdHistory = order.holds?.length
+        ? order.holds.map(h => `${h.heldBy} @ ${new Date(h.heldAt).toLocaleString()}: ${h.remark}`).join(' | ')
+        : '';
+
+      worksheet.addRow({
+        id: order.id || '',
+        brandName: order.brandName || '',
+        firmName: order.salesEntry?.firmName || '',
+        gstNo: order.salesEntry?.gstNo || '',
+        city: order.salesEntry?.city || '',
+        area: order.salesEntry?.area || '',
+        contactPerson: order.salesEntry?.contactPerson1Name || '',
+        contactNumber: order.salesEntry?.contactPerson1Number || '',
+        orderRemark: order.orderRemark || '',
+        calledBy: order.calledBy || '',
+        status: order.status?.replace('_', ' ') || '',
+        createdBy: order.createdBy || '',
+        createdAt: order.createdAt ? new Date(order.createdAt).toLocaleString() : '',
+        billingRemark: order.billingRemark || '',
+        billedBy: order.billedBy || '',
+        billedAt: order.billedAt ? new Date(order.billedAt).toLocaleString() : '',
+        completionRemark: order.completionRemark || '',
+        completedBy: order.completedBy || '',
+        completedAt: order.completedAt ? new Date(order.completedAt).toLocaleString() : '',
+        cancelledBy: order.cancelledBy || '',
+        cancelledAt: order.cancelledAt ? new Date(order.cancelledAt).toLocaleString() : '',
+        holdCount: order.holds?.length || 0,
+        holdHistory,
+      });
+    });
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    const fileName = `Orders_Export_${new Date().toISOString().split('T')[0]}.xlsx`;
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    return true;
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
+
+export const exportSalesEntriesToExcel = async (entries, logs = []) => {
+  try {
+    if (!entries || entries.length === 0) {
+      throw new Error('No data to export');
+    }
+
+    const workbook = new ExcelJS.Workbook();
+
+    // ── Sheet 1: Sales Entries ──────────────────────────────────────────
+    const ws1 = workbook.addWorksheet('Sales Entries');
+
+    ws1.columns = [
+      { header: 'ID', key: 'id', width: 10 },
+      { header: 'Firm Name', key: 'firmName', width: 30 },
+      { header: 'GST Number', key: 'gstNo', width: 18 },
+      { header: 'Contact Person 1 Name', key: 'contactPerson1Name', width: 25 },
+      { header: 'Contact Person 1 Number', key: 'contactPerson1Number', width: 18 },
+      { header: 'Contact Person 2 Name', key: 'contactPerson2Name', width: 25 },
+      { header: 'Contact Person 2 Number', key: 'contactPerson2Number', width: 18 },
+      { header: 'Account Contact Name', key: 'accountContactName', width: 25 },
+      { header: 'Account Contact Number', key: 'accountContactNumber', width: 18 },
+      { header: 'WhatsApp Number', key: 'whatsappNumber', width: 18 },
+      { header: 'Email', key: 'email', width: 30 },
+      { header: 'Address', key: 'address', width: 40 },
+      { header: 'Landmark', key: 'landmark', width: 25 },
+      { header: 'Area', key: 'area', width: 20 },
+      { header: 'City', key: 'city', width: 20 },
+      { header: 'Pincode', key: 'pincode', width: 12 },
+      { header: 'Visit Count', key: 'visitCount', width: 12 },
+      { header: 'Call Count', key: 'callCount', width: 12 },
+      { header: 'Total Logs', key: 'totalLogs', width: 12 },
+      { header: 'Delay Count', key: 'delayCount', width: 12 },
+      { header: 'Delayed By', key: 'delayedBy', width: 30 },
+      { header: 'Reminder Date', key: 'reminderDate', width: 20 },
+      { header: 'Last Activity Date', key: 'lastActivityDate', width: 20 },
+      { header: 'Created By', key: 'createdBy', width: 20 },
+      { header: 'Created At', key: 'createdAt', width: 20 },
+      { header: 'Updated At', key: 'updatedAt', width: 20 },
+    ];
+
+    // Build a map: salesEntryId -> first row number in Sheet 2 for that firm
+    // We'll fill this after building Sheet 2
+    const firmRowMap = {}; // salesEntryId -> Sheet2 row number
+
+    // ── Sheet 2: Visit & Call Logs ──────────────────────────────────────
+    const ws2 = workbook.addWorksheet('Visit & Call Logs');
+
+    ws2.columns = [
+      { header: 'Firm Name', key: 'firmName', width: 30 },
+      { header: 'GST No', key: 'gstNo', width: 18 },
+      { header: 'City', key: 'city', width: 18 },
+      { header: 'Area', key: 'area', width: 18 },
+      { header: 'Log Type', key: 'logType', width: 12 },
+      { header: 'Call Type', key: 'callType', width: 12 },
+      { header: 'Logged By', key: 'loggedBy', width: 18 },
+      { header: 'Logged At', key: 'loggedAt', width: 22 },
+      { header: 'Remark', key: 'remark', width: 40 },
+      { header: 'Latitude', key: 'latitude', width: 15 },
+      { header: 'Longitude', key: 'longitude', width: 15 },
+      { header: 'Location Accuracy (m)', key: 'locationAccuracy', width: 22 },
+    ];
+
+    // Style Sheet 2 header
+    ws2.getRow(1).font = { bold: true };
+    ws2.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD0E8FF' } };
+    ws2.autoFilter = { from: 'A1', to: 'L1' };
+
+    // Group logs by salesEntryId for quick lookup
+    const logsByEntry = {};
+    logs.forEach(log => {
+      if (!logsByEntry[log.salesEntryId]) logsByEntry[log.salesEntryId] = [];
+      logsByEntry[log.salesEntryId].push(log);
+    });
+
+    // Write logs to Sheet 2, grouped by firm (same order as entries)
+    let currentSheet2Row = 2; // row 1 is header
+    entries.forEach(entry => {
+      const entryLogs = logsByEntry[entry.id] || [];
+      if (entryLogs.length === 0) return;
+
+      firmRowMap[entry.id] = currentSheet2Row;
+
+      entryLogs.forEach(log => {
+        ws2.addRow({
+          firmName: entry.firmName || log.salesEntry?.firmName || '',
+          gstNo: entry.gstNo || log.salesEntry?.gstNo || '',
+          city: entry.city || log.salesEntry?.city || '',
+          area: entry.area || log.salesEntry?.area || '',
+          logType: log.logType || '',
+          callType: log.callType || '',
+          loggedBy: log.loggedBy || '',
+          loggedAt: log.loggedAt ? new Date(log.loggedAt).toLocaleString() : '',
+          remark: log.remark || '',
+          latitude: log.latitude ?? '',
+          longitude: log.longitude ?? '',
+          locationAccuracy: log.locationAccuracy ?? '',
+        });
+        currentSheet2Row++;
+      });
+    });
+
+    // Style Sheet 2 data rows alternating
+    for (let r = 2; r < currentSheet2Row; r++) {
+      const row = ws2.getRow(r);
+      const logType = row.getCell('logType').value;
+      row.fill = {
+        type: 'pattern', pattern: 'solid',
+        fgColor: { argb: logType === 'VISIT' ? 'FFE8F5E9' : 'FFFFF3E0' }
+      };
+    }
+
+    // ── Now write Sheet 1 rows with hyperlinks ──────────────────────────
+    entries.forEach(entry => {
+      const visitCount = entry.visitCount || 0;
+      const callCount = entry.callCount || 0;
+      const sheet2Row = firmRowMap[entry.id];
+
+      const rowData = {
+        id: entry.id || '',
+        firmName: entry.firmName || '',
+        gstNo: entry.gstNo || '',
+        contactPerson1Name: entry.contactPerson1Name || '',
+        contactPerson1Number: entry.contactPerson1Number || '',
+        contactPerson2Name: entry.contactPerson2Name || '',
+        contactPerson2Number: entry.contactPerson2Number || '',
+        accountContactName: entry.accountContactName || '',
+        accountContactNumber: entry.accountContactNumber || '',
+        whatsappNumber: entry.whatsappNumber || entry.contactPerson1Number || '',
+        email: entry.email || '',
+        address: entry.address || '',
+        landmark: entry.landmark || '',
+        area: entry.area || '',
+        city: entry.city || '',
+        pincode: entry.pincode || '',
+        visitCount,
+        callCount,
+        totalLogs: visitCount + callCount,
+        delayCount: entry.delayCount || 0,
+        delayedBy: entry.delayedBy ? entry.delayedBy.join(', ') : '',
+        reminderDate: entry.reminderDate ? new Date(entry.reminderDate).toLocaleString() : '',
+        lastActivityDate: entry.lastActivityDate ? new Date(entry.lastActivityDate).toLocaleString() : '',
+        createdBy: entry.createdBy || '',
+        createdAt: entry.createdAt ? new Date(entry.createdAt).toLocaleString() : '',
+        updatedAt: entry.updatedAt ? new Date(entry.updatedAt).toLocaleString() : '',
+      };
+
+      const addedRow = ws1.addRow(rowData);
+
+      // Add hyperlinks on Visit Count and Call Count cells if logs exist
+      if (sheet2Row) {
+        const visitCell = addedRow.getCell('visitCount');
+        visitCell.value = {
+          text: String(visitCount),
+          hyperlink: `#'Visit & Call Logs'!A${sheet2Row}`,
+        };
+        visitCell.font = { color: { argb: 'FF0563C1' }, underline: true };
+
+        const callCell = addedRow.getCell('callCount');
+        callCell.value = {
+          text: String(callCount),
+          hyperlink: `#'Visit & Call Logs'!A${sheet2Row}`,
+        };
+        callCell.font = { color: { argb: 'FF0563C1' }, underline: true };
+      }
+    });
+
+    // Style Sheet 1 header
+    ws1.getRow(1).font = { bold: true };
+    ws1.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+
+    const fileName = `Sales_Entries_Export_${new Date().toISOString().split('T')[0]}.xlsx`;
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    window.URL.revokeObjectURL(url);
+
+    return true;
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
