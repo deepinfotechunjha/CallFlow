@@ -18,11 +18,11 @@ model User {
   secretPassword         String                   @default("DEFAULTSECRET")
   brandName              String?                  @db.VarChar(100)
   deletionHistory        DeletionHistory[]
+  orders                 Order[]
+  orderHolds             OrderHold[]
   salesEntries           SalesEntry[]
   salesLogs              SalesLog[]
   serviceDeletionHistory ServiceDeletionHistory[]
-  orders                 Order[]
-  orderHolds             OrderHold[]
 }
 
 model Call {
@@ -127,9 +127,9 @@ model Category {
 model ServiceCategory {
   id        Int      @id @default(autoincrement())
   name      String   @unique
-  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
 }
 
 model CarryInService {
@@ -151,14 +151,23 @@ model CarryInService {
   deliveredAt        DateTime?
   deliverRemark      String?
   checkRemark        String?
-  checkedBy          String?
   checkedAt          DateTime?
+<<<<<<< Updated upstream
   warrantyRemark     String?
   warrantyBy         String?
   warrantyAt         DateTime?
   repairingRemark    String?
   repairingBy        String?
   repairingAt        DateTime?
+=======
+  checkedBy          String?
+  repairingAt        DateTime?
+  repairingBy        String?
+  repairingRemark    String?
+  warrantyAt         DateTime?
+  warrantyBy         String?
+  warrantyRemark     String?
+>>>>>>> Stashed changes
   customer           Customer? @relation(fields: [customerId], references: [id])
 
   @@index([phone])
@@ -228,9 +237,9 @@ model SalesEntry {
   area                 String?    @db.VarChar(100)
   city                 String     @db.VarChar(100)
   whatsappNumber       String?    @db.VarChar(15)
+  orders               Order[]
   creator              User?      @relation(fields: [createdById], references: [id])
   logs                 SalesLog[]
-  orders               Order[]
 
   @@index([firmName])
   @@index([city])
@@ -290,8 +299,8 @@ model Order {
   completedAt      DateTime?   @db.Timestamptz(6)
   cancelledBy      String?     @db.VarChar(50)
   cancelledAt      DateTime?   @db.Timestamptz(6)
-  revertRemark     String?
   dispatchFrom     String?     @db.VarChar(50)
+  revertRemark     String?
   brandName        String      @default("") @db.VarChar(100)
   creator          User?       @relation(fields: [createdById], references: [id])
   salesEntry       SalesEntry  @relation(fields: [salesEntryId], references: [id])
@@ -325,14 +334,14 @@ model Location {
 }
 
 model OrderHold {
-  id         Int      @id @default(autoincrement())
-  orderId    Int
-  remark     String
-  heldBy     String   @db.VarChar(50)
-  heldById   Int?
-  heldAt     DateTime @default(now()) @db.Timestamptz(6)
-  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  holder     User?    @relation(fields: [heldById], references: [id])
+  id       Int      @id @default(autoincrement())
+  orderId  Int
+  remark   String
+  heldBy   String   @db.VarChar(50)
+  heldById Int?
+  heldAt   DateTime @default(now()) @db.Timestamptz(6)
+  holder   User?    @relation(fields: [heldById], references: [id])
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
   @@index([heldAt])

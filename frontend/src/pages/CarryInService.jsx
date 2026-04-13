@@ -340,8 +340,8 @@ const CarryInService = () => {
   };
 
   const getRowColor = (service) => {
-    if (service.warrantyRemark) return 'bg-amber-50';
-    if (service.repairingRemark) return 'bg-rose-50';
+    if (service.warrantyRemark) return 'bg-blue-200 hover:bg-blue-200';
+    if (service.repairingRemark) return 'bg-green-200 hover:bg-green-200';
     return '';
   };
 
@@ -691,8 +691,12 @@ const CarryInService = () => {
       {/* Services - Responsive Layout */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="px-4 sm:px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-            <span>📊</span> Service Records
+          <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2 justify-between">
+            <span className="flex items-center gap-2"><span>📊</span> Service Records</span>
+            <span className="flex items-center gap-3 text-xs font-medium">
+              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-blue-200"></span> Warranty</span>
+              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-green-200"></span> Repairing</span>
+            </span>
           </h2>
         </div>
 
@@ -726,7 +730,7 @@ const CarryInService = () => {
               )}
               <div className="divide-y divide-gray-200">
                 {filteredServices.map((service, index) => (
-                  <div key={service.id} className={`p-4 hover:bg-gray-50 transition-colors ${getRowColor(service)}`}>
+                  <div key={service.id} className={`p-4 transition-colors ${getRowColor(service) || 'hover:bg-gray-50'}`}>
                     {user?.role === 'HOST' && service.status === 'COMPLETED_AND_COLLECTED' && (
                       <div className="flex justify-end mb-2">
                         <input
@@ -890,7 +894,7 @@ const CarryInService = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredServices.map((service, index) => (
-                    <tr key={service.id} onClick={() => setSelectedService(service)} className={`cursor-pointer hover:bg-gray-50 transition-colors ${getRowColor(service)}`}>
+                    <tr key={service.id} onClick={() => setSelectedService(service)} className={`cursor-pointer transition-colors ${getRowColor(service) || 'hover:bg-gray-50'}`}>
                       <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-500 w-16">
                         {index + 1}
                       </td>

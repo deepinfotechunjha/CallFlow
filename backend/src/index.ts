@@ -2851,7 +2851,7 @@ app.post('/carry-in-services/:id/warranty', authMiddleware, async (req: Request,
         if (existingService.status !== 'PENDING') return res.status(400).json({ error: 'Can only mark PENDING services as warranty' });
         const service = await prisma.carryInService.update({
             where: { id: serviceId },
-            data: { warrantyRemark: warrantyRemark.trim(), warrantyBy: req.user.username, warrantyAt: new Date() }
+            data: { warrantyRemark: warrantyRemark.trim(), warrantyBy: req.user.username, warrantyAt: new Date(), repairingRemark: null, repairingBy: null, repairingAt: null }
         });
         emitToAll('service_updated', service);
         res.json(service);
@@ -2869,7 +2869,7 @@ app.post('/carry-in-services/:id/repairing', authMiddleware, async (req: Request
         if (existingService.status !== 'PENDING') return res.status(400).json({ error: 'Can only mark PENDING services as repairing' });
         const service = await prisma.carryInService.update({
             where: { id: serviceId },
-            data: { repairingRemark: repairingRemark.trim(), repairingBy: req.user.username, repairingAt: new Date() }
+            data: { repairingRemark: repairingRemark.trim(), repairingBy: req.user.username, repairingAt: new Date(), warrantyRemark: null, warrantyBy: null, warrantyAt: null }
         });
         emitToAll('service_updated', service);
         res.json(service);
