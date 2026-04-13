@@ -55,6 +55,7 @@ const OrdersPage = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [expandedHolds, setExpandedHolds] = useState({});
   const [confirmCancel, setConfirmCancel] = useState(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [createdByFilter, setCreatedByFilter] = useState('ALL');
@@ -131,8 +132,10 @@ const OrdersPage = () => {
   };
 
   const handleCancel = async (order) => {
-    setConfirmCancel(null);
+    setIsCancelling(true);
     await cancelOrder(order.id);
+    setIsCancelling(false);
+    setConfirmCancel(null);
   };
 
   const toggleHolds = (id) => setExpandedHolds(prev => ({ ...prev, [id]: !prev[id] }));
@@ -593,8 +596,10 @@ const OrdersPage = () => {
             <p className="text-sm text-gray-600 mb-1">Firm: <strong>{confirmCancel.salesEntry?.firmName}</strong></p>
             <p className="text-sm text-gray-500 mb-5">The order will be marked as cancelled and remain visible.</p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmCancel(null)} className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">Go Back</button>
-              <button onClick={() => handleCancel(confirmCancel)} className="flex-1 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">Yes, Cancel</button>
+              <button onClick={() => setConfirmCancel(null)} disabled={isCancelling} className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">Go Back</button>
+              <button onClick={() => handleCancel(confirmCancel)} disabled={isCancelling} className="flex-1 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-400 text-sm font-medium flex items-center justify-center gap-2">
+                {isCancelling ? <><span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span> Cancelling...</> : 'Yes, Cancel'}
+              </button>
             </div>
           </div>
         </div>
