@@ -26,7 +26,7 @@ const PublicCallForm = () => {
 
   const validateLink = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/share/${linkId}`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/share/${linkId}`);
       const data = await response.json();
 
       if (response.ok && data.success) {
@@ -46,7 +46,7 @@ const PublicCallForm = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/categories`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/categories`);
       if (response.ok) {
         const data = await response.json();
         setCategories(data);
@@ -66,7 +66,7 @@ const PublicCallForm = () => {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/share/${linkId}/submit`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/share/${linkId}/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

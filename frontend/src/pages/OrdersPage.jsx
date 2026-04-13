@@ -77,7 +77,7 @@ const OrdersPage = () => {
     if (isExporting) return;
     setIsExporting(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/auth/verify-secret`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/verify-secret`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

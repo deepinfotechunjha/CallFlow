@@ -11,7 +11,7 @@ const SalesShareModal = ({ isOpen, onClose }) => {
   const generateShareLink = async () => {
     setIsGenerating(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/share/create-sales-link`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/share/create-sales-link`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
