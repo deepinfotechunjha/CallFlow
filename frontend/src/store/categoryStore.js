@@ -69,10 +69,14 @@ const useCategoryStore = create((set, get) => ({
   
   deleteCategory: async (id) => {
     try {
-      await apiClient.delete(`/categories/${id}`);
+      await apiClient.delete(`/categories/${id}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      set(state => ({ categories: state.categories.filter(c => c.id !== id) }));
       toast.success('Category deleted successfully');
     } catch (error) {
-      toast.error('Failed to delete category');
+      const message = error.response?.data?.error || 'Failed to delete category';
+      toast.error(message);
       throw error;
     }
   }

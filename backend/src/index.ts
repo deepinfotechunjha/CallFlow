@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { PrismaClient } from "@prisma/client";
@@ -22,6 +23,7 @@ declare global {
                 id: number;
                 username: string;
                 role: string;
+                brandName?: string;
             };
         }
     }
@@ -32,6 +34,7 @@ interface AuthenticatedRequest extends Request {
         id: number;
         username: string;
         role: string;
+        brandName?: string;
     };
 }
 
@@ -94,23 +97,79 @@ const httpServer = createServer(app);
 
 const allowedOrigins = [
     process.env.FRONTEND_ORIGIN || 'http://localhost:5173',
-    'https://call-manage.netlify.app',
-    'https://deploy-call.netlify.app',
-    'https://deploycall.netlify.app',
-    'https://deepcallflow.netlify.app', // Add your actual Netlify URL
+    'http://localhost:5173',
     'http://localhost:5174',
-    'http://localhost:5175'
+    'http://localhost:5175',
+    'http://localhost:5176',
+    'http://localhost:5177',
+    'http://localhost:5178',
+    'http://localhost:5179',
+    'http://localhost:5180',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'http://localhost:4000',
+    'http://localhost:4001',
+    'http://localhost:8000',
+    'http://localhost:8080',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174',
+    'http://127.0.0.1:5175',
+    'http://127.0.0.1:5176',
+    'http://127.0.0.1:5177',
+    'http://127.0.0.1:5178',
+    'http://127.0.0.1:5179',
+    'http://127.0.0.1:5180',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
+    'http://127.0.0.1:3002',
+    'http://127.0.0.1:4000',
+    'http://127.0.0.1:4001',
+    'http://127.0.0.1:8000',
+    'http://127.0.0.1:8080'
 ];
 
 const io = new Server(httpServer, {
     cors: {
-        origin: allowedOrigins,
+        origin: [
+            'http://localhost:5173',
+            'http://localhost:5174',
+            'http://localhost:5175',
+            'http://localhost:5176',
+            'http://localhost:5177',
+            'http://localhost:5178',
+            'http://localhost:5179',
+            'http://localhost:5180',
+            'http://localhost:3000',
+            'http://localhost:3001',
+            'http://localhost:3002',
+            'http://localhost:4000',
+            'http://localhost:4001',
+            'http://localhost:8000',
+            'http://localhost:8080',
+            'http://127.0.0.1:5173',
+            'http://127.0.0.1:5174',
+            'http://127.0.0.1:5175',
+            'http://127.0.0.1:5176',
+            'http://127.0.0.1:5177',
+            'http://127.0.0.1:5178',
+            'http://127.0.0.1:5179',
+            'http://127.0.0.1:5180',
+            'http://127.0.0.1:3000',
+            'http://127.0.0.1:3001',
+            'http://127.0.0.1:3002',
+            'http://127.0.0.1:4000',
+            'http://127.0.0.1:4001',
+            'http://127.0.0.1:8000',
+            'http://127.0.0.1:8080'
+        ],
         methods: ["GET", "POST"],
         credentials: true
     }
 });
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.use(cors({
     origin: (origin, callback) => {
@@ -120,7 +179,7 @@ app.use(cors({
         // Check if origin is in allowed list
         if (allowedOrigins.includes(origin)) return callback(null, true);
         
-        // Allow localhost in development with proper validation
+        // Allow localhost and 127.0.0.1 with any port in development
         if (process.env.NODE_ENV !== 'production') {
             const localhostPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
             if (localhostPattern.test(origin)) {
@@ -289,6 +348,8 @@ async function sendServiceDeletionNotificationEmail(
     console.error('Failed to send service deletion notification email:', error);
   }
 }
+
+const capitalize = (s: string) => s.trim() ? s.trim().charAt(0).toUpperCase() + s.trim().slice(1).toLowerCase() : s.trim();
 
 function signToken(payload: object) {
     return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
@@ -471,11 +532,11 @@ app.post('/auth/login', async (req: Request, res: Response) => {
 
         if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
 
-        const token = signToken({ 
-            id: user.id, 
-            username: user.username, 
-            role: user.role 
-        });
+            const tokenPayload: any = { id: user.id, username: user.username, role: user.role };
+        if (user.role === 'COMPANY_BASED_ACCESS' && user.brandName) {
+            tokenPayload.brandName = user.brandName;
+        }
+        const token = signToken(tokenPayload);
 
         res.json({ 
             token, 
@@ -484,7 +545,8 @@ app.post('/auth/login', async (req: Request, res: Response) => {
                 username: user.username, 
                 email: user.email,
                 phone: user.phone,
-                role: user.role, 
+                role: user.role,
+                brandName: user.brandName || null,
                 createdAt: user.createdAt 
             } 
         });
@@ -502,7 +564,7 @@ app.get('/auth/me', authMiddleware, async (req: Request, res: Response) => {
         
         const user = await withRetry(() => prisma.user.findUnique({ 
             where: { id: req.user!.id },
-            select: { id: true, username: true, email: true, phone: true, role: true, createdAt: true }
+            select: { id: true, username: true, email: true, phone: true, role: true, brandName: true, createdAt: true }
         }));
         
         if (!user) {
@@ -963,10 +1025,10 @@ app.post('/auth/reset-password', authMiddleware, async (req: Request, res: Respo
 });
 
 // User endpoints - display purpose anywhere 
-app.get("/users", authMiddleware, requireRole(['HOST', 'ADMIN', 'SPECIAL_ADMIN']), async (_req: Request, res: Response) => {
+app.get("/users", authMiddleware, requireRole(['HOST', 'ADMIN', 'SPECIAL_ADMIN', 'SALES_ADMIN', 'ACCOUNTANT']), async (_req: Request, res: Response) => {
     try {
         const users = await prisma.user.findMany({ 
-            select: { id: true, username: true, email: true, phone: true, role: true, createdAt: true } 
+            select: { id: true, username: true, email: true, phone: true, role: true, brandName: true, createdAt: true } 
         });
         res.json(users);
     } catch (err: any) {
@@ -982,8 +1044,17 @@ app.post("/users", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), async
         return res.status(400).json({ error: "username, password, email, phone, and role are required" });
     }
     
-    if (!['HOST', 'ADMIN', 'ENGINEER'].includes(role)) {
-        return res.status(400).json({ error: "Invalid role. Must be HOST, ADMIN, or ENGINEER" });
+    if (!['HOST', 'ADMIN', 'ENGINEER', 'SALES_EXECUTIVE', 'ACCOUNTANT', 'COMPANY_PAYROLL', 'TALLY_CALLER', 'SALES_ADMIN', 'COMPANY_BASED_ACCESS'].includes(role)) {
+        return res.status(400).json({ error: "Invalid role" });
+    }
+
+    const { brandName } = req.body as { brandName?: string };
+    if (role === 'COMPANY_BASED_ACCESS') {
+        if (!brandName || !brandName.trim()) {
+            return res.status(400).json({ error: 'brandName is required for COMPANY_BASED_ACCESS role' });
+        }
+        const brand = await prisma.brand.findFirst({ where: { name: brandName.trim(), isActive: true } });
+        if (!brand) return res.status(400).json({ error: 'Invalid or inactive brand name' });
     }
     
     try {
@@ -991,7 +1062,7 @@ app.post("/users", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), async
         const hashedSecretPassword = await bcrypt.hash(secretPassword || 'DEFAULTSECRET', 10);
         
         const user = await prisma.user.create({ 
-            data: { username, password: hashed, email, phone, role, secretPassword: hashedSecretPassword } 
+            data: { username, password: hashed, email, phone, role, secretPassword: hashedSecretPassword, brandName: role === 'COMPANY_BASED_ACCESS' ? brandName!.trim() : null } 
         });
         
         const userResponse = { 
@@ -999,7 +1070,8 @@ app.post("/users", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), async
             username: user.username, 
             email: user.email,
             phone: user.phone,
-            role: user.role, 
+            role: user.role,
+            brandName: user.brandName || null,
             createdAt: user.createdAt 
         };
         
@@ -1048,7 +1120,8 @@ app.put("/users/:id", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), as
             updateData.password = await bcrypt.hash(password, 10);
         }
         
-        if (role && ['HOST', 'ADMIN', 'ENGINEER'].includes(role)) {
+        const { brandName: updateBrandName } = req.body as { brandName?: string };
+        if (role && ['HOST', 'ADMIN', 'ENGINEER', 'SALES_EXECUTIVE', 'ACCOUNTANT', 'COMPANY_PAYROLL', 'TALLY_CALLER', 'SALES_ADMIN', 'COMPANY_BASED_ACCESS'].includes(role)) {
             updateData.role = role;
             
             if (role === 'HOST' && currentUser.role !== 'HOST') {
@@ -1056,12 +1129,28 @@ app.put("/users/:id", authMiddleware, requireRole(['HOST', 'SPECIAL_ADMIN']), as
             } else if (role !== 'HOST' && currentUser.role === 'HOST') {
                 updateData.secretPassword = await bcrypt.hash('DEFAULTSECRET', 10);
             }
+
+            if (role === 'COMPANY_BASED_ACCESS') {
+                const bn = updateBrandName?.trim();
+                if (!bn) return res.status(400).json({ error: 'brandName is required for COMPANY_BASED_ACCESS role' });
+                const brand = await prisma.brand.findFirst({ where: { name: bn, isActive: true } });
+                if (!brand) return res.status(400).json({ error: 'Invalid or inactive brand name' });
+                updateData.brandName = bn;
+            } else {
+                updateData.brandName = null;
+            }
+        } else if (updateBrandName !== undefined && currentUser.role === 'COMPANY_BASED_ACCESS') {
+            const bn = updateBrandName.trim();
+            if (!bn) return res.status(400).json({ error: 'brandName is required for COMPANY_BASED_ACCESS role' });
+            const brand = await prisma.brand.findFirst({ where: { name: bn, isActive: true } });
+            if (!brand) return res.status(400).json({ error: 'Invalid or inactive brand name' });
+            updateData.brandName = bn;
         }
         
         const user = await prisma.user.update({
             where: { id: userId },
             data: updateData,
-            select: { id: true, username: true, email: true, phone: true, role: true, createdAt: true }
+            select: { id: true, username: true, email: true, phone: true, role: true, brandName: true, createdAt: true }
         });
         
         // Force logout the updated user via WebSocket
@@ -2061,6 +2150,256 @@ app.post('/notifications/bulk-delete', authMiddleware, async (req: Request, res:
     }
 });
 
+// Cities endpoints
+app.get('/cities', async (_req: Request, res: Response) => {
+    try {
+        const cities = await prisma.city.findMany({
+            where: { isActive: true },
+            orderBy: { name: 'asc' }
+        });
+        res.json(cities);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.get('/cities/protected', authMiddleware, async (_req: Request, res: Response) => {
+    try {
+        const cities = await prisma.city.findMany({
+            where: { isActive: true },
+            orderBy: { name: 'asc' }
+        });
+        res.json(cities);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/cities', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (req: Request, res: Response) => {
+    const { name } = req.body as { name: string };
+    
+    if (!name || !name.trim()) {
+        return res.status(400).json({ error: 'City name is required' });
+    }
+    
+    try {
+        // Check if a city with this name already exists (including inactive ones)
+        const existingCity = await prisma.city.findUnique({
+            where: { name: name.trim() }
+        });
+        
+        if (existingCity) {
+            if (existingCity.isActive) {
+                return res.status(400).json({ error: 'City already exists' });
+            } else {
+                // Reactivate the existing city
+                const city = await prisma.city.update({
+                    where: { id: existingCity.id },
+                    data: { isActive: true }
+                });
+                emitToAll('city_created', city);
+                return res.status(201).json(city);
+            }
+        }
+        
+        // Create new city if none exists
+        const city = await prisma.city.create({
+            data: { name: name.trim() }
+        });
+        
+        emitToAll('city_created', city);
+        res.status(201).json(city);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.put('/cities/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const cityId = parseInt(req.params.id || '');
+    const { name } = req.body as { name: string };
+    
+    if (!name || !name.trim()) {
+        return res.status(400).json({ error: 'City name is required' });
+    }
+    
+    try {
+        const city = await prisma.city.update({
+            where: { id: cityId },
+            data: { name: name.trim() }
+        });
+        
+        emitToAll('city_updated', city);
+        res.json(city);
+    } catch (err: any) {
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'City already exists' });
+        }
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.delete('/cities/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const cityId = parseInt(req.params.id || '');
+    
+    try {
+        const city = await prisma.city.update({
+            where: { id: cityId },
+            data: { isActive: false }
+        });
+        
+        // Also deactivate all areas in this city
+        await prisma.area.updateMany({
+            where: { cityId: cityId },
+            data: { isActive: false }
+        });
+        
+        emitToAll('city_deleted', { id: cityId });
+        res.json({ success: true, city });
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// Areas endpoints
+app.get('/areas', async (req: Request, res: Response) => {
+    const { cityId } = req.query as { cityId?: string };
+    
+    try {
+        const whereClause: any = { isActive: true };
+        if (cityId) {
+            whereClause.cityId = parseInt(cityId);
+        }
+        
+        const areas = await prisma.area.findMany({
+            where: whereClause,
+            include: { city: true },
+            orderBy: { name: 'asc' }
+        });
+        res.json(areas);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.get('/areas/protected', authMiddleware, async (req: Request, res: Response) => {
+    const { cityId } = req.query as { cityId?: string };
+    
+    try {
+        const whereClause: any = { isActive: true };
+        if (cityId) {
+            whereClause.cityId = parseInt(cityId);
+        }
+        
+        const areas = await prisma.area.findMany({
+            where: whereClause,
+            include: { city: true },
+            orderBy: { name: 'asc' }
+        });
+        res.json(areas);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/areas', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (req: Request, res: Response) => {
+    const { name, cityId } = req.body as { name: string; cityId: number };
+    
+    if (!name || !name.trim() || !cityId) {
+        return res.status(400).json({ error: 'Area name and city are required' });
+    }
+    
+    try {
+        // Check if city exists
+        const city = await prisma.city.findUnique({ where: { id: cityId } });
+        if (!city || !city.isActive) {
+            return res.status(400).json({ error: 'Invalid city selected' });
+        }
+        
+        // Check if area already exists in this city
+        const existingArea = await prisma.area.findUnique({
+            where: { 
+                name_cityId: {
+                    name: name.trim(),
+                    cityId: cityId
+                }
+            }
+        });
+        
+        if (existingArea) {
+            if (existingArea.isActive) {
+                return res.status(400).json({ error: 'Area already exists in this city' });
+            } else {
+                // Reactivate the existing area
+                const area = await prisma.area.update({
+                    where: { id: existingArea.id },
+                    data: { isActive: true },
+                    include: { city: true }
+                });
+                emitToAll('area_created', area);
+                return res.status(201).json(area);
+            }
+        }
+        
+        // Create new area
+        const area = await prisma.area.create({
+            data: { 
+                name: name.trim(),
+                cityId: cityId
+            },
+            include: { city: true }
+        });
+        
+        emitToAll('area_created', area);
+        res.status(201).json(area);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.put('/areas/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const areaId = parseInt(req.params.id || '');
+    const { name, cityId } = req.body as { name: string; cityId: number };
+    
+    if (!name || !name.trim() || !cityId) {
+        return res.status(400).json({ error: 'Area name and city are required' });
+    }
+    
+    try {
+        const area = await prisma.area.update({
+            where: { id: areaId },
+            data: { 
+                name: name.trim(),
+                cityId: cityId
+            },
+            include: { city: true }
+        });
+        
+        emitToAll('area_updated', area);
+        res.json(area);
+    } catch (err: any) {
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'Area already exists in this city' });
+        }
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.delete('/areas/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const areaId = parseInt(req.params.id || '');
+    
+    try {
+        const area = await prisma.area.update({
+            where: { id: areaId },
+            data: { isActive: false }
+        });
+        
+        emitToAll('area_deleted', { id: areaId });
+        res.json({ success: true, area });
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
 // Categories endpoints
 app.get('/categories', async (_req: Request, res: Response) => {
     try {
@@ -2449,6 +2788,96 @@ app.post('/carry-in-services/:id/deliver', authMiddleware, async (req: Request, 
     }
 });
 
+app.post('/carry-in-services/:id/check', authMiddleware, async (req: Request, res: Response) => {
+    const serviceId = parseInt(req.params.id || '');
+    const { checkRemark } = req.body as { checkRemark: string };
+    
+    if (!req.user?.username) {
+        return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    if (!['HOST', 'ADMIN', 'ENGINEER'].includes(req.user.role)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    
+    if (!checkRemark || !checkRemark.trim()) {
+        return res.status(400).json({ error: 'Check remark is required' });
+    }
+    
+    try {
+        const existingService = await prisma.carryInService.findUnique({ where: { id: serviceId } });
+        if (!existingService) {
+            return res.status(404).json({ error: 'Service not found' });
+        }
+        
+        if (existingService.status !== 'PENDING') {
+            return res.status(400).json({ error: 'Can only check services in PENDING status' });
+        }
+        
+        const timestamp = new Date().toLocaleString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+        const newCheckEntry = `${req.user.username} (${timestamp}): ${checkRemark.trim()}`;
+        const updatedCheckRemark = existingService.checkRemark
+            ? `${existingService.checkRemark}\n${newCheckEntry}`
+            : newCheckEntry;
+        
+        const service = await prisma.carryInService.update({
+            where: { id: serviceId },
+            data: {
+                checkRemark: updatedCheckRemark,
+                checkedBy: req.user.username,
+                checkedAt: new Date()
+            }
+        });
+        
+        emitToAll('service_updated', service);
+        res.json(service);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/carry-in-services/:id/warranty', authMiddleware, async (req: Request, res: Response) => {
+    const serviceId = parseInt(req.params.id || '');
+    const { warrantyRemark } = req.body as { warrantyRemark: string };
+    if (!req.user?.username) return res.status(401).json({ error: 'User not authenticated' });
+    if (!warrantyRemark || !warrantyRemark.trim()) return res.status(400).json({ error: 'Warranty remark is required' });
+    try {
+        const existingService = await prisma.carryInService.findUnique({ where: { id: serviceId } });
+        if (!existingService) return res.status(404).json({ error: 'Service not found' });
+        if (existingService.status !== 'PENDING') return res.status(400).json({ error: 'Can only mark PENDING services as warranty' });
+        const service = await prisma.carryInService.update({
+            where: { id: serviceId },
+            data: { warrantyRemark: warrantyRemark.trim(), warrantyBy: req.user.username, warrantyAt: new Date(), repairingRemark: null, repairingBy: null, repairingAt: null }
+        });
+        emitToAll('service_updated', service);
+        res.json(service);
+    } catch (err: any) { res.status(500).json({ error: String(err) }); }
+});
+
+app.post('/carry-in-services/:id/repairing', authMiddleware, async (req: Request, res: Response) => {
+    const serviceId = parseInt(req.params.id || '');
+    const { repairingRemark } = req.body as { repairingRemark: string };
+    if (!req.user?.username) return res.status(401).json({ error: 'User not authenticated' });
+    if (!repairingRemark || !repairingRemark.trim()) return res.status(400).json({ error: 'Repairing remark is required' });
+    try {
+        const existingService = await prisma.carryInService.findUnique({ where: { id: serviceId } });
+        if (!existingService) return res.status(404).json({ error: 'Service not found' });
+        if (existingService.status !== 'PENDING') return res.status(400).json({ error: 'Can only mark PENDING services as repairing' });
+        const service = await prisma.carryInService.update({
+            where: { id: serviceId },
+            data: { repairingRemark: repairingRemark.trim(), repairingBy: req.user.username, repairingAt: new Date(), warrantyRemark: null, warrantyBy: null, warrantyAt: null }
+        });
+        emitToAll('service_updated', service);
+        res.json(service);
+    } catch (err: any) { res.status(500).json({ error: String(err) }); }
+});
+
 // Bulk Delete Carry-In Services endpoint
 app.post('/carry-in-services/bulk-delete', authMiddleware, async (req: Request, res: Response) => {
     const { serviceIds, secretPassword } = req.body as { serviceIds: number[]; secretPassword: string };
@@ -2573,7 +3002,114 @@ app.post('/carry-in-services/bulk-delete', authMiddleware, async (req: Request, 
     }
 });
 
-// Share link endpoints
+// Public API middleware for cookie validation
+function validatePublicAccess(req: Request, res: Response, next: NextFunction) {
+    const token = req.cookies?.publicAccessToken;
+    
+    if (!token) {
+        return res.status(401).json({ error: 'Access token required' });
+    }
+    
+    // Validate token in database
+    prisma.publicAccessToken.findFirst({
+        where: {
+            token,
+            expiresAt: { gt: new Date() },
+            used: false
+        }
+    }).then(tokenRecord => {
+        if (!tokenRecord) {
+            return res.status(401).json({ error: 'Invalid or expired access token' });
+        }
+        next();
+    }).catch(err => {
+        console.error('Token validation error:', err);
+        res.status(500).json({ error: 'Token validation failed' });
+    });
+}
+
+// Public endpoints for sales share form
+app.get('/api/public/cities', validatePublicAccess, async (req: Request, res: Response) => {
+    try {
+        const cities = await prisma.city.findMany({
+            where: { isActive: true },
+            select: { id: true, name: true },
+            orderBy: { name: 'asc' }
+        });
+        
+        res.json(cities);
+    } catch (err: any) {
+        res.status(500).json({ error: 'Failed to fetch cities' });
+    }
+});
+
+app.get('/api/public/areas', validatePublicAccess, async (req: Request, res: Response) => {
+    const { cityId } = req.query as { cityId?: string };
+    
+    try {
+        const whereClause: any = { isActive: true };
+        if (cityId) {
+            whereClause.cityId = parseInt(cityId);
+        }
+        
+        const areas = await prisma.area.findMany({
+            where: whereClause,
+            select: { name: true },
+            orderBy: { name: 'asc' }
+        });
+        
+        const areaList = areas.map(area => area.name);
+        res.json(areaList);
+    } catch (err: any) {
+        res.status(500).json({ error: 'Failed to fetch areas' });
+    }
+});
+
+// Create public access token when share link is accessed
+app.post('/api/public/create-access-token', async (req: Request, res: Response) => {
+    try {
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+        
+        await prisma.publicAccessToken.create({
+            data: {
+                token,
+                expiresAt
+            }
+        });
+        
+        // Set cookie for 1 hour
+        res.cookie('publicAccessToken', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 1000 // 1 hour
+        });
+        
+        res.json({ success: true, expiresAt });
+    } catch (err: any) {
+        res.status(500).json({ error: 'Failed to create access token' });
+    }
+});
+
+// Cleanup expired tokens (run periodically)
+setInterval(async () => {
+    try {
+        const result = await prisma.publicAccessToken.deleteMany({
+            where: {
+                OR: [
+                    { expiresAt: { lt: new Date() } },
+                    { used: true }
+                ]
+            }
+        });
+        if (result.count > 0) {
+            console.log(`Cleaned up ${result.count} expired public access tokens`);
+        }
+    } catch (error) {
+        console.error('Failed to cleanup expired tokens:', error);
+    }
+}, 10 * 60 * 1000); // Every 10 minutes
 app.post('/share/create-link', authMiddleware, async (req: Request, res: Response) => {
     try {
         // Create JWT token with 24 hour expiry and unique ID
@@ -2598,6 +3134,59 @@ app.post('/share/create-link', authMiddleware, async (req: Request, res: Respons
     } catch (err: any) {
         console.error('Create share link error:', err);
         res.status(500).json({ error: 'Failed to create share link' });
+    }
+});
+
+app.post('/share/create-service-link', authMiddleware, async (req: Request, res: Response) => {
+    try {
+        const token = jwt.sign(
+            { 
+                type: 'service-share-link',
+                id: crypto.randomUUID(),
+                createdAt: Date.now(),
+                exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60)
+            }, 
+            JWT_SECRET
+        );
+        
+        const shareUrl = `${process.env.FRONTEND_ORIGIN || 'http://localhost:5173'}/share-service/${token}`;
+        
+        res.json({ 
+            success: true, 
+            shareUrl,
+            linkId: token,
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+        });
+    } catch (err: any) {
+        console.error('Create service share link error:', err);
+        res.status(500).json({ error: 'Failed to create service share link' });
+    }
+});
+
+app.post('/share/create-sales-link', authMiddleware, async (req: Request, res: Response) => {
+    try {
+        // Create JWT token with 1 hour expiry and unique ID
+        const token = jwt.sign(
+            { 
+                type: 'sales-share-link',
+                id: crypto.randomUUID(), // Unique ID ensures no duplicates
+                createdAt: Date.now(),
+                exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+            }, 
+            JWT_SECRET
+        );
+        
+        const shareUrl = `${process.env.FRONTEND_ORIGIN || 'http://localhost:5173'}/share/sales/${token}`;
+        
+        res.json({ 
+            success: true, 
+            shareUrl,
+            linkId: token,
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+        });
+    } catch (err: any) {
+        console.error('Create sales share link error:', err);
+        res.status(500).json({ error: 'Failed to create sales share link' });
     }
 });
 
@@ -2639,6 +3228,231 @@ app.get('/share/:linkId', async (req: Request, res: Response) => {
     }
 });
 
+app.get('/share/sales/:linkId', async (req: Request, res: Response) => {
+    const { linkId } = req.params;
+    
+    if (!linkId) {
+        return res.status(400).json({ error: 'Link ID is required' });
+    }
+    
+    try {
+        // Check if token was already used
+        if (usedShareTokens.has(linkId)) {
+            return res.status(404).json({ error: 'Share link has already been used' });
+        }
+        
+        // Verify JWT token
+        const decoded = jwt.verify(linkId, JWT_SECRET) as any;
+        
+        if (decoded.type !== 'sales-share-link') {
+            return res.status(404).json({ error: 'Invalid sales share link' });
+        }
+        
+        // Create public access token for city/area data
+        const publicToken = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+        
+        await prisma.publicAccessToken.create({
+            data: {
+                token: publicToken,
+                expiresAt
+            }
+        });
+        
+        // Set cookie for 1 hour
+        res.cookie('publicAccessToken', publicToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 1000 // 1 hour
+        });
+        
+        res.json({ 
+            success: true, 
+            valid: true,
+            createdAt: new Date(decoded.createdAt).toISOString(),
+            expiresAt: new Date(decoded.exp * 1000).toISOString(),
+            publicAccessExpiresAt: expiresAt.toISOString()
+        });
+    } catch (err: any) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(404).json({ error: 'Share link has expired' });
+        }
+        if (err.name === 'JsonWebTokenError') {
+            return res.status(404).json({ error: 'Invalid share link' });
+        }
+        console.error('Validate sales share link error:', err);
+        res.status(500).json({ error: 'Failed to validate share link' });
+    }
+});
+
+app.post('/share/sales/:linkId/submit', async (req: Request, res: Response) => {
+    const { linkId } = req.params;
+    const { firmName, gstNo, contactPerson1Name, contactPerson1Number, contactPerson2Name, contactPerson2Number, accountContactName, accountContactNumber, address, landmark, area, city, pincode, email, whatsappNumber } = req.body;
+    
+    if (!linkId) {
+        return res.status(400).json({ error: 'Link ID is required' });
+    }
+    
+    if (!firmName || !gstNo || !contactPerson1Name || !contactPerson1Number || !address || !area || !city || !pincode) {
+        return res.status(400).json({ error: 'Required fields missing (area is required)' });
+    }
+    
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    if (!gstRegex.test(gstNo)) {
+        return res.status(400).json({ error: 'Invalid GST number format' });
+    }
+    
+    try {
+        // Check if token was already used
+        if (usedShareTokens.has(linkId)) {
+            return res.status(404).json({ error: 'Share link has already been used' });
+        }
+        
+        // Verify JWT token
+        const decoded = jwt.verify(linkId, JWT_SECRET) as any;
+        
+        if (decoded.type !== 'sales-share-link') {
+            return res.status(404).json({ error: 'Invalid sales share link' });
+        }
+        
+        // Mark public access token as used and delete cookie
+        const publicToken = req.cookies?.publicAccessToken;
+        if (publicToken) {
+            await prisma.publicAccessToken.updateMany({
+                where: { token: publicToken },
+                data: { used: true }
+            });
+            res.clearCookie('publicAccessToken');
+        }
+        
+        // Find the first HOST user to assign the entry to
+        const hostUser = await prisma.user.findFirst({
+            where: { role: 'HOST' },
+            select: { id: true }
+        });
+        
+        if (!hostUser) {
+            const anyUser = await prisma.user.findFirst({
+                select: { id: true }
+            });
+            
+            if (!anyUser) {
+                return res.status(500).json({ error: 'No users found in system' });
+            }
+            
+            const entry = await prisma.salesEntry.create({
+                data: {
+                    firmName,
+                    gstNo: gstNo.toUpperCase(),
+                    contactPerson1Name,
+                    contactPerson1Number,
+                    contactPerson2Name,
+                    contactPerson2Number,
+                    accountContactName,
+                    accountContactNumber,
+                    address,
+                    landmark,
+                    area,
+                    city,
+                    pincode,
+                    email,
+                    whatsappNumber: whatsappNumber || null,
+                    createdBy: 'Share Link',
+                    createdById: anyUser.id
+                }
+            });
+            
+            usedShareTokens.add(linkId);
+            emitToAll('sales_entry_created', entry);
+            
+            return res.status(201).json({ 
+                success: true, 
+                entry,
+                message: 'Sales entry submitted successfully' 
+            });
+        }
+        
+        const entry = await prisma.salesEntry.create({
+            data: {
+                firmName,
+                gstNo: gstNo.toUpperCase(),
+                contactPerson1Name,
+                contactPerson1Number,
+                contactPerson2Name,
+                contactPerson2Number,
+                accountContactName,
+                accountContactNumber,
+                address,
+                landmark,
+                area,
+                city,
+                pincode,
+                email,
+                whatsappNumber: whatsappNumber || null,
+                createdBy: 'Share Link',
+                createdById: hostUser.id
+            }
+        });
+        
+        usedShareTokens.add(linkId);
+        emitToAll('sales_entry_created', entry);
+        
+        res.status(201).json({ 
+            success: true, 
+            entry,
+            message: 'Sales entry submitted successfully' 
+        });
+    } catch (err: any) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(404).json({ error: 'Share link has expired' });
+        }
+        if (err.name === 'JsonWebTokenError') {
+            return res.status(404).json({ error: 'Invalid share link' });
+        }
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'GST number is already present' });
+        }
+        console.error('Submit sales share link error:', err);
+        res.status(500).json({ error: 'Failed to submit sales entry' });
+    }
+});
+
+app.get('/share-service/:linkId', async (req: Request, res: Response) => {
+    const { linkId } = req.params;
+    
+    if (!linkId) {
+        return res.status(400).json({ error: 'Link ID is required' });
+    }
+    
+    try {
+        if (usedShareTokens.has(linkId)) {
+            return res.status(404).json({ error: 'Share link has already been used' });
+        }
+        
+        const decoded = jwt.verify(linkId, JWT_SECRET) as any;
+        
+        if (decoded.type !== 'service-share-link') {
+            return res.status(404).json({ error: 'Invalid service share link' });
+        }
+        
+        res.json({ 
+            success: true, 
+            valid: true,
+            createdAt: new Date(decoded.createdAt).toISOString(),
+            expiresAt: new Date(decoded.exp * 1000).toISOString()
+        });
+    } catch (err: any) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(404).json({ error: 'Share link has expired' });
+        }
+        if (err.name === 'JsonWebTokenError') {
+            return res.status(404).json({ error: 'Invalid share link' });
+        }
+        res.status(500).json({ error: 'Failed to validate share link' });
+    }
+});
+
 app.post('/share/:linkId/submit', async (req: Request, res: Response) => {
     const { linkId } = req.params;
     const { customerName, phone, email, address, problem, category } = req.body as {
@@ -2670,9 +3484,6 @@ app.post('/share/:linkId/submit', async (req: Request, res: Response) => {
         if (decoded.type !== 'share-link') {
             return res.status(404).json({ error: 'Invalid share link' });
         }
-        
-        // Mark token as used
-        usedShareTokens.add(linkId);
         
         // Create customer if doesn't exist
         let customer = null;
@@ -2720,7 +3531,7 @@ app.post('/share/:linkId/submit', async (req: Request, res: Response) => {
             }) : prisma.$queryRaw`SELECT 1`
         ]);
         
-        // Emit real-time update
+        usedShareTokens.add(linkId);
         emitToAll('call_created', call);
         
         res.status(201).json({ 
@@ -2772,9 +3583,6 @@ app.post('/share/:linkId/submit-service', async (req: Request, res: Response) =>
             return res.status(404).json({ error: 'Invalid share link' });
         }
         
-        // Mark token as used
-        usedShareTokens.add(linkId);
-        
         // Create customer if doesn't exist
         let customer = await prisma.customer.findUnique({ where: { phone } });
         if (!customer) {
@@ -2816,7 +3624,7 @@ app.post('/share/:linkId/submit-service', async (req: Request, res: Response) =>
             })
         ]);
         
-        // Emit real-time update
+        usedShareTokens.add(linkId);
         emitToAll('service_created', service);
         
         res.status(201).json({ 
@@ -2835,6 +3643,883 @@ app.post('/share/:linkId/submit-service', async (req: Request, res: Response) =>
         res.status(500).json({ error: 'Failed to submit service' });
     }
 });
+app.post('/share-service/:linkId/submit', async (req: Request, res: Response) => {
+    const { linkId } = req.params;
+    const { customerName, phone, email, address, category, serviceDescription } = req.body as {
+        customerName: string;
+        phone: string;
+        email?: string;
+        address: string;
+        category: string;
+        serviceDescription?: string;
+    };
+    
+    if (!linkId) {
+        return res.status(400).json({ error: 'Link ID is required' });
+    }
+    
+    if (!customerName || !phone || !address || !category) {
+        return res.status(400).json({ error: 'Customer name, phone, address, and category are required' });
+    }
+    
+    try {
+        if (usedShareTokens.has(linkId)) {
+            return res.status(404).json({ error: 'Share link has already been used' });
+        }
+        
+        const decoded = jwt.verify(linkId, JWT_SECRET) as any;
+        
+        if (decoded.type !== 'service-share-link') {
+            return res.status(404).json({ error: 'Invalid service share link' });
+        }
+        
+        let customer = await prisma.customer.findUnique({ where: { phone } });
+        if (!customer) {
+            customer = await prisma.customer.create({
+                data: { 
+                    name: customerName, 
+                    phone, 
+                    email: email || null, 
+                    address: address || null,
+                    outsideCalls: 0,
+                    carryInServices: 0,
+                    totalInteractions: 0
+                }
+            });
+        }
+        
+        const [service] = await prisma.$transaction([
+            prisma.carryInService.create({
+                data: {
+                    customerName,
+                    phone,
+                    email: email || null,
+                    address: address,
+                    category,
+                    serviceDescription: serviceDescription || null,
+                    customerId: customer.id,
+                    createdBy: 'Share Link'
+                }
+            }),
+            prisma.customer.update({
+                where: { id: customer.id },
+                data: {
+                    carryInServices: { increment: 1 },
+                    totalInteractions: { increment: 1 },
+                    lastServiceDate: new Date(),
+                    lastActivityDate: new Date()
+                }
+            })
+        ]);
+        
+        usedShareTokens.add(linkId);
+        emitToAll('service_created', service);
+        
+        res.status(201).json({ 
+            success: true, 
+            service,
+            message: 'Service submitted successfully' 
+        });
+    } catch (err: any) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(404).json({ error: 'Share link has expired' });
+        }
+        if (err.name === 'JsonWebTokenError') {
+            return res.status(404).json({ error: 'Invalid share link' });
+        }
+        console.error('Submit service share link error:', err);
+        res.status(500).json({ error: 'Failed to submit service' });
+    }
+});
+
+
+app.get('/sales-logs', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (_req: Request, res: Response) => {
+    try {
+        const logs = await prisma.salesLog.findMany({
+            select: {
+                id: true,
+                salesEntryId: true,
+                logType: true,
+                loggedBy: true,
+                loggedAt: true
+            },
+            orderBy: { loggedAt: 'desc' }
+        });
+        res.json(logs);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.get('/sales-logs/full', authMiddleware, requireRole(['HOST', 'SALES_ADMIN']), async (_req: Request, res: Response) => {
+    try {
+        const logs = await prisma.salesLog.findMany({
+            include: {
+                salesEntry: {
+                    select: { firmName: true, city: true, area: true, gstNo: true }
+                }
+            },
+            orderBy: { loggedAt: 'desc' }
+        });
+        res.json(logs);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// Sales Executive endpoints
+app.get('/sales-entries', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (req: Request, res: Response) => {
+    try {
+        const baseQuery = `
+            SELECT 
+                se.*,
+                COUNT(CASE WHEN sl."logType" = 'VISIT' THEN 1 END)::int as "visitCount",
+                COUNT(CASE WHEN sl."logType" = 'CALL' THEN 1 END)::int as "callCount",
+                (SELECT sl2."loggedAt" FROM "SalesLog" sl2 WHERE sl2."salesEntryId" = se.id ORDER BY sl2."loggedAt" DESC LIMIT 1) as "lastLoggedAt",
+                (SELECT sl2."logType" FROM "SalesLog" sl2 WHERE sl2."salesEntryId" = se.id ORDER BY sl2."loggedAt" DESC LIMIT 1) as "lastLogType",
+                (SELECT sl2."loggedAt" FROM "SalesLog" sl2 WHERE sl2."salesEntryId" = se.id AND sl2."logType" = 'VISIT' ORDER BY sl2."loggedAt" DESC LIMIT 1) as "lastVisitDate",
+                (SELECT sl2."loggedAt" FROM "SalesLog" sl2 WHERE sl2."salesEntryId" = se.id AND sl2."logType" = 'CALL' ORDER BY sl2."loggedAt" DESC LIMIT 1) as "lastCallDate"
+            FROM "SalesEntry" se
+            LEFT JOIN "SalesLog" sl ON se.id = sl."salesEntryId"
+            GROUP BY se.id
+            ORDER BY se."createdAt" DESC
+        `;
+        const entries = await prisma.$queryRawUnsafe(baseQuery);
+        res.json(entries);
+    } catch (err: any) {
+        console.error('Sales entries fetch error:', err);
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.get('/sales-entries/search', authMiddleware, async (req: Request, res: Response) => {
+    const { q } = req.query as { q?: string };
+    const allowedRoles = ['HOST', 'SALES_EXECUTIVE', 'ACCOUNTANT', 'COMPANY_PAYROLL', 'TALLY_CALLER', 'SALES_ADMIN'];
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    if (!q || !q.trim()) {
+        return res.status(400).json({ error: 'Search query is required' });
+    }
+    try {
+        const entries = await prisma.salesEntry.findMany({
+            where: {
+                OR: [
+                    { firmName: { contains: q, mode: 'insensitive' } },
+                    { contactPerson1Number: { contains: q } },
+                    { contactPerson2Number: { contains: q } },
+                    { gstNo: { contains: q, mode: 'insensitive' } }
+                ]
+            },
+            select: {
+                id: true,
+                firmName: true,
+                gstNo: true,
+                contactPerson1Name: true,
+                contactPerson1Number: true,
+                contactPerson2Name: true,
+                contactPerson2Number: true,
+                accountContactName: true,
+                accountContactNumber: true,
+                city: true,
+                area: true,
+                address: true
+            },
+            take: 20,
+            orderBy: { firmName: 'asc' }
+        });
+        res.json(entries);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.get('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (req: Request, res: Response) => {
+    const entryId = parseInt(req.params.id || '');
+    try {
+        const entry = await prisma.salesEntry.findUnique({
+            where: { id: entryId },
+            include: {
+                logs: {
+                    orderBy: { loggedAt: 'desc' }
+                }
+            }
+        });
+        if (!entry) return res.status(404).json({ error: 'Entry not found' });
+        res.json(entry);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/sales-entries', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (req: Request, res: Response) => {
+    const { firmName, gstNo, contactPerson1Name, contactPerson1Number, contactPerson2Name, contactPerson2Number, accountContactName, accountContactNumber, address, landmark, area, city, pincode, email, whatsappNumber } = req.body;
+    
+    if (!firmName || !gstNo || !contactPerson1Name || !contactPerson1Number || !address || !city || !pincode) {
+        return res.status(400).json({ error: 'Required fields missing' });
+    }
+    
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    if (!gstRegex.test(gstNo)) {
+        return res.status(400).json({ error: 'Invalid GST number format' });
+    }
+    
+    try {
+        const entry = await prisma.salesEntry.create({
+            data: {
+                firmName,
+                gstNo: gstNo.toUpperCase(),
+                contactPerson1Name,
+                contactPerson1Number,
+                contactPerson2Name,
+                contactPerson2Number,
+                accountContactName,
+                accountContactNumber,
+                address,
+                landmark,
+                area: area ? capitalize(area) : area,
+                city: capitalize(city),
+                pincode,
+                email,
+                whatsappNumber: whatsappNumber || null,
+                createdBy: req.user!.username,
+                createdById: req.user!.id
+            }
+        });
+        emitToAll('sales_entry_created', entry);
+        res.status(201).json(entry);
+    } catch (err: any) {
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'GST number is already present' });
+        }
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/sales-entries/:id/visit', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (req: Request, res: Response) => {
+    const entryId = parseInt(req.params.id || '');
+    const { remark, latitude, longitude, locationAccuracy } = req.body;
+    
+    try {
+        const entry = await prisma.salesEntry.findUnique({ where: { id: entryId } });
+        if (!entry) return res.status(404).json({ error: 'Entry not found' });
+        
+        const log = await prisma.salesLog.create({
+            data: {
+                salesEntryId: entryId,
+                logType: 'VISIT',
+                remark,
+                latitude: latitude || null,
+                longitude: longitude || null,
+                locationAccuracy: locationAccuracy || null,
+                loggedBy: req.user!.username,
+                loggedById: req.user!.id
+            }
+        });
+        emitToAll('sales_log_created', { salesEntryId: entryId, log });
+        res.status(201).json(log);
+    } catch (err: any) {
+        console.error('Sales visit log error:', err);
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/sales-entries/:id/call', authMiddleware, requireRole(['HOST', 'SALES_EXECUTIVE', 'TALLY_CALLER', 'SALES_ADMIN']), async (req: Request, res: Response) => {
+    const entryId = parseInt(req.params.id || '');
+    const { callType, remark } = req.body;
+    
+    if (!callType || !['RECEIVED', 'OUTGOING'].includes(callType)) {
+        return res.status(400).json({ error: 'Valid call type required (RECEIVED or OUTGOING)' });
+    }
+    
+    try {
+        const entry = await prisma.salesEntry.findUnique({ where: { id: entryId } });
+        if (!entry) return res.status(404).json({ error: 'Entry not found' });
+        
+        const log = await prisma.salesLog.create({
+            data: {
+                salesEntryId: entryId,
+                logType: 'CALL',
+                callType,
+                remark,
+                loggedBy: req.user!.username,
+                loggedById: req.user!.id
+            }
+        });
+        emitToAll('sales_log_created', { salesEntryId: entryId, log });
+        res.status(201).json(log);
+    } catch (err: any) {
+        console.error('Sales call log error:', err);
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.put('/sales-entries/:id', authMiddleware, requireRole(['HOST', 'SALES_ADMIN']), async (req: Request, res: Response) => {
+    const entryId = parseInt(req.params.id || '');
+    const { firmName, gstNo, contactPerson1Name, contactPerson1Number, contactPerson2Name, contactPerson2Number, accountContactName, accountContactNumber, address, landmark, area, city, pincode, email, whatsappNumber } = req.body;
+    
+    try {
+        const updateData: any = {};
+        if (firmName) updateData.firmName = firmName;
+        if (gstNo) updateData.gstNo = gstNo.toUpperCase();
+        if (contactPerson1Name) updateData.contactPerson1Name = contactPerson1Name;
+        if (contactPerson1Number) updateData.contactPerson1Number = contactPerson1Number;
+        if (contactPerson2Name !== undefined) updateData.contactPerson2Name = contactPerson2Name;
+        if (contactPerson2Number !== undefined) updateData.contactPerson2Number = contactPerson2Number;
+        if (accountContactName !== undefined) updateData.accountContactName = accountContactName;
+        if (accountContactNumber !== undefined) updateData.accountContactNumber = accountContactNumber;
+        if (address) updateData.address = address;
+        if (landmark !== undefined) updateData.landmark = landmark;
+        if (area !== undefined) updateData.area = area ? capitalize(area) : area;
+        if (city) updateData.city = capitalize(city);
+        if (pincode) updateData.pincode = pincode;
+        if (email !== undefined) updateData.email = email;
+        if (whatsappNumber !== undefined) updateData.whatsappNumber = whatsappNumber || null;
+        
+        const entry = await prisma.salesEntry.update({
+            where: { id: entryId },
+            data: updateData
+        });
+        
+        const rows = await prisma.$queryRaw<any[]>`
+            SELECT 
+                se.*,
+                COUNT(CASE WHEN sl."logType" = 'VISIT' THEN 1 END)::int as "visitCount",
+                COUNT(CASE WHEN sl."logType" = 'CALL' THEN 1 END)::int as "callCount"
+            FROM "SalesEntry" se
+            LEFT JOIN "SalesLog" sl ON se.id = sl."salesEntryId"
+            WHERE se.id = ${entryId}
+            GROUP BY se.id
+        `;
+        const entryWithCounts = rows[0];
+        
+        emitToAll('sales_entry_updated', entryWithCounts);
+        res.json(entryWithCounts);
+    } catch (err: any) {
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'GST number is already present' });
+        }
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+
+// ─── Brands ───────────────────────────────────────────────────────────────
+app.get('/brands', authMiddleware, async (_req: Request, res: Response) => {
+    try {
+        const brands = await prisma.brand.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } });
+        res.json(brands);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/brands', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const { name, secretPassword: sp } = req.body as { name: string; secretPassword: string };
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Brand name is required' });
+    if (!sp) return res.status(400).json({ error: 'Secret password is required' });
+    try {
+        const dbUser = await prisma.user.findUnique({ where: { id: req.user!.id }, select: { secretPassword: true } });
+        if (!dbUser || !await bcrypt.compare(sp, dbUser.secretPassword)) {
+            return res.status(401).json({ error: 'Invalid secret password' });
+        }
+        const normalizedName = capitalize(name);
+        const existing = await prisma.brand.findFirst({ where: { name: { equals: normalizedName, mode: 'insensitive' } } });
+        if (existing) {
+            if (existing.isActive) return res.status(400).json({ error: 'Brand already exists' });
+            const brand = await prisma.brand.update({ where: { id: existing.id }, data: { isActive: true, name: normalizedName } });
+            emitToAll('brand_created', brand);
+            return res.status(201).json(brand);
+        }
+        const brand = await prisma.brand.create({ data: { name: normalizedName } });
+        emitToAll('brand_created', brand);
+        res.status(201).json(brand);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.put('/brands/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const brandId = parseInt(req.params.id || '');
+    const { name, secretPassword: sp } = req.body as { name: string; secretPassword: string };
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Brand name is required' });
+    if (!sp) return res.status(400).json({ error: 'Secret password is required' });
+    try {
+        const dbUser = await prisma.user.findUnique({ where: { id: req.user!.id }, select: { secretPassword: true } });
+        if (!dbUser || !await bcrypt.compare(sp, dbUser.secretPassword)) {
+            return res.status(401).json({ error: 'Invalid secret password' });
+        }
+        const normalizedName = capitalize(name);
+        const brand = await prisma.brand.update({ where: { id: brandId }, data: { name: normalizedName } });
+        emitToAll('brand_updated', brand);
+        res.json(brand);
+    } catch (err: any) {
+        if (err.code === 'P2002') return res.status(400).json({ error: 'Brand already exists' });
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.delete('/brands/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const brandId = parseInt(req.params.id || '');
+    const { secretPassword: sp } = req.body as { secretPassword: string };
+    if (!sp) return res.status(400).json({ error: 'Secret password is required' });
+    try {
+        const dbUser = await prisma.user.findUnique({ where: { id: req.user!.id }, select: { secretPassword: true } });
+        if (!dbUser || !await bcrypt.compare(sp, dbUser.secretPassword)) {
+            return res.status(401).json({ error: 'Invalid secret password' });
+        }
+        const brand = await prisma.brand.findUnique({ where: { id: brandId } });
+        if (!brand) return res.status(404).json({ error: 'Brand not found' });
+        // Check if any users are assigned this brand
+        const assignedUsers = await prisma.user.findMany({ where: { brandName: brand.name, role: 'COMPANY_BASED_ACCESS' }, select: { username: true } });
+        const updated = await prisma.brand.update({ where: { id: brandId }, data: { isActive: false } });
+
+        // Clear brandName from COMPANY_BASED_ACCESS users
+        await prisma.user.updateMany({
+            where: { brandName: brand.name, role: 'COMPANY_BASED_ACCESS' },
+            data: { brandName: null }
+        });
+
+        emitToAll('brand_deleted', { id: brandId, assignedUsers: assignedUsers.map(u => u.username) });
+        res.json({ success: true, brand: updated });
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+// ─── End Brands ────────────────────────────────────────────────────────────
+
+// ─── Locations ────────────────────────────────────────────────────────────
+app.get('/locations', authMiddleware, async (_req: Request, res: Response) => {
+    try {
+        const locations = await prisma.location.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } });
+        res.json(locations);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/locations', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const { name, secretPassword: sp } = req.body as { name: string; secretPassword: string };
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Location name is required' });
+    if (!sp) return res.status(400).json({ error: 'Secret password is required' });
+    try {
+        const dbUser = await prisma.user.findUnique({ where: { id: req.user!.id }, select: { secretPassword: true } });
+        if (!dbUser || !await bcrypt.compare(sp, dbUser.secretPassword)) {
+            return res.status(401).json({ error: 'Invalid secret password' });
+        }
+        const normalizedName = capitalize(name);
+        const existing = await prisma.location.findFirst({ where: { name: { equals: normalizedName, mode: 'insensitive' } } });
+        if (existing) {
+            if (existing.isActive) return res.status(400).json({ error: 'Location already exists' });
+            const location = await prisma.location.update({ where: { id: existing.id }, data: { isActive: true, name: normalizedName } });
+            emitToAll('location_created', location);
+            return res.status(201).json(location);
+        }
+        const location = await prisma.location.create({ data: { name: normalizedName } });
+        emitToAll('location_created', location);
+        res.status(201).json(location);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.put('/locations/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const locationId = parseInt(req.params.id || '');
+    const { name, secretPassword: sp } = req.body as { name: string; secretPassword: string };
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Location name is required' });
+    if (!sp) return res.status(400).json({ error: 'Secret password is required' });
+    try {
+        const dbUser = await prisma.user.findUnique({ where: { id: req.user!.id }, select: { secretPassword: true } });
+        if (!dbUser || !await bcrypt.compare(sp, dbUser.secretPassword)) {
+            return res.status(401).json({ error: 'Invalid secret password' });
+        }
+        const normalizedName = capitalize(name);
+        const location = await prisma.location.update({ where: { id: locationId }, data: { name: normalizedName } });
+        emitToAll('location_updated', location);
+        res.json(location);
+    } catch (err: any) {
+        if (err.code === 'P2002') return res.status(400).json({ error: 'Location already exists' });
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.delete('/locations/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const locationId = parseInt(req.params.id || '');
+    const { secretPassword: sp } = req.body as { secretPassword: string };
+    if (!sp) return res.status(400).json({ error: 'Secret password is required' });
+    try {
+        const dbUser = await prisma.user.findUnique({ where: { id: req.user!.id }, select: { secretPassword: true } });
+        if (!dbUser || !await bcrypt.compare(sp, dbUser.secretPassword)) {
+            return res.status(401).json({ error: 'Invalid secret password' });
+        }
+        const location = await prisma.location.findUnique({ where: { id: locationId } });
+        if (!location) return res.status(404).json({ error: 'Location not found' });
+        const updated = await prisma.location.update({ where: { id: locationId }, data: { isActive: false } });
+
+        // Remove this location from all orders' dispatchFrom
+        const ordersWithLocation = await prisma.order.findMany({
+            where: { dispatchFrom: { contains: location.name } },
+            include: {
+                salesEntry: { select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true } },
+                holds: { orderBy: { heldAt: 'asc' } }
+            }
+        });
+        for (const order of ordersWithLocation) {
+            const remaining = (order.dispatchFrom || '').split(',').filter(l => l.trim() !== location.name).join(',');
+            const updatedOrder = await prisma.order.update({
+                where: { id: order.id },
+                data: { dispatchFrom: remaining || null },
+                include: {
+                    salesEntry: { select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true } },
+                    holds: { orderBy: { heldAt: 'asc' } }
+                }
+            });
+            emitToAll('order_updated', updatedOrder);
+        }
+
+        emitToAll('location_deleted', { id: locationId });
+        res.json({ success: true, location: updated });
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+// ─── End Locations ─────────────────────────────────────────────────────────
+
+// ─── Orders ───────────────────────────────────────────────────────────────
+const ORDER_PAGE_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_EXECUTIVE', 'COMPANY_PAYROLL', 'SALES_ADMIN', 'COMPANY_BASED_ACCESS'];
+const ORDER_ACTION_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_ADMIN'];
+
+app.get('/orders', authMiddleware, async (req: Request, res: Response) => {
+    if (!req.user || !ORDER_PAGE_ROLES.includes(req.user.role)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    const { status, startDate, endDate } = req.query as { status?: string; startDate?: string; endDate?: string };
+    try {
+        const where: any = {};
+        // Scoping: SALES_EXECUTIVE and COMPANY_PAYROLL see only their own orders
+        if (['SALES_EXECUTIVE', 'COMPANY_PAYROLL'].includes(req.user.role)) {
+            where.createdById = req.user.id;
+        }
+        // COMPANY_BASED_ACCESS sees only orders matching their brand
+        if (req.user.role === 'COMPANY_BASED_ACCESS') {
+            where.brandName = (req.user as any).brandName || '';
+        }
+        if (status && status !== 'ALL') where.status = status;
+        if (startDate || endDate) {
+            where.createdAt = {};
+            if (startDate) where.createdAt.gte = new Date(startDate);
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                where.createdAt.lte = end;
+            }
+        }
+        const orders = await prisma.order.findMany({
+            where,
+            include: {
+                salesEntry: {
+                    select: {
+                        id: true,
+                        firmName: true,
+                        city: true,
+                        area: true,
+                        contactPerson1Name: true,
+                        contactPerson1Number: true,
+                        gstNo: true
+                    }
+                },
+                holds: { orderBy: { heldAt: 'asc' } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json(orders);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/orders', authMiddleware, async (req: Request, res: Response) => {
+    if (!req.user || !ORDER_PAGE_ROLES.includes(req.user.role)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    const { salesEntryId, orderRemark, calledBy, dispatchFrom, brandName: orderBrandName } = req.body as {
+        salesEntryId: number;
+        orderRemark: string;
+        calledBy?: string;
+        dispatchFrom?: string;
+        brandName?: string;
+    };
+    if (!salesEntryId || !orderRemark || !orderRemark.trim() || !dispatchFrom || !dispatchFrom.trim()) {
+        return res.status(400).json({ error: 'salesEntryId, orderRemark and dispatchFrom are required' });
+    }
+    if (!orderBrandName || !orderBrandName.trim()) {
+        return res.status(400).json({ error: 'brandName is required' });
+    }
+    const brandExists = await prisma.brand.findFirst({ where: { name: orderBrandName.trim(), isActive: true } });
+    if (!brandExists) return res.status(400).json({ error: 'Invalid or inactive brand' });
+    try {
+        const entry = await prisma.salesEntry.findUnique({ where: { id: Number(salesEntryId) } });
+        if (!entry) return res.status(404).json({ error: 'Sales entry not found' });
+
+        const order = await prisma.order.create({
+            data: {
+                salesEntryId: Number(salesEntryId),
+                orderRemark: orderRemark.trim(),
+                calledBy: ORDER_ACTION_ROLES.includes(req.user.role) ? (calledBy || null) : null,
+                dispatchFrom: dispatchFrom || null,
+                brandName: orderBrandName!.trim(),
+                status: 'PENDING',
+                createdBy: req.user.username,
+                createdById: req.user.id
+            },
+            include: {
+                salesEntry: {
+                    select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true }
+                },
+                holds: true
+            }
+        });
+        emitToAll('order_created', order);
+        res.status(201).json(order);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.put('/orders/:id', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const orderId = parseInt(req.params.id || '');
+    const { orderRemark, calledBy, brandName, dispatchFrom } = req.body as {
+        orderRemark?: string;
+        calledBy?: string;
+        brandName?: string;
+        dispatchFrom?: string;
+    };
+    try {
+        const order = await prisma.order.findUnique({ where: { id: orderId } });
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        if (brandName) {
+            const brandExists = await prisma.brand.findFirst({ where: { name: brandName.trim(), isActive: true } });
+            if (!brandExists) return res.status(400).json({ error: 'Invalid or inactive brand' });
+        }
+        const updated = await prisma.order.update({
+            where: { id: orderId },
+            data: {
+                ...(orderRemark !== undefined && { orderRemark: orderRemark.trim() }),
+                ...(calledBy !== undefined && { calledBy: calledBy || null }),
+                ...(brandName !== undefined && { brandName: brandName.trim() }),
+                ...(dispatchFrom !== undefined && { dispatchFrom: dispatchFrom || null }),
+            },
+            include: {
+                salesEntry: { select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true } },
+                holds: { orderBy: { heldAt: 'asc' } }
+            }
+        });
+        emitToAll('order_updated', updated);
+        res.json(updated);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/orders/:id/hold', authMiddleware, async (req: Request, res: Response) => {
+    if (!req.user || !ORDER_ACTION_ROLES.includes(req.user.role)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    const orderId = parseInt(req.params.id || '');
+    const { remark } = req.body as { remark: string };
+    if (!remark || !remark.trim()) {
+        return res.status(400).json({ error: 'Hold remark is required' });
+    }
+    try {
+        const order = await prisma.order.findUnique({ where: { id: orderId } });
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        if (['CANCELLED', 'COMPLETED'].includes(order.status)) {
+            return res.status(400).json({ error: `Cannot hold a ${order.status.toLowerCase()} order` });
+        }
+        await prisma.orderHold.create({
+            data: {
+                orderId,
+                remark: remark.trim(),
+                heldBy: req.user.username,
+                heldById: req.user.id
+            }
+        });
+        const updated = await prisma.order.update({
+            where: { id: orderId },
+            data: { status: 'ON_HOLD' },
+            include: {
+                salesEntry: { select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true } },
+                holds: { orderBy: { heldAt: 'asc' } }
+            }
+        });
+        emitToAll('order_updated', updated);
+        res.json(updated);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/orders/:id/bill', authMiddleware, async (req: Request, res: Response) => {
+    if (!req.user || !ORDER_ACTION_ROLES.includes(req.user.role)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    const orderId = parseInt(req.params.id || '');
+    const { billingRemark } = req.body as { billingRemark: string };
+    if (!billingRemark || !billingRemark.trim()) {
+        return res.status(400).json({ error: 'Billing remark is required' });
+    }
+    try {
+        const order = await prisma.order.findUnique({ where: { id: orderId } });
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        if (['CANCELLED', 'COMPLETED', 'BILLED'].includes(order.status)) {
+            return res.status(400).json({ error: `Cannot bill a ${order.status.toLowerCase()} order` });
+        }
+        const updated = await prisma.order.update({
+            where: { id: orderId },
+            data: {
+                status: 'BILLED',
+                billingRemark: billingRemark.trim(),
+                billedBy: req.user.username,
+                billedAt: new Date()
+            },
+            include: {
+                salesEntry: { select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true } },
+                holds: { orderBy: { heldAt: 'asc' } }
+            }
+        });
+        emitToAll('order_updated', updated);
+        res.json(updated);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/orders/:id/complete', authMiddleware, async (req: Request, res: Response) => {
+    if (!req.user || !ORDER_ACTION_ROLES.includes(req.user.role)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    const orderId = parseInt(req.params.id || '');
+    const { completionRemark } = req.body as { completionRemark: string };
+    if (!completionRemark || !completionRemark.trim()) {
+        return res.status(400).json({ error: 'Completion remark is required' });
+    }
+    try {
+        const order = await prisma.order.findUnique({ where: { id: orderId } });
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        if (order.status !== 'BILLED') {
+            return res.status(400).json({ error: 'Order must be BILLED before completing' });
+        }
+        const updated = await prisma.order.update({
+            where: { id: orderId },
+            data: {
+                status: 'COMPLETED',
+                completionRemark: completionRemark.trim(),
+                completedBy: req.user.username,
+                completedAt: new Date()
+            },
+            include: {
+                salesEntry: { select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true } },
+                holds: { orderBy: { heldAt: 'asc' } }
+            }
+        });
+        emitToAll('order_updated', updated);
+        res.json(updated);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/orders/:id/cancel', authMiddleware, async (req: Request, res: Response) => {
+    if (!req.user || !ORDER_PAGE_ROLES.includes(req.user.role)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    const orderId = parseInt(req.params.id || '');
+    try {
+        const order = await prisma.order.findUnique({ where: { id: orderId } });
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        if (['CANCELLED', 'COMPLETED'].includes(order.status)) {
+            return res.status(400).json({ error: `Order is already ${order.status.toLowerCase()}` });
+        }
+        const updated = await prisma.order.update({
+            where: { id: orderId },
+            data: {
+                status: 'CANCELLED',
+                cancelledBy: req.user.username,
+                cancelledAt: new Date()
+            },
+            include: {
+                salesEntry: { select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true } },
+                holds: { orderBy: { heldAt: 'asc' } }
+            }
+        });
+        emitToAll('order_updated', updated);
+        res.json(updated);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/orders/:id/revert', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const orderId = parseInt(req.params.id || '');
+    const { secretPassword, targetStatus, remark } = req.body as { secretPassword: string; targetStatus: string; remark?: string };
+    if (!secretPassword || !targetStatus) {
+        return res.status(400).json({ error: 'secretPassword and targetStatus are required' });
+    }
+    if (!['ON_HOLD', 'BILLED', 'PENDING'].includes(targetStatus)) {
+        return res.status(400).json({ error: 'targetStatus must be ON_HOLD, BILLED, or PENDING' });
+    }
+    try {
+        const order = await prisma.order.findUnique({ where: { id: orderId } });
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        if (order.status !== 'CANCELLED') {
+            return res.status(400).json({ error: 'Only cancelled orders can be reverted' });
+        }
+        const dbUser = await prisma.user.findUnique({
+            where: { id: req.user!.id },
+            select: { secretPassword: true }
+        });
+        if (!dbUser) return res.status(404).json({ error: 'User not found' });
+        const isValid = await bcrypt.compare(secretPassword, dbUser.secretPassword);
+        if (!isValid) return res.status(401).json({ error: 'Invalid secret password' });
+
+        const updateData: any = {
+            status: targetStatus,
+            cancelledBy: null,
+            cancelledAt: null
+        };
+
+        if (targetStatus === 'ON_HOLD' && remark) {
+            await prisma.orderHold.create({
+                data: {
+                    orderId,
+                    remark: remark.trim(),
+                    heldBy: req.user!.username,
+                    heldById: req.user!.id
+                }
+            });
+        }
+        if (targetStatus === 'BILLED' && remark) {
+            updateData.billingRemark = remark.trim();
+            updateData.billedBy = req.user!.username;
+            updateData.billedAt = new Date();
+        }
+
+        const updated = await prisma.order.update({
+            where: { id: orderId },
+            data: updateData,
+            include: {
+                salesEntry: { select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true } },
+                holds: { orderBy: { heldAt: 'asc' } }
+            }
+        });
+        emitToAll('order_updated', updated);
+        res.json(updated);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+// ─── End Orders ────────────────────────────────────────────────────────────
+
 io.on('connection', (socket) => {
     socket.on('register', (userId: number) => {
         userSockets.set(userId, socket.id);
@@ -2872,10 +4557,10 @@ async function startServer() {
     try {
         await initializeDatabase();
         
-        httpServer.listen(PORT, '0.0.0.0', () => {
+        httpServer.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
             console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-            console.log(`Health check: https://deploy-call-1.onrender.com/health`);
+            console.log(`Health check: http://localhost:${PORT}/health`);
         });
     } catch (error) {
         console.error('Failed to start server:', error);

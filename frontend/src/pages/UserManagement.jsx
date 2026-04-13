@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import useCallStore from '../store/callStore';
+import useBrandStore from '../store/brandStore';
 import useSocket from '../hooks/useSocket';
 import useClickOutside from '../hooks/useClickOutside';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -41,7 +42,8 @@ const UserManagement = () => {
     email: '',
     phone: '',
     role: 'ENGINEER',
-    secretPassword: ''
+    secretPassword: '',
+    brandName: ''
   });
   const [editFormData, setEditFormData] = useState({
     username: '',
@@ -49,11 +51,13 @@ const UserManagement = () => {
     email: '',
     phone: '',
     role: 'ENGINEER',
-    secretPassword: ''
+    secretPassword: '',
+    brandName: ''
   });
   
   const { users, fetchUsers, createUser, updateUser, deleteUser, user } = useAuthStore();
   const { calls } = useCallStore();
+  const { brands, fetchBrands } = useBrandStore();
   
   // Initialize WebSocket connection
   useSocket();
@@ -84,8 +88,9 @@ const UserManagement = () => {
   useEffect(() => {
     if (hasAccess) {
       fetchUsers();
+      fetchBrands();
     }
-  }, [hasAccess, fetchUsers]);
+  }, [hasAccess, fetchUsers, fetchBrands]);
 
   useEffect(() => {
     // Check if current user still exists in the users list
@@ -103,6 +108,11 @@ const UserManagement = () => {
     e.preventDefault();
     if (!formData.username || !formData.password || !formData.email || !formData.phone) {
       setAlertMessage('Username, password, email, and phone are required');
+      setShowAlert(true);
+      return;
+    }
+    if (formData.role === 'COMPANY_BASED_ACCESS' && !formData.brandName.trim()) {
+      setAlertMessage('Brand name is required for Company Based Access role');
       setShowAlert(true);
       return;
     }
@@ -132,7 +142,8 @@ const UserManagement = () => {
       email: userToEdit.email || '',
       phone: userToEdit.phone || '',
       role: userToEdit.role,
-      secretPassword: ''
+      secretPassword: '',
+      brandName: userToEdit.brandName || ''
     });
     setShowEditForm(true);
   };
@@ -141,6 +152,11 @@ const UserManagement = () => {
     e.preventDefault();
     if (!editFormData.email || !editFormData.phone) {
       setAlertMessage('Email and phone are required');
+      setShowAlert(true);
+      return;
+    }
+    if (editFormData.role === 'COMPANY_BASED_ACCESS' && !editFormData.brandName.trim()) {
+      setAlertMessage('Brand name is required for Company Based Access role');
       setShowAlert(true);
       return;
     }
@@ -162,6 +178,9 @@ const UserManagement = () => {
       email: editFormData.email,
       phone: editFormData.phone
     };
+    if (editFormData.role === 'COMPANY_BASED_ACCESS') {
+      updateData.brandName = editFormData.brandName.trim();
+    }
     if (editFormData.password) {
       updateData.password = editFormData.password;
     }
@@ -234,7 +253,7 @@ const UserManagement = () => {
             await createUser(pendingAction.data);
             setSuccessMessage(`User "${pendingAction.data.username}" has been created successfully.`);
             setShowSuccessAlert(true);
-            setFormData({ username: '', password: '', email: '', phone: '', role: 'ENGINEER', secretPassword: '' });
+            setFormData({ username: '', password: '', email: '', phone: '', role: 'ENGINEER', secretPassword: '', brandName: '' });
             setShowAddForm(false);
           } else if (pendingAction.type === 'edit') {
             const result = await updateUser(pendingAction.userId, pendingAction.data);
@@ -503,9 +522,14 @@ const UserManagement = () => {
                     <span className={`px-3 py-1 text-xs font-medium rounded-full border ${
                       u.role === 'HOST' ? 'bg-purple-100 text-purple-800 border-purple-200' :
                       u.role === 'ADMIN' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                      'bg-green-100 text-green-800 border-green-200'
+                      u.role === 'SALES_EXECUTIVE' ? 'bg-green-100 text-green-800 border-green-200' :
+                      u.role === 'SALES_ADMIN' ? 'bg-indigo-100 text-indigo-800 border-indigo-200' :
+                      u.role === 'ACCOUNTANT' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                      u.role === 'COMPANY_PAYROLL' ? 'bg-orange-100 text-orange-800 border-orange-200' :
+                      u.role === 'TALLY_CALLER' ? 'bg-pink-100 text-pink-800 border-pink-200' :
+                      'bg-gray-100 text-gray-800 border-gray-200'
                     }`}>
-                      {u.role}
+                      {u.role.replace(/_/g, ' ')}
                     </span>
                   </td>
                   <td className="hidden lg:table-cell px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
@@ -556,9 +580,14 @@ const UserManagement = () => {
                   <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full border mt-1 ${
                     u.role === 'HOST' ? 'bg-purple-100 text-purple-800 border-purple-200' :
                     u.role === 'ADMIN' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                    'bg-green-100 text-green-800 border-green-200'
+                    u.role === 'SALES_EXECUTIVE' ? 'bg-green-100 text-green-800 border-green-200' :
+                    u.role === 'SALES_ADMIN' ? 'bg-indigo-100 text-indigo-800 border-indigo-200' :
+                    u.role === 'ACCOUNTANT' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                    u.role === 'COMPANY_PAYROLL' ? 'bg-orange-100 text-orange-800 border-orange-200' :
+                    u.role === 'TALLY_CALLER' ? 'bg-pink-100 text-pink-800 border-pink-200' :
+                    'bg-gray-100 text-gray-800 border-gray-200'
                   }`}>
-                    {u.role}
+                    {u.role.replace(/_/g, ' ')}
                   </span>
                 </div>
               </div>
@@ -675,8 +704,29 @@ const UserManagement = () => {
                   <option value="ENGINEER">Engineer</option>
                   {canCreateAdmin && <option value="ADMIN">Admin</option>}
                   {user?.role === 'HOST' && <option value="HOST">Host</option>}
+                  {user?.role === 'HOST' && <option value="SALES_EXECUTIVE">Sales Executive</option>}
+                  {user?.role === 'HOST' && <option value="ACCOUNTANT">Accountant</option>}
+                  {user?.role === 'HOST' && <option value="COMPANY_PAYROLL">Company Payroll</option>}
+                  {user?.role === 'HOST' && <option value="TALLY_CALLER">Tally Caller</option>}
+                  {user?.role === 'HOST' && <option value="SALES_ADMIN">Sales Admin</option>}
+                  {user?.role === 'HOST' && <option value="COMPANY_BASED_ACCESS">Company Based Access</option>}
                 </select>
               </div>
+
+              {formData.role === 'COMPANY_BASED_ACCESS' && (
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium mb-1">Brand *</label>
+                  <select
+                    value={formData.brandName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, brandName: e.target.value }))}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                    required
+                  >
+                    <option value="">— Select brand —</option>
+                    {brands.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+                  </select>
+                </div>
+              )}
 
               {formData.role === 'HOST' && (
                 <div>
@@ -793,8 +843,29 @@ const UserManagement = () => {
                   <option value="ENGINEER">Engineer</option>
                   <option value="ADMIN">Admin</option>
                   <option value="HOST">Host</option>
+                  {user?.role === 'HOST' && <option value="SALES_EXECUTIVE">Sales Executive</option>}
+                  {user?.role === 'HOST' && <option value="ACCOUNTANT">Accountant</option>}
+                  {user?.role === 'HOST' && <option value="COMPANY_PAYROLL">Company Payroll</option>}
+                  {user?.role === 'HOST' && <option value="TALLY_CALLER">Tally Caller</option>}
+                  {user?.role === 'HOST' && <option value="SALES_ADMIN">Sales Admin</option>}
+                  {user?.role === 'HOST' && <option value="COMPANY_BASED_ACCESS">Company Based Access</option>}
                 </select>
               </div>
+
+              {editFormData.role === 'COMPANY_BASED_ACCESS' && (
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium mb-1">Brand *</label>
+                  <select
+                    value={editFormData.brandName}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, brandName: e.target.value }))}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                    required
+                  >
+                    <option value="">— Select brand —</option>
+                    {brands.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+                  </select>
+                </div>
+              )}
 
               {editFormData.role === 'HOST' && editingUser.role !== 'HOST' && (
                 <div>

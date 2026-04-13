@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { io } from 'socket.io-client';
 import useAuthStore from '../store/authStore';
 import useCallStore from '../store/callStore';
@@ -6,6 +7,11 @@ import useCarryInServiceStore from '../store/carryInServiceStore';
 import useCategoryStore from '../store/categoryStore';
 import useServiceCategoryStore from '../store/serviceCategoryStore';
 import useDCStore from '../store/dcStore';
+import useSalesStore from '../store/salesStore';
+import useOrderStore from '../store/orderStore';
+
+import useBrandStore from '../store/brandStore';
+import useLocationStore from '../store/locationStore';
 
 let socket = null;
 
@@ -14,8 +20,8 @@ const useSocket = () => {
 
   useEffect(() => {
     if (user && !socket) {
-      // Use environment variable for API URL, fallback to localhost if not set
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      // Use environment variable for API URL
+      const API_URL = import.meta.env.VITE_API_URL;
       
       socket = io(API_URL, {
         transports: ['websocket', 'polling']
@@ -23,6 +29,11 @@ const useSocket = () => {
 
       socket.on('connect', () => {
         console.log('Connected to server');
+        socket.emit('register', user.id);
+      });
+
+      socket.on('reconnect', () => {
+        console.log('Reconnected to server, re-registering...');
         socket.emit('register', user.id);
       });
 
@@ -40,13 +51,13 @@ const useSocket = () => {
 
       // User management events
       socket.on('user_deleted', (data) => {
-        alert(data.message || 'Your account has been removed. You will be logged out.');
+        toast.error(data.message || 'Your account has been removed. You will be logged out.');
         logout();
         window.location.href = '/login';
       });
 
       socket.on('force_logout', (data) => {
-        alert(data.message || 'Your account has been updated. Please log in again.');
+        toast.error(data.message || 'Your account has been updated. Please log in again.');
         logout();
         window.location.href = '/login';
       });
@@ -147,6 +158,54 @@ const useSocket = () => {
         window.dispatchEvent(new CustomEvent('notification_update', { 
           detail: notification 
         }));
+      });
+
+      // Sales Executive events
+      socket.on('sales_entry_created', (entry) => {
+        useSalesStore.getState().handleSalesEntryCreated(entry);
+      });
+
+      socket.on('sales_entry_updated', (entry) => {
+        useSalesStore.getState().handleSalesEntryUpdated(entry);
+      });
+
+      socket.on('sales_log_created', (data) => {
+        useSalesStore.getState().handleSalesLogCreated(data);
+      });
+
+      // Brand events
+      socket.on('brand_created', (brand) => {
+        useBrandStore.getState().handleBrandCreated(brand);
+      });
+
+      socket.on('brand_updated', (brand) => {
+        useBrandStore.getState().handleBrandUpdated(brand);
+      });
+
+      socket.on('brand_deleted', (data) => {
+        useBrandStore.getState().handleBrandDeleted(data);
+      });
+
+      // Location events
+      socket.on('location_created', (location) => {
+        useLocationStore.getState().handleLocationCreated(location);
+      });
+
+      socket.on('location_updated', (location) => {
+        useLocationStore.getState().handleLocationUpdated(location);
+      });
+
+      socket.on('location_deleted', (data) => {
+        useLocationStore.getState().handleLocationDeleted(data);
+      });
+
+      // Order events
+      socket.on('order_created', (order) => {
+        useOrderStore.getState().handleOrderCreated(order);
+      });
+
+      socket.on('order_updated', (order) => {
+        useOrderStore.getState().handleOrderUpdated(order);
       });
     }
 
