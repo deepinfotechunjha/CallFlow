@@ -91,7 +91,7 @@ const PublicSalesForm = () => {
   const loadCities = async () => {
     setLoadingData(true);
     try {
-      const citiesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/public/cities`, {
+      const citiesResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/public/cities`, {
         credentials: 'include'
       });
 
@@ -115,7 +115,7 @@ const PublicSalesForm = () => {
 
     setLoadingData(true);
     try {
-      const areasResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/public/areas?cityId=${city.id}`, {
+      const areasResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/public/areas?cityId=${city.id}`, {
         credentials: 'include'
       });
 
@@ -133,7 +133,7 @@ const PublicSalesForm = () => {
 
   const validateLink = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/share/sales/${linkId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/share/sales/${linkId}`, {
         credentials: 'include'
       });
       const data = await response.json();
@@ -189,7 +189,7 @@ const PublicSalesForm = () => {
         email: formData.email?.trim() || null
       };
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/share/sales/${linkId}/submit`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/share/sales/${linkId}/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

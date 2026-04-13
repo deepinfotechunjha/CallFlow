@@ -4557,7 +4557,7 @@ async function startServer() {
     try {
         await initializeDatabase();
         
-        httpServer.listen(PORT, '127.0.0.1', () => {
+        httpServer.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
             console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
             console.log(`Health check: http://localhost:${PORT}/health`);

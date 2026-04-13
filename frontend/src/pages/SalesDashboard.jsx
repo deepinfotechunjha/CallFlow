@@ -49,7 +49,7 @@ const SalesDashboard = () => {
     if (user?.role === 'HOST' || user?.role === 'SALES_ADMIN') {
       fetchUsers();
       const token = useAuthStore.getState().token;
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const baseUrl = import.meta.env.VITE_API_URL;
       fetch(`${baseUrl}/users`, { headers: { 'Authorization': `Bearer ${token}` } })
         .then(r => r.json())
         .then(data => {
@@ -242,7 +242,7 @@ const SalesDashboard = () => {
     if (isExporting) return;
     setIsExporting(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/auth/verify-secret`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/verify-secret`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -262,7 +262,7 @@ const SalesDashboard = () => {
         }
 
         // Fetch full logs for Sheet 2
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+        const baseUrl = import.meta.env.VITE_API_URL;
         const logsRes = await fetch(`${baseUrl}/sales-logs/full`, {
           headers: { 'Authorization': `Bearer ${useAuthStore.getState().token}` }
         });

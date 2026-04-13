@@ -20,8 +20,8 @@ const useSocket = () => {
 
   useEffect(() => {
     if (user && !socket) {
-      // Use environment variable for API URL, fallback to localhost if not set
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      // Use environment variable for API URL
+      const API_URL = import.meta.env.VITE_API_URL;
       
       socket = io(API_URL, {
         transports: ['websocket', 'polling']
