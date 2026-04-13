@@ -153,6 +153,12 @@ model CarryInService {
   checkRemark        String?
   checkedBy          String?
   checkedAt          DateTime?
+  warrantyRemark     String?
+  warrantyBy         String?
+  warrantyAt         DateTime?
+  repairingRemark    String?
+  repairingBy        String?
+  repairingAt        DateTime?
   customer           Customer? @relation(fields: [customerId], references: [id])
 
   @@index([phone])

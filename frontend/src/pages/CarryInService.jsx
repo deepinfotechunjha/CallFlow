@@ -47,10 +47,14 @@ const CarryInService = () => {
   const [isCompleting, setIsCompleting] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [isDelivering, setIsDelivering] = useState(false);
+  const [isWarranty, setIsWarranty] = useState(false);
+  const [isRepairing, setIsRepairing] = useState(false);
+  const [warrantyRemark, setWarrantyRemark] = useState('');
+  const [repairingRemark, setRepairingRemark] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const { services, fetchServices, addService, updateService, completeService, deliverService, checkService, findCustomerByPhone, bulkDeleteServices } = useCarryInServiceStore();
+  const { services, fetchServices, addService, updateService, completeService, deliverService, checkService, warrantyService, repairingService, findCustomerByPhone, bulkDeleteServices } = useCarryInServiceStore();
   const { serviceCategories, fetchServiceCategories } = useServiceCategoryStore();
   const { user, token } = useAuthStore();
   
@@ -63,10 +67,12 @@ const CarryInService = () => {
     }
   });
   const completeConfirmRef = useClickOutside(() => {
-    if (!isCompleting && !isChecking) {
+    if (!isCompleting && !isChecking && !isWarranty && !isRepairing) {
       setShowCompleteConfirm(null);
       setCompleteRemark('');
       setCheckRemark('');
+      setWarrantyRemark('');
+      setRepairingRemark('');
       setCompleteAction('complete');
     }
   });
@@ -163,6 +169,36 @@ const CarryInService = () => {
     } catch (error) {
       console.error('Error checking service:', error);
       setIsChecking(false);
+    }
+  };
+
+  const handleWarrantyService = async (serviceId) => {
+    if (isWarranty || !warrantyRemark.trim()) return;
+    setIsWarranty(true);
+    try {
+      await warrantyService(serviceId, warrantyRemark);
+      setShowCompleteConfirm(null);
+      setWarrantyRemark('');
+      setCompleteAction('complete');
+      setIsWarranty(false);
+    } catch (error) {
+      console.error('Error marking warranty:', error);
+      setIsWarranty(false);
+    }
+  };
+
+  const handleRepairingService = async (serviceId) => {
+    if (isRepairing || !repairingRemark.trim()) return;
+    setIsRepairing(true);
+    try {
+      await repairingService(serviceId, repairingRemark);
+      setShowCompleteConfirm(null);
+      setRepairingRemark('');
+      setCompleteAction('complete');
+      setIsRepairing(false);
+    } catch (error) {
+      console.error('Error marking repairing:', error);
+      setIsRepairing(false);
     }
   };
 
@@ -301,6 +337,12 @@ const CarryInService = () => {
       case 'COMPLETED_AND_COLLECTED': return 'Completed & Collected';
       default: return status;
     }
+  };
+
+  const getRowColor = (service) => {
+    if (service.warrantyRemark) return 'bg-amber-50';
+    if (service.repairingRemark) return 'bg-rose-50';
+    return '';
   };
 
   const getFilterCounts = () => {
@@ -684,7 +726,7 @@ const CarryInService = () => {
               )}
               <div className="divide-y divide-gray-200">
                 {filteredServices.map((service, index) => (
-                  <div key={service.id} className="p-4 hover:bg-gray-50 transition-colors">
+                  <div key={service.id} className={`p-4 hover:bg-gray-50 transition-colors ${getRowColor(service)}`}>
                     {user?.role === 'HOST' && service.status === 'COMPLETED_AND_COLLECTED' && (
                       <div className="flex justify-end mb-2">
                         <input
@@ -848,7 +890,7 @@ const CarryInService = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredServices.map((service, index) => (
-                    <tr key={service.id} onClick={() => setSelectedService(service)} className="cursor-pointer hover:bg-gray-50 transition-colors">
+                    <tr key={service.id} onClick={() => setSelectedService(service)} className={`cursor-pointer hover:bg-gray-50 transition-colors ${getRowColor(service)}`}>
                       <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-500 w-16">
                         {index + 1}
                       </td>
@@ -1183,71 +1225,110 @@ const CarryInService = () => {
       {showCompleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div ref={completeConfirmRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
-            <h2 className="text-lg sm:text-xl font-bold mb-4">Complete Service</h2>
+            <h2 className="text-lg sm:text-xl font-bold mb-4">Service Action</h2>
             
-            <div className="flex gap-4 mb-4">
+            <div className="flex flex-wrap gap-4 mb-4">
               <label className="flex items-center cursor-pointer">
-                <input
-                  type="radio"
-                  name="completeAction"
-                  value="complete"
+                <input type="radio" name="completeAction" value="complete"
                   checked={completeAction === 'complete'}
-                  onChange={(e) => setCompleteAction(e.target.value)}
-                  className="mr-2"
-                />
+                  onChange={(e) => setCompleteAction(e.target.value)} className="mr-2" />
                 Complete
               </label>
               <label className="flex items-center cursor-pointer">
-                <input
-                  type="radio"
-                  name="completeAction"
-                  value="check"
+                <input type="radio" name="completeAction" value="check"
                   checked={completeAction === 'check'}
-                  onChange={(e) => setCompleteAction(e.target.value)}
-                  className="mr-2"
-                />
+                  onChange={(e) => setCompleteAction(e.target.value)} className="mr-2" />
                 Check
+              </label>
+              <label className="flex items-center cursor-pointer">
+                <input type="radio" name="completeAction" value="warranty"
+                  checked={completeAction === 'warranty'}
+                  onChange={(e) => setCompleteAction(e.target.value)} className="mr-2" />
+                <span className="text-amber-700 font-medium">Warranty</span>
+              </label>
+              <label className="flex items-center cursor-pointer">
+                <input type="radio" name="completeAction" value="repairing"
+                  checked={completeAction === 'repairing'}
+                  onChange={(e) => setCompleteAction(e.target.value)} className="mr-2" />
+                <span className="text-rose-700 font-medium">Repairing</span>
               </label>
             </div>
 
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">
-                {completeAction === 'complete' ? 'Complete Remark (optional)' : 'Check Remark *'}
+                {completeAction === 'complete' ? 'Complete Remark (optional)'
+                  : completeAction === 'check' ? 'Check Remark *'
+                  : completeAction === 'warranty' ? 'Warranty Remark *'
+                  : 'Repairing Remark *'}
               </label>
               <textarea
-                value={completeAction === 'complete' ? completeRemark : checkRemark}
-                onChange={(e) => completeAction === 'complete' ? setCompleteRemark(e.target.value) : setCheckRemark(e.target.value)}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                value={
+                  completeAction === 'complete' ? completeRemark
+                  : completeAction === 'check' ? checkRemark
+                  : completeAction === 'warranty' ? warrantyRemark
+                  : repairingRemark
+                }
+                onChange={(e) => {
+                  if (completeAction === 'complete') setCompleteRemark(e.target.value);
+                  else if (completeAction === 'check') setCheckRemark(e.target.value);
+                  else if (completeAction === 'warranty') setWarrantyRemark(e.target.value);
+                  else setRepairingRemark(e.target.value);
+                }}
+                className={`w-full p-2 border rounded focus:ring-2 text-sm ${
+                  completeAction === 'warranty' ? 'focus:ring-amber-500 border-amber-200'
+                  : completeAction === 'repairing' ? 'focus:ring-rose-500 border-rose-200'
+                  : 'focus:ring-blue-500'
+                }`}
                 rows="3"
-                placeholder={completeAction === 'complete' ? 'Add any notes about the completion...' : 'Describe what was checked...'}
-                required={completeAction === 'check'}
+                placeholder={
+                  completeAction === 'complete' ? 'Add any notes about the completion...'
+                  : completeAction === 'check' ? 'Describe what was checked...'
+                  : completeAction === 'warranty' ? 'Describe the warranty details...'
+                  : 'Describe what needs repairing...'
+                }
+                required={completeAction !== 'complete'}
               />
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2">
               <button
-                onClick={() => completeAction === 'complete' ? handleCompleteService(showCompleteConfirm) : handleCheckService(showCompleteConfirm)}
-                disabled={completeAction === 'complete' ? isCompleting : (isChecking || !checkRemark.trim())}
+                onClick={() => {
+                  if (completeAction === 'complete') handleCompleteService(showCompleteConfirm);
+                  else if (completeAction === 'check') handleCheckService(showCompleteConfirm);
+                  else if (completeAction === 'warranty') handleWarrantyService(showCompleteConfirm);
+                  else handleRepairingService(showCompleteConfirm);
+                }}
+                disabled={
+                  completeAction === 'complete' ? isCompleting
+                  : completeAction === 'check' ? (isChecking || !checkRemark.trim())
+                  : completeAction === 'warranty' ? (isWarranty || !warrantyRemark.trim())
+                  : (isRepairing || !repairingRemark.trim())
+                }
                 className={`flex-1 py-2 rounded font-medium text-sm ${
-                  (completeAction === 'complete' ? isCompleting : (isChecking || !checkRemark.trim()))
-                    ? 'bg-gray-400 text-white cursor-not-allowed'
-                    : completeAction === 'complete'
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-purple-600 text-white hover:bg-purple-700'
+                  completeAction === 'warranty'
+                    ? (isWarranty || !warrantyRemark.trim() ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-amber-500 text-white hover:bg-amber-600')
+                  : completeAction === 'repairing'
+                    ? (isRepairing || !repairingRemark.trim() ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-rose-600 text-white hover:bg-rose-700')
+                  : completeAction === 'check'
+                    ? (isChecking || !checkRemark.trim() ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-purple-600 text-white hover:bg-purple-700')
+                  : (isCompleting ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700')
                 }`}
               >
-                {completeAction === 'complete'
-                  ? (isCompleting ? 'Processing...' : 'Yes, Complete')
-                  : (isChecking ? 'Processing...' : 'Mark as Checked')}
+                {completeAction === 'complete' ? (isCompleting ? 'Processing...' : 'Yes, Complete')
+                  : completeAction === 'check' ? (isChecking ? 'Processing...' : 'Mark as Checked')
+                  : completeAction === 'warranty' ? (isWarranty ? 'Processing...' : 'Mark as Warranty')
+                  : (isRepairing ? 'Processing...' : 'Mark as Repairing')}
               </button>
               <button
                 onClick={() => {
                   setShowCompleteConfirm(null);
                   setCompleteRemark('');
                   setCheckRemark('');
+                  setWarrantyRemark('');
+                  setRepairingRemark('');
                   setCompleteAction('complete');
                 }}
-                disabled={isCompleting || isChecking}
+                disabled={isCompleting || isChecking || isWarranty || isRepairing}
                 className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 text-sm disabled:opacity-50"
               >
                 Cancel
@@ -1407,7 +1488,7 @@ const CarryInService = () => {
               </div>
             )}
             
-            {(selectedService.completeRemark || selectedService.deliverRemark || selectedService.checkRemark) && (
+            {(selectedService.completeRemark || selectedService.deliverRemark || selectedService.checkRemark || selectedService.warrantyRemark || selectedService.repairingRemark) && (
               <div className="mt-6 space-y-4">
                 {selectedService.checkRemark && (
                   <div>
@@ -1416,6 +1497,28 @@ const CarryInService = () => {
                       {selectedService.checkRemark.split('\n').map((entry, index) => (
                         <div key={index} className="text-sm text-purple-800 mb-1 last:mb-0">{entry}</div>
                       ))}
+                    </div>
+                  </div>
+                )}
+                {selectedService.warrantyRemark && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Warranty Remark</label>
+                    <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 text-sm">
+                      <p>{selectedService.warrantyRemark}</p>
+                      {selectedService.warrantyBy && (
+                        <p className="text-xs text-amber-600 mt-1">By {selectedService.warrantyBy}{selectedService.warrantyAt ? ` on ${new Date(selectedService.warrantyAt).toLocaleString()}` : ''}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {selectedService.repairingRemark && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Repairing Remark</label>
+                    <div className="p-3 bg-rose-50 rounded-lg border border-rose-200 text-sm">
+                      <p>{selectedService.repairingRemark}</p>
+                      {selectedService.repairingBy && (
+                        <p className="text-xs text-rose-600 mt-1">By {selectedService.repairingBy}{selectedService.repairingAt ? ` on ${new Date(selectedService.repairingAt).toLocaleString()}` : ''}</p>
+                      )}
                     </div>
                   </div>
                 )}
