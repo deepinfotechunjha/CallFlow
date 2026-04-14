@@ -481,90 +481,6 @@ const PublicSalesForm = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Area <span className="text-red-500">*</span>
-                    </label>
-                    {showOtherArea ? (
-                      <div className="relative">
-                        <input
-                          type="text"
-                          name="area"
-                          value={formData.area}
-                          onChange={handleChange}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                          placeholder="Enter area name"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowOtherArea(false)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="relative" ref={areaDropdownRef}>
-                        {formData.area && !showOtherArea ? (
-                          <div className="w-full p-3 border border-gray-300 rounded-lg bg-green-50 flex items-center justify-between">
-                            <span>{formData.area}</span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setFormData(prev => ({ ...prev, area: '' }));
-                                setAreaSearch('');
-                              }}
-                              className="text-red-500 hover:text-red-700 font-bold text-lg leading-none"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ) : (
-                          <input
-                            type="text"
-                            value={areaSearch}
-                            onChange={(e) => {
-                              setAreaSearch(e.target.value);
-                              setShowAreaDropdown(true);
-                            }}
-                            onFocus={() => setShowAreaDropdown(true)}
-                            onClick={() => setShowAreaDropdown(true)}
-                            placeholder={loadingData ? "Loading areas..." : selectedCity ? "Select or search area" : "Please select a city first"}
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                            disabled={loadingData || (!selectedCity && !showOtherCity)}
-                          />
-                        )}
-                        {showAreaDropdown && !loadingData && !formData.area && (
-                          <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-hidden">
-                            <div 
-                              onClick={() => handleAreaSelect('OTHER')}
-                              className="sticky top-0 px-4 py-3 bg-purple-50 hover:bg-purple-100 cursor-pointer font-medium text-purple-700 border-b-2 border-purple-200 z-10"
-                            >
-                              ✏️ Other (Custom Area)
-                            </div>
-                            <div className="overflow-y-auto max-h-52">
-                              {filteredAreas.length > 0 ? (
-                                filteredAreas.map((area, index) => (
-                                  <div
-                                    key={index}
-                                    onClick={() => handleAreaSelect(area)}
-                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                                  >
-                                    {area}
-                                  </div>
-                                ))
-                              ) : selectedCity ? (
-                                <div className="px-4 py-2 text-gray-500 text-sm">No areas found for this city</div>
-                              ) : (
-                                <div className="px-4 py-2 text-gray-500 text-sm">Please select a city first</div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       City <span className="text-red-500">*</span>
                     </label>
                     {showOtherCity ? (
@@ -641,6 +557,90 @@ const PublicSalesForm = () => {
                                 ))
                               ) : (
                                 <div className="px-4 py-2 text-gray-500 text-sm">No cities found</div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Area <span className="text-red-500">*</span>
+                    </label>
+                    {showOtherArea ? (
+                      <div className="relative">
+                        <input
+                          type="text"
+                          name="area"
+                          value={formData.area}
+                          onChange={handleChange}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                          placeholder="Enter area name"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowOtherArea(false)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="relative" ref={areaDropdownRef}>
+                        {formData.area && !showOtherArea ? (
+                          <div className="w-full p-3 border border-gray-300 rounded-lg bg-green-50 flex items-center justify-between">
+                            <span>{formData.area}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFormData(prev => ({ ...prev, area: '' }));
+                                setAreaSearch('');
+                              }}
+                              className="text-red-500 hover:text-red-700 font-bold text-lg leading-none"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            value={areaSearch}
+                            onChange={(e) => {
+                              setAreaSearch(e.target.value);
+                              setShowAreaDropdown(true);
+                            }}
+                            onFocus={() => setShowAreaDropdown(true)}
+                            onClick={() => setShowAreaDropdown(true)}
+                            placeholder={loadingData ? "Loading areas..." : selectedCity ? "Select or search area" : "Please select a city first"}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            disabled={loadingData || (!selectedCity && !showOtherCity)}
+                          />
+                        )}
+                        {showAreaDropdown && !loadingData && !formData.area && (
+                          <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-hidden">
+                            <div 
+                              onClick={() => handleAreaSelect('OTHER')}
+                              className="sticky top-0 px-4 py-3 bg-purple-50 hover:bg-purple-100 cursor-pointer font-medium text-purple-700 border-b-2 border-purple-200 z-10"
+                            >
+                              ✏️ Other (Custom Area)
+                            </div>
+                            <div className="overflow-y-auto max-h-52">
+                              {filteredAreas.length > 0 ? (
+                                filteredAreas.map((area, index) => (
+                                  <div
+                                    key={index}
+                                    onClick={() => handleAreaSelect(area)}
+                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                                  >
+                                    {area}
+                                  </div>
+                                ))
+                              ) : selectedCity ? (
+                                <div className="px-4 py-2 text-gray-500 text-sm">No areas found for this city</div>
+                              ) : (
+                                <div className="px-4 py-2 text-gray-500 text-sm">Please select a city first</div>
                               )}
                             </div>
                           </div>
