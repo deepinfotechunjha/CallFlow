@@ -4149,27 +4149,6 @@ app.delete('/locations/:id', authMiddleware, requireRole(['HOST']), async (req: 
         if (!location) return res.status(404).json({ error: 'Location not found' });
         const updated = await prisma.location.update({ where: { id: locationId }, data: { isActive: false } });
 
-        // Remove this location from all orders' dispatchFrom
-        const ordersWithLocation = await prisma.order.findMany({
-            where: { dispatchFrom: { contains: location.name } },
-            include: {
-                salesEntry: { select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true } },
-                holds: { orderBy: { heldAt: 'asc' } }
-            }
-        });
-        for (const order of ordersWithLocation) {
-            const remaining = (order.dispatchFrom || '').split(',').filter(l => l.trim() !== location.name).join(',');
-            const updatedOrder = await prisma.order.update({
-                where: { id: order.id },
-                data: { dispatchFrom: remaining || null },
-                include: {
-                    salesEntry: { select: { id: true, firmName: true, city: true, area: true, contactPerson1Name: true, contactPerson1Number: true, gstNo: true } },
-                    holds: { orderBy: { heldAt: 'asc' } }
-                }
-            });
-            emitToAll('order_updated', updatedOrder);
-        }
-
         emitToAll('location_deleted', { id: locationId });
         res.json({ success: true, location: updated });
     } catch (err: any) {
