@@ -3002,9 +3002,9 @@ app.post('/carry-in-services/bulk-delete', authMiddleware, async (req: Request, 
     }
 });
 
-// Public API middleware for cookie validation
+// Public API middleware for token validation (query param for cross-origin production)
 function validatePublicAccess(req: Request, res: Response, next: NextFunction) {
-    const token = req.cookies?.publicAccessToken;
+    const token = (req.query.token as string) || req.cookies?.publicAccessToken;
     
     if (!token) {
         return res.status(401).json({ error: 'Access token required' });
@@ -3270,6 +3270,7 @@ app.get('/share/sales/:linkId', async (req: Request, res: Response) => {
         res.json({ 
             success: true, 
             valid: true,
+            publicToken,
             createdAt: new Date(decoded.createdAt).toISOString(),
             expiresAt: new Date(decoded.exp * 1000).toISOString(),
             publicAccessExpiresAt: expiresAt.toISOString()

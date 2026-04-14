@@ -51,7 +51,7 @@ const useCallStore = create((set, get) => ({
   fetchCalls: async () => {
     try {
       const response = await apiClient.get('/calls');
-      set({ calls: response.data });
+      set({ calls: Array.isArray(response.data) ? response.data : [] });
     } catch (error) {
       console.error('Failed to fetch calls:', error);
       toast.error('Failed to fetch calls');

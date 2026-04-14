@@ -19,6 +19,7 @@ const PublicSalesForm = () => {
   const [cities, setCities] = useState([]);
   const [areas, setAreas] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
+  const [publicToken, setPublicToken] = useState('');
   const cityDropdownRef = useClickOutside(() => setShowCityDropdown(false));
   const areaDropdownRef = useClickOutside(() => setShowAreaDropdown(false));
 
@@ -81,17 +82,18 @@ const PublicSalesForm = () => {
     area: '',
     city: '',
     pincode: '',
-    email: ''
+    email: '',
+    whatsappNumber: ''
   });
 
   useEffect(() => {
     validateLink();
   }, [linkId]);
 
-  const loadCities = async () => {
+  const loadCities = async (token) => {
     setLoadingData(true);
     try {
-      const citiesResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/public/cities`, {
+      const citiesResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/public/cities?token=${token}`, {
         credentials: 'include'
       });
 
@@ -115,7 +117,7 @@ const PublicSalesForm = () => {
 
     setLoadingData(true);
     try {
-      const areasResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/public/areas?cityId=${city.id}`, {
+      const areasResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/public/areas?cityId=${city.id}&token=${publicToken}`, {
         credentials: 'include'
       });
 
@@ -140,8 +142,8 @@ const PublicSalesForm = () => {
 
       if (response.ok && data.success) {
         setIsValidLink(true);
-        // Load cities after successful validation
-        await loadCities();
+        setPublicToken(data.publicToken);
+        await loadCities(data.publicToken);
       } else {
         setIsValidLink(false);
         toast.error(data.error || 'Invalid or expired link');
@@ -186,7 +188,8 @@ const PublicSalesForm = () => {
         area: formData.area?.trim() || null,
         city: formData.city.trim(),
         pincode: formData.pincode.trim(),
-        email: formData.email?.trim() || null
+        email: formData.email?.trim() || null,
+        whatsappNumber: formData.whatsappNumber?.trim() || null
       };
 
       const response = await fetch(`${import.meta.env.VITE_API_URL}/share/sales/${linkId}/submit`, {
@@ -411,18 +414,34 @@ const PublicSalesForm = () => {
                 </div>
               </div>
 
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="Enter email address (optional)"
-                />
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="Enter email address (optional)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    💬 WhatsApp Number
+                  </label>
+                  <input
+                    type="tel"
+                    name="whatsappNumber"
+                    value={formData.whatsappNumber}
+                    onChange={handleChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="Leave blank to use Contact-1 number"
+                    maxLength={10}
+                  />
+                </div>
               </div>
             </div>
 
@@ -510,7 +529,7 @@ const PublicSalesForm = () => {
                             onClick={() => setShowAreaDropdown(true)}
                             placeholder={loadingData ? "Loading areas..." : selectedCity ? "Select or search area" : "Please select a city first"}
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                            disabled={loadingData || !selectedCity}
+                            disabled={loadingData || (!selectedCity && !showOtherCity)}
                           />
                         )}
                         {showAreaDropdown && !loadingData && !formData.area && (
