@@ -191,6 +191,7 @@ app.use(cors({
         return callback(new Error('Not allowed by CORS'));
     },
     methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Public-Token"],
     credentials: true,
     optionsSuccessStatus: 200
 }));
@@ -3002,9 +3003,9 @@ app.post('/carry-in-services/bulk-delete', authMiddleware, async (req: Request, 
     }
 });
 
-// Public API middleware for cookie validation
+// Public API middleware for header-based token validation
 function validatePublicAccess(req: Request, res: Response, next: NextFunction) {
-    const token = req.cookies?.publicAccessToken;
+    const token = req.headers['x-public-token'] as string | undefined;
     
     if (!token) {
         return res.status(401).json({ error: 'Access token required' });
@@ -3259,17 +3260,10 @@ app.get('/share/sales/:linkId', async (req: Request, res: Response) => {
             }
         });
         
-        // Set cookie for 1 hour
-        res.cookie('publicAccessToken', publicToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 60 * 60 * 1000 // 1 hour
-        });
-        
         res.json({ 
             success: true, 
             valid: true,
+            publicToken,
             createdAt: new Date(decoded.createdAt).toISOString(),
             expiresAt: new Date(decoded.exp * 1000).toISOString(),
             publicAccessExpiresAt: expiresAt.toISOString()
@@ -3316,14 +3310,13 @@ app.post('/share/sales/:linkId/submit', async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Invalid sales share link' });
         }
         
-        // Mark public access token as used and delete cookie
-        const publicToken = req.cookies?.publicAccessToken;
+        // Mark public access token as used
+        const publicToken = req.headers['x-public-token'] as string | undefined;
         if (publicToken) {
             await prisma.publicAccessToken.updateMany({
                 where: { token: publicToken },
                 data: { used: true }
             });
-            res.clearCookie('publicAccessToken');
         }
         
         // Find the first HOST user to assign the entry to

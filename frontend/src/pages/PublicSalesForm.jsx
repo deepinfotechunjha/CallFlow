@@ -19,6 +19,7 @@ const PublicSalesForm = () => {
   const [cities, setCities] = useState([]);
   const [areas, setAreas] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
+  const [publicToken, setPublicToken] = useState('');
   const cityDropdownRef = useClickOutside(() => setShowCityDropdown(false));
   const areaDropdownRef = useClickOutside(() => setShowAreaDropdown(false));
 
@@ -45,7 +46,7 @@ const PublicSalesForm = () => {
       setCitySearch('');
       // Load areas for the selected city
       if (city) {
-        loadAreas(city);
+        loadAreas(city, publicToken);
       } else {
         setAreas([]);
       }
@@ -81,18 +82,19 @@ const PublicSalesForm = () => {
     area: '',
     city: '',
     pincode: '',
-    email: ''
+    email: '',
+    whatsappNumber: ''
   });
 
   useEffect(() => {
     validateLink();
   }, [linkId]);
 
-  const loadCities = async () => {
+  const loadCities = async (token) => {
     setLoadingData(true);
     try {
       const citiesResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/public/cities`, {
-        credentials: 'include'
+        headers: { 'X-Public-Token': token }
       });
 
       if (citiesResponse.ok) {
@@ -107,7 +109,7 @@ const PublicSalesForm = () => {
     }
   };
 
-  const loadAreas = async (city) => {
+  const loadAreas = async (city, token) => {
     if (!city) {
       setAreas([]);
       return;
@@ -116,7 +118,7 @@ const PublicSalesForm = () => {
     setLoadingData(true);
     try {
       const areasResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/public/areas?cityId=${city.id}`, {
-        credentials: 'include'
+        headers: { 'X-Public-Token': token || publicToken }
       });
 
       if (areasResponse.ok) {
@@ -133,15 +135,14 @@ const PublicSalesForm = () => {
 
   const validateLink = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/share/sales/${linkId}`, {
-        credentials: 'include'
-      });
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/share/sales/${linkId}`);
       const data = await response.json();
 
       if (response.ok && data.success) {
         setIsValidLink(true);
-        // Load cities after successful validation
-        await loadCities();
+        const token = data.publicToken;
+        setPublicToken(token);
+        await loadCities(token);
       } else {
         setIsValidLink(false);
         toast.error(data.error || 'Invalid or expired link');
@@ -186,7 +187,8 @@ const PublicSalesForm = () => {
         area: formData.area?.trim() || null,
         city: formData.city.trim(),
         pincode: formData.pincode.trim(),
-        email: formData.email?.trim() || null
+        email: formData.email?.trim() || null,
+        whatsappNumber: formData.whatsappNumber?.trim() || null
       };
 
       const response = await fetch(`${import.meta.env.VITE_API_URL}/share/sales/${linkId}/submit`, {
@@ -194,7 +196,6 @@ const PublicSalesForm = () => {
         headers: {
           'Content-Type': 'application/json'
         },
-        credentials: 'include',
         body: JSON.stringify(submitData)
       });
 
@@ -411,18 +412,34 @@ const PublicSalesForm = () => {
                 </div>
               </div>
 
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="Enter email address (optional)"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="Enter email address (optional)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    WhatsApp Number
+                  </label>
+                  <input
+                    type="tel"
+                    name="whatsappNumber"
+                    value={formData.whatsappNumber}
+                    onChange={handleChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="Enter WhatsApp number (optional)"
+                    maxLength={15}
+                  />
+                </div>
               </div>
             </div>
 
@@ -458,6 +475,91 @@ const PublicSalesForm = () => {
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                       placeholder="Enter landmark (optional)"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      City <span className="text-red-500">*</span>
+                    </label>
+                    {showOtherCity ? (
+                      <div className="relative">
+                        <input
+                          type="text"
+                          name="city"
+                          value={formData.city}
+                          onChange={handleChange}
+                          required
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                          placeholder="Enter city name"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowOtherCity(false)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="relative" ref={cityDropdownRef}>
+                        {selectedCity ? (
+                          <div className="w-full p-3 border border-gray-300 rounded-lg bg-blue-50 flex items-center justify-between">
+                            <span>{selectedCity.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedCity(null);
+                                setFormData(prev => ({ ...prev, city: '', area: '' }));
+                                setAreas([]);
+                              }}
+                              className="text-red-500 hover:text-red-700 font-bold text-lg leading-none"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            value={citySearch}
+                            onChange={(e) => {
+                              setCitySearch(e.target.value);
+                              setShowCityDropdown(true);
+                            }}
+                            onFocus={() => setShowCityDropdown(true)}
+                            onClick={() => setShowCityDropdown(true)}
+                            placeholder={loadingData ? "Loading cities..." : "Select or search city"}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            disabled={loadingData}
+                            required
+                          />
+                        )}
+                        {showCityDropdown && !loadingData && !selectedCity && (
+                          <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-hidden">
+                            <div
+                              onClick={() => handleCitySelect('OTHER')}
+                              className="sticky top-0 px-4 py-3 bg-purple-50 hover:bg-purple-100 cursor-pointer font-medium text-purple-700 border-b-2 border-purple-200 z-10"
+                            >
+                              ✏️ Other (Custom City)
+                            </div>
+                            <div className="overflow-y-auto max-h-52">
+                              {filteredCities.length > 0 ? (
+                                filteredCities.map((city) => (
+                                  <div
+                                    key={city.id}
+                                    onClick={() => handleCitySelect(city)}
+                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                                  >
+                                    {city.name}
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="px-4 py-2 text-gray-500 text-sm">No cities found</div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -515,7 +617,7 @@ const PublicSalesForm = () => {
                         )}
                         {showAreaDropdown && !loadingData && !formData.area && (
                           <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-hidden">
-                            <div 
+                            <div
                               onClick={() => handleAreaSelect('OTHER')}
                               className="sticky top-0 px-4 py-3 bg-purple-50 hover:bg-purple-100 cursor-pointer font-medium text-purple-700 border-b-2 border-purple-200 z-10"
                             >
@@ -536,92 +638,6 @@ const PublicSalesForm = () => {
                                 <div className="px-4 py-2 text-gray-500 text-sm">No areas found for this city</div>
                               ) : (
                                 <div className="px-4 py-2 text-gray-500 text-sm">Please select a city first</div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      City <span className="text-red-500">*</span>
-                    </label>
-                    {showOtherCity ? (
-                      <div className="relative">
-                        <input
-                          type="text"
-                          name="city"
-                          value={formData.city}
-                          onChange={handleChange}
-                          required
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                          placeholder="Enter city name"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowOtherCity(false)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="relative" ref={cityDropdownRef}>
-                        {selectedCity ? (
-                          <div className="w-full p-3 border border-gray-300 rounded-lg bg-blue-50 flex items-center justify-between">
-                            <span>{selectedCity.name}</span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedCity(null);
-                                setFormData(prev => ({ ...prev, city: '' }));
-                                setAreas([]);
-                                setFormData(prev => ({ ...prev, area: '' }));
-                              }}
-                              className="text-red-500 hover:text-red-700 font-bold text-lg leading-none"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ) : (
-                          <input
-                            type="text"
-                            value={citySearch}
-                            onChange={(e) => {
-                              setCitySearch(e.target.value);
-                              setShowCityDropdown(true);
-                            }}
-                            onFocus={() => setShowCityDropdown(true)}
-                            onClick={() => setShowCityDropdown(true)}
-                            placeholder={loadingData ? "Loading cities..." : "Select or search city"}
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                            disabled={loadingData}
-                            required
-                          />
-                        )}
-                        {showCityDropdown && !loadingData && !selectedCity && (
-                          <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-hidden">
-                            <div 
-                              onClick={() => handleCitySelect('OTHER')}
-                              className="sticky top-0 px-4 py-3 bg-purple-50 hover:bg-purple-100 cursor-pointer font-medium text-purple-700 border-b-2 border-purple-200 z-10"
-                            >
-                              ✏️ Other (Custom City)
-                            </div>
-                            <div className="overflow-y-auto max-h-52">
-                              {filteredCities.length > 0 ? (
-                                filteredCities.map((city, index) => (
-                                  <div
-                                    key={city.id}
-                                    onClick={() => handleCitySelect(city)}
-                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                                  >
-                                    {city.name}
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="px-4 py-2 text-gray-500 text-sm">No cities found</div>
                               )}
                             </div>
                           </div>
