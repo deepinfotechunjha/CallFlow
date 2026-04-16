@@ -3117,6 +3117,7 @@ app.post('/share/create-link', authMiddleware, async (req: Request, res: Respons
             { 
                 type: 'share-link',
                 id: crypto.randomUUID(), // Unique ID ensures no duplicates
+                createdBy: req.user!.username,
                 createdAt: Date.now(),
                 exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
             }, 
@@ -3143,6 +3144,7 @@ app.post('/share/create-service-link', authMiddleware, async (req: Request, res:
             { 
                 type: 'service-share-link',
                 id: crypto.randomUUID(),
+                createdBy: req.user!.username,
                 createdAt: Date.now(),
                 exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60)
             }, 
@@ -3170,6 +3172,7 @@ app.post('/share/create-sales-link', authMiddleware, async (req: Request, res: R
             { 
                 type: 'sales-share-link',
                 id: crypto.randomUUID(), // Unique ID ensures no duplicates
+                createdBy: req.user!.username,
                 createdAt: Date.now(),
                 exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
             }, 
@@ -3359,7 +3362,7 @@ app.post('/share/sales/:linkId/submit', async (req: Request, res: Response) => {
                     pincode,
                     email,
                     whatsappNumber: whatsappNumber || null,
-                    createdBy: 'Share Link',
+                    createdBy: `${decoded.createdBy || 'Unknown'}(Share Link)`,
                     createdById: anyUser.id
                 }
             });
@@ -3391,7 +3394,7 @@ app.post('/share/sales/:linkId/submit', async (req: Request, res: Response) => {
                 pincode,
                 email,
                 whatsappNumber: whatsappNumber || null,
-                createdBy: 'Share Link',
+                createdBy: `${decoded.createdBy || 'Unknown'}(Share Link)`,
                 createdById: hostUser.id
             }
         });
@@ -3517,7 +3520,7 @@ app.post('/share/:linkId/submit', async (req: Request, res: Response) => {
                     problem,
                     category,
                     status: 'PENDING',
-                    createdBy: 'Share Link',
+                    createdBy: `${decoded.createdBy || 'Unknown'}(Share Link)`,
                     customerId: customer?.id || null,
                 }
             }),
@@ -3611,7 +3614,7 @@ app.post('/share/:linkId/submit-service', async (req: Request, res: Response) =>
                     category,
                     serviceDescription: serviceDescription || null,
                     customerId: customer.id,
-                    createdBy: 'Share Link'
+                    createdBy: `${decoded.createdBy || 'Unknown'}(Share Link)`
                 }
             }),
             prisma.customer.update({
@@ -3699,7 +3702,7 @@ app.post('/share-service/:linkId/submit', async (req: Request, res: Response) =>
                     category,
                     serviceDescription: serviceDescription || null,
                     customerId: customer.id,
-                    createdBy: 'Share Link'
+                    createdBy: `${decoded.createdBy || 'Unknown'}(Share Link)`
                 }
             }),
             prisma.customer.update({
