@@ -24,7 +24,20 @@ const AddSalesEntryForm = ({ onClose }) => {
   const [selectedCity, setSelectedCity] = useState(null);
   const [selectedArea, setSelectedArea] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailError, setEmailError] = useState('');
   const { addEntry } = useSalesStore();
+
+  const validateEmail = (value) => {
+    if (!value) return '';
+    if (/[A-Z]/.test(value)) return 'Email must be in lowercase letters';
+    if (value.includes(' ')) return 'Email must not contain spaces';
+    if (!value.includes('@')) return 'Email must contain @';
+    const [, domain] = value.split('@');
+    if (!domain) return 'Email must have a domain (e.g. gmail.com)';
+    if (!domain.includes('.')) return 'Email must contain a dot in domain (e.g. .com)';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Invalid email format';
+    return '';
+  };
   const modalRef = useClickOutside(onClose);
 
   const handleCityChange = (city) => {
@@ -46,6 +59,9 @@ const AddSalesEntryForm = ({ onClose }) => {
       setIsSubmitting(false);
       return;
     }
+
+    const emailErr = validateEmail(formData.email);
+    if (emailErr) { setEmailError(emailErr); return; }
 
     setIsSubmitting(true);
     try {
@@ -93,11 +109,13 @@ const AddSalesEntryForm = ({ onClose }) => {
             <div>
               <label className="block text-xs sm:text-sm font-medium mb-1">Email</label>
               <input
-                type="email"
+                type="text"
                 value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                onChange={(e) => { setFormData(prev => ({ ...prev, email: e.target.value })); if (emailError) setEmailError(''); }}
+                onBlur={(e) => setEmailError(validateEmail(e.target.value))}
+                className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm ${emailError ? 'border-red-400' : ''}`}
               />
+              {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
             </div>
 
             {/* Contact Person 1 - Name & Number in parallel */}

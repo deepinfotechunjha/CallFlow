@@ -20,6 +20,19 @@ const PublicSalesForm = () => {
   const [areas, setAreas] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
   const [publicToken, setPublicToken] = useState('');
+  const [emailError, setEmailError] = useState('');
+
+  const validateEmail = (value) => {
+    if (!value) return '';
+    if (/[A-Z]/.test(value)) return 'Email must be in lowercase letters';
+    if (value.includes(' ')) return 'Email must not contain spaces';
+    if (!value.includes('@')) return 'Email must contain @';
+    const [, domain] = value.split('@');
+    if (!domain) return 'Email must have a domain (e.g. gmail.com)';
+    if (!domain.includes('.')) return 'Email must contain a dot in domain (e.g. .com)';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Invalid email format';
+    return '';
+  };
   const cityDropdownRef = useClickOutside(() => setShowCityDropdown(false));
   const areaDropdownRef = useClickOutside(() => setShowAreaDropdown(false));
 
@@ -171,6 +184,9 @@ const PublicSalesForm = () => {
       toast.error('Please enter a valid GST number (e.g., 22AAAAA0000A1Z5)');
       return;
     }
+
+    const emailErr = validateEmail(formData.email);
+    if (emailErr) { setEmailError(emailErr); return; }
 
     setIsSubmitting(true);
     try {
@@ -420,13 +436,15 @@ const PublicSalesForm = () => {
                     Email Address
                   </label>
                   <input
-                    type="email"
+                    type="text"
                     name="email"
                     value={formData.email}
-                    onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    onChange={(e) => { handleChange(e); if (emailError) setEmailError(''); }}
+                    onBlur={(e) => setEmailError(validateEmail(e.target.value))}
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${emailError ? 'border-red-400' : 'border-gray-300'}`}
                     placeholder="Enter email address (optional)"
                   />
+                  {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
