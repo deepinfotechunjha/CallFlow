@@ -7,6 +7,7 @@ import OrderBillModal from '../components/OrderBillModal';
 import OrderCompleteModal from '../components/OrderCompleteModal';
 import OrderRevertModal from '../components/OrderRevertModal';
 import OrderEditModal from '../components/OrderEditModal';
+import OrderDetailModal from '../components/OrderDetailModal';
 import SalesShareModal from '../components/SalesShareModal';
 import ExportModal from '../components/ExportModal';
 import { exportOrdersToExcel } from '../utils/excelExport';
@@ -54,8 +55,8 @@ const OrdersPage = () => {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showRevertModal, setShowRevertModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [expandedHolds, setExpandedHolds] = useState({});
   const [confirmCancel, setConfirmCancel] = useState(null);
   const [isCancelling, setIsCancelling] = useState(false);
 
@@ -133,6 +134,16 @@ const OrdersPage = () => {
     setShowRevertModal(false);
     setShowEditModal(false);
     setSelectedOrder(null);
+    setShowDetailModal(false);
+  };
+
+  const openDetail = (order) => {
+    setSelectedOrder(order);
+    setShowDetailModal(true);
+  };
+
+  const closeDetail = () => {
+    setShowDetailModal(false);
   };
 
   const handleCancel = async (order) => {
@@ -141,8 +152,6 @@ const OrdersPage = () => {
     setIsCancelling(false);
     setConfirmCancel(null);
   };
-
-  const toggleHolds = (id) => setExpandedHolds(prev => ({ ...prev, [id]: !prev[id] }));
 
   const filteredOrders = orders.filter(o => {
     if (PERSONAL_ORDER_ROLES.includes(user?.role) && o.createdBy !== user?.username) return false;
@@ -364,7 +373,7 @@ const OrdersPage = () => {
       </div>
 
       {/* Desktop Table */}
-      <div className="hidden wide:block">
+      <div className="hidden xl:block">
         {loading ? (
           <div className="text-center py-16">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
@@ -376,66 +385,86 @@ const OrdersPage = () => {
           </div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gradient-to-r from-blue-600 to-purple-600">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500">#</th>
-                    <th onClick={() => handleSort('firm')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Firm {getSortIcon('firm')}</th>
-                    {user?.role === 'HOST' && <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 whitespace-nowrap">Brand</th>}
-                    <th onClick={() => handleSort('remark')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Order Remark {getSortIcon('remark')}</th>
-                    <th onClick={() => handleSort('calledBy')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Called By {getSortIcon('calledBy')}</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 whitespace-nowrap">Dispatch From</th>
-                    <th onClick={() => handleSort('status')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Status {getSortIcon('status')}</th>
-                    <th onClick={() => handleSort('createdBy')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Created By {getSortIcon('createdBy')}</th>
-                    <th onClick={() => handleSort('date')} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 whitespace-nowrap">Created At {getSortIcon('date')}</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Actions</th>
+                    <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-10">#</th>
+                    <th onClick={() => handleSort('firm')} className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap">
+                      <div className="flex items-center gap-1">Firm {getSortIcon('firm')}</div>
+                    </th>
+                    {user?.role === 'HOST' && (
+                      <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Brand</th>
+                    )}
+                    <th onClick={() => handleSort('remark')} className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap">
+                      <div className="flex items-center gap-1">Order Remark {getSortIcon('remark')}</div>
+                    </th>
+                    <th onClick={() => handleSort('calledBy')} className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap">
+                      <div className="flex items-center gap-1">Called By {getSortIcon('calledBy')}</div>
+                    </th>
+                    <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Dispatch From</th>
+                    <th onClick={() => handleSort('status')} className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap">
+                      <div className="flex items-center gap-1">Status {getSortIcon('status')}</div>
+                    </th>
+                    <th onClick={() => handleSort('createdBy')} className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap">
+                      <div className="flex items-center gap-1">Created By {getSortIcon('createdBy')}</div>
+                    </th>
+                    <th onClick={() => handleSort('date')} className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap">
+                      <div className="flex items-center gap-1">Created At {getSortIcon('date')}</div>
+                    </th>
+                    <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {sortedOrders.map((order, index) => (
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {sortedOrders.map((order, index) => {
+                    const colSpan = user?.role === 'HOST' ? 10 : 9;
+                    return (
                     <React.Fragment key={order.id}>
-                      <tr className={`hover:bg-gray-50 transition-colors ${order.status === 'CANCELLED' ? 'opacity-60' : ''}`}>
-                        <td className="px-4 py-3 text-sm text-gray-500">{index + 1}</td>
-                        <td className="px-4 py-3">
-                          <p className={`font-medium text-sm text-gray-800 ${order.status === 'CANCELLED' ? 'line-through' : ''}`}>{order.salesEntry?.firmName}</p>
-                          <p className="text-xs text-gray-500">{order.salesEntry?.city}{order.salesEntry?.area ? ` · ${order.salesEntry.area}` : ''}</p>
+                      <tr
+                      className={`cursor-pointer hover:bg-slate-50 transition-colors align-top ${order.status === 'CANCELLED' ? 'opacity-70' : ''}`}
+                      onClick={() => openDetail(order)}
+                    >
+                        <td className="px-4 py-4 text-sm font-medium text-gray-500">{index + 1}</td>
+                        <td className="px-4 py-4">
+                          <p className={`font-semibold text-sm text-gray-900 ${order.status === 'CANCELLED' ? 'line-through' : ''}`}>{order.salesEntry?.firmName}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{order.salesEntry?.city}{order.salesEntry?.area ? ` · ${order.salesEntry.area}` : ''}</p>
                         </td>
                         {user?.role === 'HOST' && (
-                          <td className="px-4 py-3 text-xs font-medium text-teal-700">
+                          <td className="px-4 py-4 text-xs font-medium text-teal-700 whitespace-nowrap">
                             {order.brandName || '—'}
                           </td>
                         )}
-                        <td className="px-4 py-3 text-sm text-gray-700 max-w-xs">
-                          <p className="truncate" title={order.orderRemark}>{order.orderRemark}</p>
+                        <td className="px-4 py-4 text-sm text-gray-700 max-w-[200px]">
+                          <p className="truncate" title={order.orderRemark}>{order.orderRemark || '—'}</p>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{order.calledBy || '—'}</td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">{order.calledBy || '—'}</td>
+                        <td className="px-4 py-4">
                           {order.dispatchFrom ? (
                             <div className="flex flex-wrap gap-1">
                               {order.dispatchFrom.split(',').map(loc => (
-                                <span key={loc} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
-                                  📦 {loc}
+                                <span key={loc} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 whitespace-nowrap">
+                                  📦 {loc.trim()}
                                 </span>
                               ))}
                             </div>
-                          ) : '—'}
+                          ) : <span className="text-gray-400">—</span>}
                         </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_BADGE[order.status] || 'bg-gray-100 text-gray-600'}`}>
+                        <td className="px-4 py-4">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                            order.status === 'PENDING' ? 'bg-gray-100 text-gray-700 border-gray-200' :
+                            order.status === 'ON_HOLD' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                            order.status === 'BILLED' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                            order.status === 'COMPLETED' ? 'bg-green-100 text-green-700 border-green-200' :
+                            'bg-red-100 text-red-700 border-red-200'
+                          }`}>
                             {STATUS_LABEL[order.status] || order.status.replace('_', ' ')}
                           </span>
-                          {order.holds?.length > 0 && (
-                            <button
-                              onClick={() => toggleHolds(order.id)}
-                              className="ml-2 text-xs text-yellow-600 hover:underline"
-                            >
-                              {expandedHolds[order.id] ? '▲' : '▼'} {order.holds.length} hold{order.holds.length > 1 ? 's' : ''}
-                            </button>
-                          )}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{order.createdBy}</td>
-                        <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{formatDate(order.createdAt)}</td>
-                        <td className="px-4 py-3" >
+                        <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">{order.createdBy}</td>
+                        <td className="px-4 py-4 text-xs text-gray-500 whitespace-nowrap">
+                          <div>{formatDate(order.createdAt)}</div>
+                        </td>
+                        <td className="px-4 py-4">
                           <ActionButtons
                             order={order}
                             canAction={canAction}
@@ -452,54 +481,18 @@ const OrdersPage = () => {
                         </td>
                       </tr>
 
-                      {expandedHolds[order.id] && order.holds?.length > 0 && (
-                        <tr className="bg-yellow-50">
-                          <td colSpan={user?.role === 'HOST' ? 10 : 9} className="px-6 py-3">
-                            <p className="text-xs font-semibold text-yellow-700 mb-2">Hold History</p>
-                            <div className="space-y-1">
-                              {order.holds.map(h => (
-                                <div key={h.id} className="text-xs text-gray-700 flex gap-3">
-                                  <span className="font-medium text-yellow-700 whitespace-nowrap">{h.heldBy}</span>
-                                  <span className="text-gray-400 whitespace-nowrap">{formatDate(h.heldAt)}</span>
-                                  <span>{h.remark}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-
-                      {(order.status === 'BILLED' || order.status === 'COMPLETED') && (
-                        <tr className="bg-blue-50">
-                          <td colSpan={user?.role === 'HOST' ? 10 : 9} className="px-6 py-2 text-xs text-gray-600">
-                            {order.billingRemark && (
-                              <span className="mr-4">🧾 <strong>Billing:</strong> {order.billingRemark} — {order.billedBy} @ {formatDate(order.billedAt)}</span>
-                            )}
-                            {order.status === 'COMPLETED' && order.completionRemark && (
-                              <span>🚚 <strong>Transport:</strong> {order.completionRemark} — {order.completedBy} @ {formatDate(order.completedAt)}</span>
-                            )}
-                          </td>
-                        </tr>
-                      )}
-
-                      {/* Cancelled By info row */}
-                      {order.status === 'CANCELLED' && order.cancelledBy && (
-                        <tr className="bg-red-50">
-                          <td colSpan={user?.role === 'HOST' ? 10 : 9} className="px-6 py-2 text-xs text-red-700">
-                            ✕ <strong>Cancelled by:</strong> {order.cancelledBy} @ {formatDate(order.cancelledAt)}
-                          </td>
-                        </tr>
-                      )}
                     </React.Fragment>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
+            </div>
           </div>
         )}
       </div>
 
       {/* Mobile Cards */}
-      <div className="wide:hidden space-y-4">
+      <div className="xl:hidden space-y-4">
         {loading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
@@ -513,7 +506,8 @@ const OrdersPage = () => {
           filteredOrders.map(order => (
             <div
               key={order.id}
-              className={`bg-white rounded-xl border shadow-sm p-4 ${order.status === 'CANCELLED' ? 'opacity-60 border-red-200' : 'border-gray-200'}`}
+              onClick={() => openDetail(order)}
+              className={`cursor-pointer bg-white rounded-xl border shadow-sm p-4 ${order.status === 'CANCELLED' ? 'opacity-70 border-red-200' : 'border-gray-200'} hover:border-blue-300 hover:shadow-md transition`}
             >
               <div className="flex justify-between items-start mb-2">
                 <div>
@@ -539,43 +533,6 @@ const OrdersPage = () => {
               )}
               <p className="text-xs text-gray-500 mb-3">By {order.createdBy} · {formatDate(order.createdAt)}</p>
 
-              {order.holds?.length > 0 && (
-                <div className="mb-3">
-                  <button
-                    onClick={() => toggleHolds(order.id)}
-                    className="text-xs text-yellow-600 font-medium hover:underline"
-                  >
-                    {expandedHolds[order.id] ? '▲ Hide' : '▼ Show'} {order.holds.length} hold{order.holds.length > 1 ? 's' : ''}
-                  </button>
-                  {expandedHolds[order.id] && (
-                    <div className="mt-2 bg-yellow-50 rounded-lg p-2 space-y-1">
-                      {order.holds.map(h => (
-                        <div key={h.id} className="text-xs text-gray-700">
-                          <span className="font-medium text-yellow-700">{h.heldBy}</span>
-                          <span className="text-gray-400 ml-1">{formatDate(h.heldAt)}</span>
-                          <p>{h.remark}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {(order.status === 'BILLED' || order.status === 'COMPLETED') && order.billingRemark && (
-                <div className="bg-blue-50 rounded-lg p-2 mb-2 text-xs text-gray-600">
-                  🧾 <strong>Billing:</strong> {order.billingRemark} — {order.billedBy}
-                  {order.status === 'COMPLETED' && order.completionRemark && (
-                    <div className="mt-1">🚚 <strong>Transport:</strong> {order.completionRemark} — {order.completedBy}</div>
-                  )}
-                </div>
-              )}
-
-              {/* Cancelled info */}
-              {order.status === 'CANCELLED' && order.cancelledBy && (
-                <div className="bg-red-50 rounded-lg p-2 mb-2 text-xs text-red-700">
-                  ✕ <strong>Cancelled by:</strong> {order.cancelledBy} @ {formatDate(order.cancelledAt)}
-                </div>
-              )}
 
               <ActionButtons
                 order={order}
@@ -623,6 +580,7 @@ const OrdersPage = () => {
           title="Export Orders to Excel"
         />
       )}
+      {showDetailModal && selectedOrder && <OrderDetailModal order={selectedOrder} onClose={closeDetail} />}
       {showHoldModal && selectedOrder && <OrderHoldModal order={selectedOrder} onClose={closeAll} />}
       {showBillModal && selectedOrder && <OrderBillModal order={selectedOrder} onClose={closeAll} />}
       {showCompleteModal && selectedOrder && <OrderCompleteModal order={selectedOrder} onClose={closeAll} />}
@@ -640,34 +598,34 @@ const ActionButtons = ({ order, canAction, canCancel, onHold, onBill, onComplete
   const isBilled = status === 'BILLED';
 
   return (
-    <div className="flex gap-1.5 flex-wrap">
+    <div className="flex flex-col gap-1.5 min-w-[90px]">
       {isHost && (
-        <button onClick={onEdit} className="px-2.5 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium">
+        <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium text-left whitespace-nowrap">
           ✏️ Edit
         </button>
       )}
       {canAction && !isCancelled && !isCompleted && !isBilled && (
-        <button onClick={onHold} className="px-2.5 py-1.5 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 text-xs font-medium">
+        <button onClick={(e) => { e.stopPropagation(); onHold(); }} className="px-3 py-1.5 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 text-xs font-medium text-left whitespace-nowrap">
           ⏸ Hold
         </button>
       )}
       {canAction && ['PENDING', 'ON_HOLD'].includes(status) && (
-        <button onClick={onBill} className="px-2.5 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-xs font-medium">
+        <button onClick={(e) => { e.stopPropagation(); onBill(); }} className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-xs font-medium text-left whitespace-nowrap">
           🧾 Bill
         </button>
       )}
       {canAction && isBilled && (
-        <button onClick={onComplete} className="px-2.5 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 text-xs font-medium">
+        <button onClick={(e) => { e.stopPropagation(); onComplete(); }} className="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 text-xs font-medium text-left whitespace-nowrap">
           🚚 Transport
         </button>
       )}
       {canCancel && !isCancelled && !isCompleted && (
-        <button onClick={onCancel} className="px-2.5 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-xs font-medium">
+        <button onClick={(e) => { e.stopPropagation(); onCancel(); }} className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-xs font-medium text-left whitespace-nowrap">
           ✕ Cancel
         </button>
       )}
       {isHost && isCancelled && (
-        <button onClick={onRevert} className="px-2.5 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 text-xs font-medium">
+        <button onClick={(e) => { e.stopPropagation(); onRevert(); }} className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 text-xs font-medium text-left whitespace-nowrap">
           🔄 Revert
         </button>
       )}

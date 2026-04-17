@@ -49,6 +49,7 @@ const OrderDetailModal = ({ order, onClose }) => {
           <div className="bg-gray-50 rounded-lg p-4 space-y-2">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Firm Info</p>
             <Row label="Firm" value={order.salesEntry?.firmName} />
+            <Row label="Brand" value={order.brandName} />
             <Row label="GST No" value={order.salesEntry?.gstNo} />
             <Row label="Contact Person" value={order.salesEntry?.contactPerson1Name} />
             <Row label="Contact Number" value={order.salesEntry?.contactPerson1Number} />
@@ -61,18 +62,7 @@ const OrderDetailModal = ({ order, onClose }) => {
             <Row label="Order #" value={`#${order.id}`} />
             <Row label="Order Remark" value={order.orderRemark} />
             <Row label="Called By" value={order.calledBy} />
-            {order.dispatchFrom && (
-              <div className="flex gap-2 text-sm">
-                <span className="font-medium text-gray-600 min-w-[130px]">Dispatch From:</span>
-                <div className="flex flex-wrap gap-1">
-                  {order.dispatchFrom.split(',').map(loc => (
-                    <span key={loc} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
-                      📦 {loc}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+            <Row label="Dispatch From" value={order.dispatchFrom?.split(',').map(loc => loc.trim()).filter(Boolean).join(', ')} />
             <Row label="Created By" value={order.createdBy} />
             <Row label="Created At" value={formatDate(order.createdAt)} />
           </div>
