@@ -435,7 +435,7 @@ const OrdersPage = () => {
                           </td>
                         )}
                         <td className="px-4 py-4 text-sm text-gray-700 max-w-[200px]">
-                          <p className="truncate" title={order.orderRemark}>{order.orderRemark || '—'}</p>
+                          <p className="break-words whitespace-pre-wrap" title={order.orderRemark}>{order.orderRemark || '—'}</p>
                         </td>
                         <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">{order.calledBy || '—'}</td>
                         <td className="px-4 py-4">
