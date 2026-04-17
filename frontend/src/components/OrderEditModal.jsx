@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import useOrderStore from '../store/orderStore';
 import useAuthStore from '../store/authStore';
 import useBrandStore from '../store/brandStore';
@@ -17,9 +17,13 @@ const OrderEditModal = ({ order, onClose }) => {
 
   const { updateOrder } = useOrderStore();
   const { users } = useAuthStore();
-  const { brands } = useBrandStore();
+  const { brands, fetchBrands } = useBrandStore();
   const { locations } = useLocationStore();
   const modalRef = useClickOutside(onClose);
+
+  useEffect(() => {
+    fetchBrands();
+  }, [fetchBrands]);
 
   const toggleLocation = (name) =>
     setDispatchFrom(prev => prev.includes(name) ? prev.filter(x => x !== name) : [...prev, name]);

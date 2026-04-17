@@ -12,11 +12,6 @@ const LocationSettings = () => {
   const { locations, fetchLocations, addLocation, updateLocation, deleteLocation } = useLocationStore();
   useSocket();
 
-  const [hasAccess, setHasAccess] = useState(false);
-  const [gatePassword, setGatePassword] = useState('');
-  const [showGate, setShowGate] = useState(true);
-  const [showWrongGate, setShowWrongGate] = useState(false);
-
   const [showActionSecret, setShowActionSecret] = useState(false);
   const [actionPassword, setActionPassword] = useState('');
   const [pendingAction, setPendingAction] = useState(null);
@@ -28,7 +23,6 @@ const LocationSettings = () => {
   const [editingLocation, setEditingLocation] = useState(null);
   const [editLocationName, setEditLocationName] = useState('');
 
-  const gateRef = useClickOutside(() => { if (showGate) window.history.back(); });
   const addModalRef = useClickOutside(() => { setShowAddModal(false); setNewLocationName(''); });
   const editModalRef = useClickOutside(() => { setShowEditModal(false); setEditingLocation(null); setEditLocationName(''); });
   const actionRef = useClickOutside(() => {
@@ -39,27 +33,8 @@ const LocationSettings = () => {
   });
 
   useEffect(() => {
-    if (hasAccess) fetchLocations();
-  }, [hasAccess, fetchLocations]);
-
-  const verifyGate = async () => {
-    if (!gatePassword.trim()) return;
-    try {
-      const res = await apiClient.post('/auth/verify-secret', { secretPassword: gatePassword });
-      if (res.data.success && res.data.hasAccess) {
-        setHasAccess(true);
-        setShowGate(false);
-      } else {
-        setShowGate(false);
-        setGatePassword('');
-        setShowWrongGate(true);
-      }
-    } catch {
-      setShowGate(false);
-      setGatePassword('');
-      setShowWrongGate(true);
-    }
-  };
+    fetchLocations();
+  }, [fetchLocations]);
 
   const openAdd = () => { setNewLocationName(''); setShowAddModal(true); };
   const openEdit = (location) => { setEditingLocation(location); setEditLocationName(location.name); setShowEditModal(true); };
@@ -123,48 +98,7 @@ const LocationSettings = () => {
     );
   }
 
-  if (!hasAccess) {
-    return (
-      <div className="max-w-4xl mx-auto">
-        {showGate && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div ref={gateRef} className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h2 className="text-xl font-bold mb-4">Location Settings Access</h2>
-              <p className="text-gray-600 mb-4">Enter your secret password to access location settings:</p>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Secret Password *</label>
-                <input
-                  type="password"
-                  value={gatePassword}
-                  onChange={e => setGatePassword(e.target.value)}
-                  onKeyPress={e => e.key === 'Enter' && verifyGate()}
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter secret password"
-                  autoFocus
-                />
-              </div>
-              <div className="flex gap-2">
-                <button onClick={verifyGate} className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-medium">Verify</button>
-                <button onClick={() => window.history.back()} className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400">Cancel</button>
-              </div>
-            </div>
-          </div>
-        )}
-        {showWrongGate && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h2 className="text-xl font-bold mb-4 text-red-600">Invalid Secret</h2>
-              <p className="text-gray-700 mb-6">The secret you entered is incorrect.</p>
-              <div className="flex gap-2">
-                <button onClick={() => { setShowWrongGate(false); setShowGate(true); }} className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-medium">Retry</button>
-                <button onClick={() => { setShowWrongGate(false); window.history.back(); }} className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400">Cancel</button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
+
 
   return (
     <div className="max-w-4xl mx-auto p-4">
