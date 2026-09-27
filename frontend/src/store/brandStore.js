@@ -70,6 +70,45 @@ const useBrandStore = create((set, get) => ({
       toast.error(message);
       throw error;
     }
+  },
+
+  fetchBrandProducts: async (brandName) => {
+    try {
+      const response = await apiClient.get(`/brands/${encodeURIComponent(brandName)}/products`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch brand products:', error);
+      return [];
+    }
+  },
+
+  importBrandProducts: async (brandName, products, mode) => {
+    try {
+      const response = await apiClient.post(`/brands/${encodeURIComponent(brandName)}/products`, { products, mode });
+      const { count, skipped, mode: resultMode } = response.data;
+      if (resultMode === 'replace') {
+        toast.success(`${count} products imported for ${brandName}`);
+      } else {
+        toast.success(`${count} new products added, ${skipped} skipped (duplicates)`);
+      }
+      return response.data;
+    } catch (error) {
+      const message = error.response?.data?.error || 'Failed to import products';
+      toast.error(message);
+      throw error;
+    }
+  },
+
+  clearBrandProducts: async (brandName) => {
+    try {
+      const response = await apiClient.delete(`/brands/${encodeURIComponent(brandName)}/products`);
+      toast.success(`All products cleared for ${brandName}`);
+      return response.data;
+    } catch (error) {
+      const message = error.response?.data?.error || 'Failed to clear products';
+      toast.error(message);
+      throw error;
+    }
   }
 }));
 

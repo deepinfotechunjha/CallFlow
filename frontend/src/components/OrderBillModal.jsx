@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import useOrderStore from '../store/orderStore';
 import useClickOutside from '../hooks/useClickOutside';
+import OrderRemarkDisplay from './OrderRemarkDisplay';
 
 const OrderBillModal = ({ order, onClose }) => {
   const [step, setStep] = useState(1);
@@ -47,6 +48,12 @@ const OrderBillModal = ({ order, onClose }) => {
           <p className="text-sm text-gray-600">
             Firm: <span className="font-semibold text-gray-800">{order.salesEntry?.firmName}</span>
           </p>
+          {order.orderRemark && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Order Remark</p>
+              <OrderRemarkDisplay remark={order.orderRemark} />
+            </div>
+          )}
 
           {/* Step indicator */}
           <div className="flex items-center gap-2 text-xs">

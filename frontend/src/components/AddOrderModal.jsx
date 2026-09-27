@@ -19,13 +19,18 @@ const AddOrderModal = ({ onClose }) => {
   const [dispatchFrom, setDispatchFrom] = useState([]);
   const [dispatchDropdownOpen, setDispatchDropdownOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [confirmCall, setConfirmCall] = useState(null); // { name, number }
+  const [confirmCall, setConfirmCall] = useState(null);
+
+  // Brand product table state
+  const [brandProducts, setBrandProducts] = useState([]);
+  const [productSearch, setProductSearch] = useState('');
+  const [orderItems, setOrderItems] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
 
   const dispatchDropdownRef = useRef(null);
-
   const { searchFirms, createOrder } = useOrderStore();
   const { user, users, fetchUsers } = useAuthStore();
-  const { brands, fetchBrands } = useBrandStore();
+  const { brands, fetchBrands, fetchBrandProducts } = useBrandStore();
   const { locations, fetchLocations } = useLocationStore();
   const modalRef = useClickOutside(confirmCall ? () => {} : onClose);
   const searchTimeout = useRef(null);
@@ -48,6 +53,64 @@ const AddOrderModal = ({ onClose }) => {
     fetchBrands();
     fetchLocations();
   }, [canSetCalledBy, fetchUsers, fetchBrands, fetchLocations]);
+
+  // When brand changes, fetch its products
+  useEffect(() => {
+    if (!brandName) {
+      setBrandProducts([]);
+      setOrderItems([]);
+      setProductSearch('');
+      return;
+    }
+    setLoadingProducts(true);
+    fetchBrandProducts(brandName).then(products => {
+      setBrandProducts(products);
+      setOrderItems([]);
+      setProductSearch('');
+      setLoadingProducts(false);
+    });
+  }, [brandName, fetchBrandProducts]);
+
+  const hasProducts = brandProducts.length > 0;
+
+  const filteredProducts = productSearch.trim()
+    ? brandProducts.filter(p => {
+        const q = productSearch.toLowerCase();
+        return p.code.toLowerCase().includes(q) || p.configuration.toLowerCase().includes(q);
+      })
+    : brandProducts;
+
+  const addItem = (product) => {
+    if (orderItems.find(i => i.code === product.code)) return;
+    setOrderItems(prev => [...prev, { code: product.code, configuration: product.configuration, price: '', qty: 1 }]);
+    setProductSearch('');
+  };
+
+  const removeItem = (code) => setOrderItems(prev => prev.filter(i => i.code !== code));
+
+  const updateItem = (code, field, value) => {
+    setOrderItems(prev => prev.map(i => i.code === code ? { ...i, [field]: value } : i));
+  };
+
+  const grandTotal = orderItems.reduce((sum, i) => {
+    const price = parseFloat(i.price) || 0;
+    const qty = parseInt(i.qty) || 0;
+    return sum + price * qty;
+  }, 0);
+
+  const isTableValid = orderItems.length > 0 && orderItems.every(i => parseFloat(i.price) > 0 && parseInt(i.qty) > 0);
+
+  const buildTableRemark = () => JSON.stringify({
+    type: 'table',
+    items: orderItems.map(i => ({
+      code: i.code,
+      configuration: i.configuration,
+      price: parseFloat(i.price),
+      qty: parseInt(i.qty),
+      total: parseFloat(i.price) * parseInt(i.qty)
+    })),
+    grandTotal
+  });
 
   const handleSearchChange = (e) => {
     const val = e.target.value;
@@ -81,6 +144,9 @@ const AddOrderModal = ({ onClose }) => {
     setBrandName('');
     setDispatchFrom([]);
     setDispatchDropdownOpen(false);
+    setBrandProducts([]);
+    setOrderItems([]);
+    setProductSearch('');
   };
 
   const toggleDispatchLocation = (name) => {
@@ -88,12 +154,13 @@ const AddOrderModal = ({ onClose }) => {
   };
 
   const handleConfirm = async () => {
-    if (!orderRemark.trim() || !brandName || isSubmitting) return;
+    const finalRemark = hasProducts ? (isTableValid ? buildTableRemark() : '') : orderRemark.trim();
+    if (!finalRemark || !brandName || isSubmitting) return;
     setIsSubmitting(true);
     try {
       await createOrder({
         salesEntryId: selectedFirm.id,
-        orderRemark: orderRemark.trim(),
+        orderRemark: finalRemark,
         brandName,
         calledBy: canSetCalledBy && calledBy ? calledBy : undefined,
         dispatchFrom: dispatchFrom.join(',')
@@ -244,19 +311,123 @@ const AddOrderModal = ({ onClose }) => {
                 {!brandName && <p className="text-xs text-red-500 mt-1">Please select a brand</p>}
               </div>
 
-              {/* Order Remark */}
+              {/* Order Items / Remark */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Order Remarks <span className="text-red-500">*</span>
+                  Order Items <span className="text-red-500">*</span>
                 </label>
-                <textarea
-                  value={orderRemark}
-                  onChange={e => setOrderRemark(e.target.value)}
-                  rows={5}
-                  placeholder="Enter order remarks..."
-                  autoFocus
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+
+                {loadingProducts ? (
+                  <div className="flex items-center gap-2 text-sm text-gray-500 py-3">
+                    <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                    Loading products...
+                  </div>
+                ) : hasProducts ? (
+                  <div className="space-y-2">
+                    {/* Filter bar */}
+                    <input
+                      type="text"
+                      value={productSearch}
+                      onChange={e => setProductSearch(e.target.value)}
+                      placeholder="Filter by code or configuration..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                    />
+
+                    {/* Single unified table */}
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="max-h-64 overflow-y-auto">
+                        <table className="min-w-full text-xs">
+                          <thead className="bg-gray-50 sticky top-0 z-10">
+                            <tr>
+                              <th className="px-2 py-2 text-left font-semibold text-gray-600">Code</th>
+                              <th className="px-2 py-2 text-left font-semibold text-gray-600">Configuration</th>
+                              <th className="px-2 py-2 text-right font-semibold text-gray-600">Price (₹)</th>
+                              <th className="px-2 py-2 text-right font-semibold text-gray-600">Qty</th>
+                              <th className="px-2 py-2 text-right font-semibold text-gray-600">Total</th>
+                              <th className="px-2 py-2"></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredProducts.map((p, idx) => {
+                              const added = orderItems.find(i => i.code === p.code);
+                              const price = added ? parseFloat(added.price) || 0 : 0;
+                              const qty = added ? parseInt(added.qty) || 0 : 0;
+                              const total = price * qty;
+                              return (
+                                <tr
+                                  key={p.code}
+                                  className={`border-b border-gray-100 last:border-b-0 ${
+                                    added ? 'bg-green-50' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                                  }`}
+                                >
+                                  <td className="px-2 py-1.5 font-medium text-gray-800 whitespace-nowrap">{p.code}</td>
+                                  <td className="px-2 py-1.5 text-gray-600 max-w-[110px] truncate">{p.configuration}</td>
+                                  <td className="px-2 py-1.5 text-right">
+                                    {added ? (
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        value={added.price}
+                                        onChange={e => updateItem(p.code, 'price', e.target.value)}
+                                        placeholder="0"
+                                        className="w-20 px-1.5 py-1 border border-gray-300 rounded text-xs text-right focus:ring-1 focus:ring-blue-500"
+                                      />
+                                    ) : <span className="text-gray-300">—</span>}
+                                  </td>
+                                  <td className="px-2 py-1.5 text-right">
+                                    {added ? (
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        value={added.qty}
+                                        onChange={e => updateItem(p.code, 'qty', e.target.value)}
+                                        className="w-14 px-1.5 py-1 border border-gray-300 rounded text-xs text-right focus:ring-1 focus:ring-blue-500"
+                                      />
+                                    ) : <span className="text-gray-300">—</span>}
+                                  </td>
+                                  <td className="px-2 py-1.5 text-right font-semibold text-gray-800 whitespace-nowrap">
+                                    {added && total > 0 ? `₹${total.toLocaleString('en-IN')}` : <span className="text-gray-300">—</span>}
+                                  </td>
+                                  <td className="px-2 py-1.5 text-center">
+                                    {added ? (
+                                      <button type="button" onClick={() => removeItem(p.code)} className="text-red-500 hover:text-red-700 font-bold text-sm leading-none">&times;</button>
+                                    ) : (
+                                      <button type="button" onClick={() => addItem(p)} className="text-blue-600 hover:text-blue-800 font-bold text-base leading-none">+</button>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                            {filteredProducts.length === 0 && (
+                              <tr><td colSpan={6} className="px-3 py-4 text-center text-xs text-gray-400 italic">No products match your filter.</td></tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                      {/* Grand total footer */}
+                      <div className="bg-blue-50 border-t border-gray-200 px-3 py-2 flex items-center justify-between">
+                        <span className="text-xs font-semibold text-gray-600">
+                          {orderItems.length} item{orderItems.length !== 1 ? 's' : ''} selected
+                        </span>
+                        <span className="text-sm font-bold text-blue-700">Grand Total: ₹{grandTotal.toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
+
+                    {orderItems.length > 0 && !isTableValid && (
+                      <p className="text-xs text-red-500">Please enter price and quantity for all selected items.</p>
+                    )}
+                  </div>
+                ) : (
+                  // No products imported for this brand — show old plain textarea (unchanged)
+                  <textarea
+                    value={orderRemark}
+                    onChange={e => setOrderRemark(e.target.value)}
+                    rows={5}
+                    placeholder="Enter order remarks..."
+                    autoFocus
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                )}
               </div>
 
               {/* Called By — only for privileged roles */}
@@ -326,7 +497,7 @@ const AddOrderModal = ({ onClose }) => {
                 </button>
                 <button
                   onClick={handleConfirm}
-                  disabled={!orderRemark.trim() || !brandName || dispatchFrom.length === 0 || isSubmitting}
+                  disabled={(hasProducts ? !isTableValid : !orderRemark.trim()) || !brandName || dispatchFrom.length === 0 || isSubmitting}
                   className="flex-1 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-green-300 text-sm font-medium"
                 >
                   {isSubmitting ? 'Creating...' : '✓ Confirm Order'}

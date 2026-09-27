@@ -4,6 +4,7 @@ import useAuthStore from '../store/authStore';
 import useBrandStore from '../store/brandStore';
 import useLocationStore from '../store/locationStore';
 import useClickOutside from '../hooks/useClickOutside';
+import OrderRemarkDisplay, { parseOrderRemark } from './OrderRemarkDisplay';
 
 const OrderEditModal = ({ order, onClose }) => {
   const [orderRemark, setOrderRemark] = useState(order.orderRemark || '');
@@ -15,6 +16,7 @@ const OrderEditModal = ({ order, onClose }) => {
   const [dispatchDropdownOpen, setDispatchDropdownOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const isTableRemark = !!parseOrderRemark(order.orderRemark);
   const { updateOrder } = useOrderStore();
   const { users } = useAuthStore();
   const { brands, fetchBrands } = useBrandStore();
@@ -30,11 +32,12 @@ const OrderEditModal = ({ order, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!orderRemark.trim() || !brandName || dispatchFrom.length === 0 || isSubmitting) return;
+    if (!brandName || dispatchFrom.length === 0 || isSubmitting) return;
+    if (!isTableRemark && !orderRemark.trim()) return;
     setIsSubmitting(true);
     try {
       await updateOrder(order.id, {
-        orderRemark: orderRemark.trim(),
+        orderRemark: isTableRemark ? order.orderRemark : orderRemark.trim(),
         calledBy: calledBy || null,
         brandName,
         dispatchFrom: dispatchFrom.join(','),
@@ -72,13 +75,20 @@ const OrderEditModal = ({ order, onClose }) => {
           {/* Order Remark */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Order Remark <span className="text-red-500">*</span></label>
-            <textarea
-              value={orderRemark}
-              onChange={e => setOrderRemark(e.target.value)}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-              required
-            />
+            {isTableRemark ? (
+              <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                <p className="text-xs text-gray-500 mb-2 italic">Table order — view only (cannot edit table orders)</p>
+                <OrderRemarkDisplay remark={order.orderRemark} />
+              </div>
+            ) : (
+              <textarea
+                value={orderRemark}
+                onChange={e => setOrderRemark(e.target.value)}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            )}
           </div>
 
           {/* Called By */}
@@ -131,7 +141,7 @@ const OrderEditModal = ({ order, onClose }) => {
               className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">
               Cancel
             </button>
-            <button type="submit" disabled={!orderRemark.trim() || !brandName || dispatchFrom.length === 0 || isSubmitting}
+            <button type="submit" disabled={(!isTableRemark && !orderRemark.trim()) || !brandName || dispatchFrom.length === 0 || isSubmitting}
               className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300 text-sm font-medium">
               {isSubmitting ? 'Saving...' : '✓ Save Changes'}
             </button>
