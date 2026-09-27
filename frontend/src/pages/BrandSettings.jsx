@@ -5,12 +5,15 @@ import useBrandStore from '../store/brandStore';
 import useSocket from '../hooks/useSocket';
 import useClickOutside from '../hooks/useClickOutside';
 import apiClient from '../api/apiClient';
+import BrandProductImportModal from '../components/BrandProductImportModal';
 
 const BrandSettings = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { brands, fetchBrands, addBrand, updateBrand, deleteBrand } = useBrandStore();
   useSocket();
+
+  const [importingBrand, setImportingBrand] = useState(null);
 
   // Action secret modal
   const [showActionSecret, setShowActionSecret] = useState(false);
@@ -138,6 +141,7 @@ const BrandSettings = () => {
               <div className="text-xs text-gray-500 mb-3">{new Date(brand.createdAt).toLocaleDateString()}</div>
               <div className="flex gap-2">
                 <button onClick={() => openEdit(brand)} className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-xs font-medium hover:bg-blue-700">Edit</button>
+                <button onClick={() => setImportingBrand(brand)} className="flex-1 bg-purple-600 text-white py-2 rounded-lg text-xs font-medium hover:bg-purple-700">Products</button>
                 <button onClick={() => confirmDelete(brand)} className="flex-1 bg-red-600 text-white py-2 rounded-lg text-xs font-medium hover:bg-red-700">Delete</button>
               </div>
             </div>
@@ -177,6 +181,7 @@ const BrandSettings = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex gap-2">
                       <button onClick={() => openEdit(brand)} className="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-blue-700 transition-colors">Edit</button>
+                      <button onClick={() => setImportingBrand(brand)} className="bg-purple-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-purple-700 transition-colors">📦 Products</button>
                       <button onClick={() => confirmDelete(brand)} className="bg-red-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-red-700 transition-colors">Delete</button>
                     </div>
                   </td>
@@ -186,6 +191,13 @@ const BrandSettings = () => {
           </table>
         </div>
       </div>
+
+      {importingBrand && (
+        <BrandProductImportModal
+          brand={importingBrand}
+          onClose={() => setImportingBrand(null)}
+        />
+      )}
 
       {/* Add Modal */}
       {showAddModal && (

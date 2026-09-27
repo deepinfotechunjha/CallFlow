@@ -64,7 +64,7 @@ async function withRetry<T>(operation: () => Promise<T>, maxRetries = 3): Promis
       if (i === maxRetries - 1) throw error;
       
       // Check if it's a connection error
-      if (error.code === 'P1001' || error.message.includes('timeout') || error.message.includes('connection')) {
+      if (['P1001', 'P1017', 'P1002'].includes(error.code) || error.message.includes('timeout') || error.message.includes('connection') || error.message.includes('closed')) {
         console.log(`Database connection attempt ${i + 1} failed, retrying in ${2000 * (i + 1)}ms...`);
         await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1))); // Exponential backoff
         continue;
@@ -4090,6 +4090,76 @@ app.delete('/brands/:id', authMiddleware, requireRole(['HOST']), async (req: Req
         res.status(500).json({ error: String(err) });
     }
 });
+// ─── Brand Products ──────────────────────────────────────────────────────────
+app.get('/brands/:brandName/products', authMiddleware, async (req: Request, res: Response) => {
+    const { brandName } = req.params;
+    try {
+        const products = await prisma.brandProduct.findMany({
+            where: { brandName },
+            select: { id: true, code: true, configuration: true },
+            orderBy: { code: 'asc' }
+        });
+        res.json(products);
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.post('/brands/:brandName/products', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const { brandName } = req.params;
+    const { products, mode } = req.body as {
+        products: { code: string; configuration: string }[];
+        mode: 'replace' | 'merge';
+    };
+
+    if (!products || !Array.isArray(products) || products.length === 0) {
+        return res.status(400).json({ error: 'Products array is required' });
+    }
+    if (!['replace', 'merge'].includes(mode)) {
+        return res.status(400).json({ error: 'mode must be replace or merge' });
+    }
+
+    const brand = await prisma.brand.findFirst({ where: { name: brandName, isActive: true } });
+    if (!brand) return res.status(404).json({ error: 'Brand not found' });
+
+    try {
+        if (mode === 'replace') {
+            await prisma.brandProduct.deleteMany({ where: { brandName } });
+            await prisma.brandProduct.createMany({
+                data: products.map(p => ({ brandName, code: p.code.trim(), configuration: p.configuration.trim() }))
+            });
+            return res.json({ success: true, count: products.length, mode: 'replace' });
+        } else {
+            // merge: skip duplicates by code
+            const existing = await prisma.brandProduct.findMany({
+                where: { brandName },
+                select: { code: true }
+            });
+            const existingCodes = new Set(existing.map(e => e.code));
+            const newProducts = products.filter(p => !existingCodes.has(p.code.trim()));
+            if (newProducts.length > 0) {
+                await prisma.brandProduct.createMany({
+                    data: newProducts.map(p => ({ brandName, code: p.code.trim(), configuration: p.configuration.trim() }))
+                });
+            }
+            return res.json({ success: true, count: newProducts.length, skipped: products.length - newProducts.length, mode: 'merge' });
+        }
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+app.delete('/brands/:brandName/products', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
+    const { brandName } = req.params;
+    try {
+        const result = await prisma.brandProduct.deleteMany({ where: { brandName } });
+        res.json({ success: true, deletedCount: result.count });
+    } catch (err: any) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+// ─── End Brand Products ────────────────────────────────────────────────────────
+
 // ─── End Brands ────────────────────────────────────────────────────────────
 
 // ─── Locations ────────────────────────────────────────────────────────────

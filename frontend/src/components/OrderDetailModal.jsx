@@ -1,5 +1,6 @@
 import React from 'react';
 import useClickOutside from '../hooks/useClickOutside';
+import OrderRemarkDisplay from './OrderRemarkDisplay';
 
 const STATUS_BADGE = {
   PENDING:   'bg-gray-100 text-gray-700',
@@ -60,7 +61,10 @@ const OrderDetailModal = ({ order, onClose }) => {
           <div className="bg-gray-50 rounded-lg p-4 space-y-2">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Order Info</p>
             <Row label="Order #" value={`#${order.id}`} />
-            <Row label="Order Remark" value={order.orderRemark} />
+            <div className="flex gap-2 text-sm">
+              <span className="font-medium text-gray-600 min-w-[130px]">Order Remark:</span>
+              <div className="text-gray-800 flex-1"><OrderRemarkDisplay remark={order.orderRemark} /></div>
+            </div>
             <Row label="Called By" value={order.calledBy} />
             <Row label="Dispatch From" value={order.dispatchFrom?.split(',').map(loc => loc.trim()).filter(Boolean).join(', ')} />
             <Row label="Created By" value={order.createdBy} />
