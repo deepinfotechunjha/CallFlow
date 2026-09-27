@@ -4251,6 +4251,8 @@ app.delete('/locations/:id', authMiddleware, requireRole(['HOST']), async (req: 
             emitToAll('order_updated', updatedOrder);
         }
 
+        
+
         emitToAll('location_deleted', { id: locationId });
         res.json({ success: true, location: updated });
     } catch (err: any) {
