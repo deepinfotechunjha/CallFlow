@@ -125,18 +125,18 @@ const CityAreaSelector = ({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* City Selector */}
       <div>
-        <label className="block text-xs sm:text-sm font-medium mb-1">
-          City {required && '*'}
+        <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+          City {required && <span className="text-[#FF2E46]">*</span>}
         </label>
         <div className="relative" ref={cityDropdownRef}>
           {selectedCity ? (
-            <div className="w-full p-2 border rounded bg-blue-50 flex items-center justify-between text-sm">
-              <span>{selectedCity.name}</span>
+            <div className="w-full px-3.5 py-2.5 border border-[#FF2E46]/30 rounded-xl bg-[#FFE8EB]/20 flex items-center justify-between text-sm">
+              <span className="font-bold text-[#2C2C2C]">{selectedCity.name}</span>
               <button
                 type="button"
                 onClick={() => onCityChange(null)}
                 disabled={disabled}
-                className="text-red-500 hover:text-red-700 font-bold text-lg leading-none disabled:opacity-50"
+                className="w-6 h-6 rounded-full bg-white text-gray-400 hover:text-[#FF2E46] flex items-center justify-center font-bold text-sm leading-none border border-gray-200 transition-colors"
               >
                 ×
               </button>
@@ -152,34 +152,34 @@ const CityAreaSelector = ({
               onFocus={() => setShowCityDropdown(true)}
               onClick={() => setShowCityDropdown(true)}
               placeholder="Select or search city"
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all placeholder:text-gray-400"
               required={required}
               disabled={disabled}
             />
           )}
           {showCityDropdown && !disabled && !selectedCity && (
-            <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-hidden">
+            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-60 overflow-hidden">
               <div 
                 onClick={() => handleCitySelect('ADD_NEW')}
-                className="sticky top-0 px-3 py-2 bg-green-50 hover:bg-green-100 cursor-pointer font-medium text-green-700 border-b-2 border-green-200 z-10"
+                className="sticky top-0 px-3.5 py-2.5 bg-[#FFE8EB]/50 hover:bg-[#FFE8EB] cursor-pointer font-bold text-xs uppercase tracking-wider text-[#FF2E46] border-b border-[#FF2E46]/20 z-10 transition-colors"
               >
                 + Add New City
               </div>
               <div className="overflow-y-auto max-h-52">
                 {loading ? (
-                  <div className="px-3 py-2 text-gray-500 text-sm">Loading...</div>
+                  <div className="px-3.5 py-2.5 text-gray-400 text-xs">Loading...</div>
                 ) : filteredCities.length > 0 ? (
                   filteredCities.map((city) => (
                     <div
                       key={city.id}
                       onClick={() => handleCitySelect(city)}
-                      className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                      className="px-3.5 py-2 hover:bg-[#FFE8EB]/20 cursor-pointer text-sm font-medium text-[#2C2C2C] transition-colors"
                     >
                       {city.name}
                     </div>
                   ))
                 ) : (
-                  <div className="px-3 py-2 text-gray-500 text-sm">No cities found</div>
+                  <div className="px-3.5 py-2.5 text-gray-400 text-xs">No cities found</div>
                 )}
               </div>
             </div>
@@ -189,18 +189,18 @@ const CityAreaSelector = ({
 
       {/* Area Selector */}
       <div>
-        <label className="block text-xs sm:text-sm font-medium mb-1">
-          Area {required && '*'}
+        <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+          Area {required && <span className="text-[#FF2E46]">*</span>}
         </label>
         <div className="relative" ref={areaDropdownRef}>
           {selectedArea ? (
-            <div className="w-full p-2 border rounded bg-green-50 flex items-center justify-between text-sm">
-              <span>{selectedArea.name}</span>
+            <div className="w-full px-3.5 py-2.5 border border-[#FF2E46]/30 rounded-xl bg-[#FFE8EB]/20 flex items-center justify-between text-sm">
+              <span className="font-bold text-[#2C2C2C]">{selectedArea.name}</span>
               <button
                 type="button"
                 onClick={() => onAreaChange(null)}
                 disabled={disabled}
-                className="text-red-500 hover:text-red-700 font-bold text-lg leading-none disabled:opacity-50"
+                className="w-6 h-6 rounded-full bg-white text-gray-400 hover:text-[#FF2E46] flex items-center justify-center font-bold text-sm leading-none border border-gray-200 transition-colors"
               >
                 ×
               </button>
@@ -216,34 +216,34 @@ const CityAreaSelector = ({
               onFocus={() => setShowAreaDropdown(true)}
               onClick={() => setShowAreaDropdown(true)}
               placeholder={selectedCity ? "Select or search area" : "Select city first"}
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all placeholder:text-gray-400 disabled:opacity-50"
               disabled={disabled || !selectedCity}
               required={required}
             />
           )}
           {showAreaDropdown && !disabled && selectedCity && !selectedArea && (
-            <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-hidden">
+            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-60 overflow-hidden">
               <div 
                 onClick={() => handleAreaSelect('ADD_NEW')}
-                className="sticky top-0 px-3 py-2 bg-green-50 hover:bg-green-100 cursor-pointer font-medium text-green-700 border-b-2 border-green-200 z-10"
+                className="sticky top-0 px-3.5 py-2.5 bg-[#FFE8EB]/50 hover:bg-[#FFE8EB] cursor-pointer font-bold text-xs uppercase tracking-wider text-[#FF2E46] border-b border-[#FF2E46]/20 z-10 transition-colors"
               >
                 + Add New Area
               </div>
               <div className="overflow-y-auto max-h-52">
                 {loading ? (
-                  <div className="px-3 py-2 text-gray-500 text-sm">Loading...</div>
+                  <div className="px-3.5 py-2.5 text-gray-400 text-xs">Loading...</div>
                 ) : filteredAreas.length > 0 ? (
                   filteredAreas.map((area) => (
                     <div
                       key={area.id}
                       onClick={() => handleAreaSelect(area)}
-                      className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                      className="px-3.5 py-2 hover:bg-[#FFE8EB]/20 cursor-pointer text-sm font-medium text-[#2C2C2C] transition-colors"
                     >
                       {area.name}
                     </div>
                   ))
                 ) : (
-                  <div className="px-3 py-2 text-gray-500 text-sm">No areas found</div>
+                  <div className="px-3.5 py-2.5 text-gray-400 text-xs">No areas found</div>
                 )}
               </div>
             </div>
@@ -253,25 +253,26 @@ const CityAreaSelector = ({
 
       {/* Add City Modal */}
       {showAddCityModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-bold mb-4">Add New City</h3>
+        <div className="fixed inset-0 bg-[#2C2C2C]/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-100">
+            <h3 className="text-base font-bold text-[#2C2C2C] mb-4">Add New City</h3>
             <input
               type="text"
               value={newCityName}
               onChange={(e) => setNewCityName(e.target.value)}
               placeholder="Enter city name"
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 mb-4"
+              className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all mb-4 placeholder:text-gray-400"
               onKeyPress={(e) => e.key === 'Enter' && handleAddCity()}
+              autoFocus
             />
             {error && (
-              <div className="text-red-600 text-sm mb-4">{error}</div>
+              <div className="text-[#FF2E46] text-xs font-semibold mb-4 bg-[#FFE8EB] p-2.5 rounded-lg border border-[#FF2E46]/20">{error}</div>
             )}
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <button
                 onClick={handleAddCity}
                 disabled={isSubmitting || !newCityName.trim()}
-                className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed"
+                className="flex-1 bg-[#FF2E46] text-white py-2.5 px-4 rounded-full hover:bg-[#FF5A71] disabled:opacity-50 text-xs font-bold uppercase tracking-wider transition-all shadow-md hover:shadow-lg disabled:shadow-none"
               >
                 {isSubmitting ? 'Adding...' : 'Add City'}
               </button>
@@ -282,7 +283,7 @@ const CityAreaSelector = ({
                   setError(null);
                 }}
                 disabled={isSubmitting}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed"
+                className="flex-1 bg-gray-100 text-[#2C2C2C] py-2.5 px-4 rounded-full hover:bg-gray-200 text-xs font-bold uppercase tracking-wider transition-colors"
               >
                 Cancel
               </button>
@@ -293,27 +294,28 @@ const CityAreaSelector = ({
 
       {/* Add Area Modal */}
       {showAddAreaModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-bold mb-4">
-              Add New Area in {selectedCity?.name}
+        <div className="fixed inset-0 bg-[#2C2C2C]/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-100">
+            <h3 className="text-base font-bold text-[#2C2C2C] mb-4">
+              Add New Area in <span className="text-[#FF2E46]">{selectedCity?.name}</span>
             </h3>
             <input
               type="text"
               value={newAreaName}
               onChange={(e) => setNewAreaName(e.target.value)}
               placeholder="Enter area name"
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 mb-4"
+              className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all mb-4 placeholder:text-gray-400"
               onKeyPress={(e) => e.key === 'Enter' && handleAddArea()}
+              autoFocus
             />
             {error && (
-              <div className="text-red-600 text-sm mb-4">{error}</div>
+              <div className="text-[#FF2E46] text-xs font-semibold mb-4 bg-[#FFE8EB] p-2.5 rounded-lg border border-[#FF2E46]/20">{error}</div>
             )}
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <button
                 onClick={handleAddArea}
                 disabled={isSubmitting || !newAreaName.trim()}
-                className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed"
+                className="flex-1 bg-[#FF2E46] text-white py-2.5 px-4 rounded-full hover:bg-[#FF5A71] disabled:opacity-50 text-xs font-bold uppercase tracking-wider transition-all shadow-md hover:shadow-lg disabled:shadow-none"
               >
                 {isSubmitting ? 'Adding...' : 'Add Area'}
               </button>
@@ -324,7 +326,7 @@ const CityAreaSelector = ({
                   setError(null);
                 }}
                 disabled={isSubmitting}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed"
+                className="flex-1 bg-gray-100 text-[#2C2C2C] py-2.5 px-4 rounded-full hover:bg-gray-200 text-xs font-bold uppercase tracking-wider transition-colors"
               >
                 Cancel
               </button>

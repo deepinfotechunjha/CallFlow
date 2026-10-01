@@ -33,11 +33,9 @@ const Dashboard = () => {
   const { users, fetchUsers } = useAuthStore();
   const { categories, fetchCategories } = useCategoryStore();
   
-  // Initialize WebSocket connection
   useSocket();
 
   useEffect(() => {
-    // Always fetch fresh data from database
     fetchCalls();
     fetchCategories();
     if ((user?.role === 'HOST' || user?.role === 'ADMIN')) {
@@ -45,7 +43,6 @@ const Dashboard = () => {
     }
   }, [user?.role, fetchCalls, fetchCategories, fetchUsers]);
 
-  // Role-based filter options
   const getFilterOptions = () => {
     if (user?.role === 'HOST') {
       return ['ALL', 'MY_CALLS', 'ASSIGNED_AND_PENDING', 'PENDING', 'COMPLETED'];
@@ -60,9 +57,7 @@ const Dashboard = () => {
 
   const filteredCalls = calls.filter(call => {
     const isEngineerRole = user?.role === 'ENGINEER';
-    const isMyCall = call.createdBy === user?.username || call.assignedTo === user?.username;
     
-    // Tab filter
     let tabMatch = true;
     if (filter === 'ALL') tabMatch = true;
     else if (filter === 'MY_CALLS') tabMatch = call.createdBy === user?.username;
@@ -78,7 +73,6 @@ const Dashboard = () => {
     }
     if (!tabMatch) return false;
     
-    // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       const matchesSearch = 
@@ -89,7 +83,6 @@ const Dashboard = () => {
       if (!matchesSearch) return false;
     }
     
-    // Status dropdown filter
     if (statusFilter !== 'ALL_STATUS') {
       if (statusFilter === 'PENDING' && call.status !== 'PENDING') return false;
       if (statusFilter === 'ASSIGNED' && call.status !== 'ASSIGNED') return false;
@@ -97,17 +90,14 @@ const Dashboard = () => {
       if (statusFilter === 'COMPLETED' && call.status !== 'COMPLETED') return false;
     }
     
-    // Category dropdown filter
     if (categoryFilter !== 'ALL_CATEGORIES' && call.category !== categoryFilter) return false;
     
-    // User-based filter
     if (userFilterType !== 'ALL_USERS' && selectedUser !== 'ALL') {
       if (userFilterType === 'CREATED_BY' && call.createdBy !== selectedUser) return false;
       if (userFilterType === 'ASSIGNED_BY' && call.assignedBy !== selectedUser) return false;
       if (userFilterType === 'COMPLETED_BY' && call.completedBy !== selectedUser) return false;
     }
     
-    // Date range filter
     if (appliedDateFilter.type && appliedDateFilter.start && appliedDateFilter.end) {
       const callDate = call[appliedDateFilter.type];
       if (!callDate) return false;
@@ -153,31 +143,18 @@ const Dashboard = () => {
 
   const uniqueCategories = categories.map(c => c.name);
   
-  // Get unique users for filtering
   const getUniqueUsers = () => {
     const allUsers = new Set();
     calls.forEach(call => {
-      if (call.createdBy && call.createdBy !== 'Share Link') {
-        allUsers.add(call.createdBy);
-      }
-      if (call.assignedBy && call.assignedBy !== 'Share Link') {
-        allUsers.add(call.assignedBy);
-      }
-      if (call.completedBy && call.completedBy !== 'Share Link') {
-        allUsers.add(call.completedBy);
-      }
+      if (call.createdBy && call.createdBy !== 'Share Link') allUsers.add(call.createdBy);
+      if (call.assignedBy && call.assignedBy !== 'Share Link') allUsers.add(call.assignedBy);
+      if (call.completedBy && call.completedBy !== 'Share Link') allUsers.add(call.completedBy);
     });
     return Array.from(allUsers).sort();
   };
   
   const uniqueUsers = getUniqueUsers();
 
-  const todaysCalls = calls.filter(call => {
-    const today = new Date().toDateString();
-    return new Date(call.createdAt).toDateString() === today;
-  });
-
-  // Calculate totals based on user role (same logic as backend)
   const getTotalCalls = () => {
     if (user?.role === 'ENGINEER') {
       return calls.filter(call => call.assignedTo === user?.username).length;
@@ -194,8 +171,7 @@ const Dashboard = () => {
       return calls.filter(call => {
         const isAssignedToMe = call.assignedTo === user?.username;
         const callDate = new Date(call.createdAt);
-        const isToday = callDate >= startOfDay && callDate < endOfDay;
-        return isAssignedToMe && isToday;
+        return isAssignedToMe && callDate >= startOfDay && callDate < endOfDay;
       }).length;
     }
     
@@ -220,8 +196,7 @@ const Dashboard = () => {
     if (user?.role === 'ENGINEER') {
       return calls.filter(call => {
         const isAssignedToMe = call.assignedTo === user?.username;
-        const isCompleted = call.status === 'COMPLETED';
-        return isAssignedToMe && isCompleted;
+        return isAssignedToMe && call.status === 'COMPLETED';
       }).length;
     }
     return calls.filter(c => c.status === 'COMPLETED').length;
@@ -265,134 +240,169 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-3">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+      {/* Top Header & Action Controls */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 pb-6 border-b border-gray-200">
         <div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">Welcome Back! 👋</h1>
-          <p className="text-gray-600">Hello <span className="font-semibold text-blue-600">{user?.username}</span>, here's your call management overview</p>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[11px] font-semibold text-[#FF2E46] uppercase tracking-wider bg-[#FFE8EB] px-2.5 py-0.5 rounded-md border border-[#FF2E46]/15">
+              Service Operations
+            </span>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+            Call Management
+          </h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Real-time dispatch, engineer tracking, and service lifecycle management.
+          </p>
         </div>
-        <div className={`flex gap-3 w-full sm:w-auto ${selectedCalls.length > 0 ? 'flex-wrap' : ''}`}>
+
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
           {user?.role === 'HOST' && selectedCalls.length > 0 && (
             <button
               onClick={() => setShowBulkDeleteModal(true)}
-              className="px-4 sm:px-6 py-3 rounded-xl font-medium text-sm sm:text-base whitespace-nowrap flex items-center gap-2 shadow-sm transition-all bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-medium text-xs sm:text-sm text-white bg-red-600 hover:bg-red-700 shadow-xs transition-colors"
             >
-              🗑️ Delete ({selectedCalls.length})
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Delete ({selectedCalls.length})
             </button>
           )}
+
           {user?.role === 'HOST' && (
             <button
               onClick={() => setShowExportModal(true)}
               disabled={isExporting}
-              className={`px-4 sm:px-6 py-3 rounded-xl font-medium text-sm sm:text-base whitespace-nowrap flex items-center gap-2 shadow-sm transition-all ${
-                isExporting 
-                  ? 'bg-gray-400 cursor-not-allowed text-white' 
-                  : 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800'
-              }`}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-medium text-xs sm:text-sm bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-xs transition-colors disabled:opacity-50"
             >
-              {isExporting ? '⏳ Exporting...' : '📊 Export'}
+              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              {isExporting ? 'Exporting...' : 'Export Excel'}
             </button>
           )}
+
           <button
             onClick={() => setShowShareModal(true)}
-            className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-purple-700 hover:to-purple-800 font-medium text-sm sm:text-base whitespace-nowrap shadow-sm transition-all flex items-center gap-2"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-medium text-xs sm:text-sm bg-[#2C2C2C] hover:bg-black text-white shadow-xs transition-colors"
           >
-            🔗 Share
+            <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            Share Form
           </button>
+
           <button
             onClick={() => setShowAddForm(true)}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium text-sm sm:text-base whitespace-nowrap shadow-sm transition-all"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-medium text-xs sm:text-sm text-white bg-[#FF2E46] hover:bg-[#FF5A71] shadow-xs transition-colors"
           >
-            + Add New Call
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+            </svg>
+            Add New Call
           </button>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 sm:p-6 rounded-xl shadow-sm border border-blue-200">
+      {/* Enterprise Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs">
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm sm:text-base font-medium text-blue-700 mb-1">Total Calls</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-blue-800">{getTotalCalls()}</p>
-            </div>
-            <div className="text-blue-500 text-2xl">📞</div>
+            <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Total Calls</p>
+            <span className="w-2 h-2 rounded-full bg-gray-400"></span>
           </div>
+          <p className="text-2xl font-bold text-gray-900 mt-2">{getTotalCalls()}</p>
+          <p className="text-[11px] text-gray-400 mt-1">Overall registered</p>
         </div>
-        <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 sm:p-6 rounded-xl shadow-sm border border-green-200">
+
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs">
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm sm:text-base font-medium text-green-700 mb-1">Today's Calls</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-green-800">{getTodaysCalls()}</p>
-            </div>
-            <div className="text-green-500 text-2xl">📅</div>
+            <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Today's Inflow</p>
+            <span className="w-2 h-2 rounded-full bg-[#FF2E46]"></span>
           </div>
+          <p className="text-2xl font-bold text-gray-900 mt-2">{getTodaysCalls()}</p>
+          <p className="text-[11px] text-gray-400 mt-1">Logged today</p>
         </div>
-        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 sm:p-6 rounded-xl shadow-sm border border-yellow-200">
+
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs border-l-4 border-l-amber-500">
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm sm:text-base font-medium text-yellow-700 mb-1">Pending</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-yellow-800">{getPendingCalls()}</p>
-            </div>
-            <div className="text-yellow-500 text-2xl">⏳</div>
+            <p className="text-xs font-medium uppercase tracking-wider text-amber-700">Pending / Open</p>
+            <span className="w-2 h-2 rounded-full bg-amber-500"></span>
           </div>
+          <p className="text-2xl font-bold text-amber-600 mt-2">{getPendingCalls()}</p>
+          <p className="text-[11px] text-amber-600/70 mt-1">In-progress / queued</p>
         </div>
-        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-4 sm:p-6 rounded-xl shadow-sm border border-emerald-200">
+
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs border-l-4 border-l-emerald-500">
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm sm:text-base font-medium text-emerald-700 mb-1">Completed</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-emerald-800">{getCompletedCalls()}</p>
-            </div>
-            <div className="text-emerald-500 text-2xl">✅</div>
+            <p className="text-xs font-medium uppercase tracking-wider text-emerald-700">Completed</p>
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
           </div>
+          <p className="text-2xl font-bold text-emerald-600 mt-2">{getCompletedCalls()}</p>
+          <p className="text-[11px] text-emerald-600/70 mt-1">Resolved calls</p>
         </div>
       </div>
 
       {/* Filters Section */}
-      <div className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <span>🔍</span> Search & Filters
-        </h2>
+      <div className="mb-6 bg-white p-5 rounded-xl shadow-xs border border-gray-200">
+        <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            Filter Records
+          </h2>
+          <span className="text-xs text-gray-500">
+            Total records: <strong className="text-gray-900 font-semibold">{filteredCalls.length}</strong>
+          </span>
+        </div>
         
         {/* Date Filter */}
-        <div className="mb-6 pb-6 border-b border-gray-100">
+        <div className="mb-4 pb-4 border-b border-gray-100">
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex-1 min-w-[140px]">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Date Type</label>
+              <label className="block text-[11px] font-medium uppercase tracking-wider text-gray-500 mb-1">
+                Date Field
+              </label>
               <select
                 value={dateFilter.type}
                 onChange={(e) => setDateFilter(prev => ({ ...prev, type: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#FF2E46]/15 focus:border-[#FF2E46] bg-white text-gray-800"
               >
-                <option value="">Select</option>
-                <option value="createdAt">Created</option>
-                <option value="assignedAt">Assigned</option>
-                <option value="completedAt">Completed</option>
-                <option value="lastCalledAt">Last Called</option>
+                <option value="">Select Date Field</option>
+                <option value="createdAt">Created Date</option>
+                <option value="assignedAt">Assigned Date</option>
+                <option value="completedAt">Completed Date</option>
+                <option value="lastCalledAt">Last Called Date</option>
               </select>
             </div>
             <div className="flex-1 min-w-[120px]">
-              <label className="block text-sm font-medium text-gray-700 mb-2">From</label>
+              <label className="block text-[11px] font-medium uppercase tracking-wider text-gray-500 mb-1">
+                Start Date
+              </label>
               <input
                 type="date"
                 value={dateFilter.start}
                 onChange={(e) => setDateFilter(prev => ({ ...prev, start: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#FF2E46]/15 focus:border-[#FF2E46] bg-white text-gray-800"
               />
             </div>
             <div className="flex-1 min-w-[120px]">
-              <label className="block text-sm font-medium text-gray-700 mb-2">To</label>
+              <label className="block text-[11px] font-medium uppercase tracking-wider text-gray-500 mb-1">
+                End Date
+              </label>
               <input
                 type="date"
                 value={dateFilter.end}
                 onChange={(e) => setDateFilter(prev => ({ ...prev, end: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#FF2E46]/15 focus:border-[#FF2E46] bg-white text-gray-800"
               />
             </div>
             <button
               onClick={() => setAppliedDateFilter(dateFilter)}
               disabled={!dateFilter.type || !dateFilter.start || !dateFilter.end}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-1.5 bg-[#FF2E46] text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-[#FF5A71] disabled:opacity-40 transition-colors"
             >
               Apply
             </button>
@@ -402,7 +412,7 @@ const Dashboard = () => {
                   setDateFilter({ type: '', start: '', end: '' });
                   setAppliedDateFilter({ type: '', start: '', end: '' });
                 }}
-                className="px-6 py-3 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs sm:text-sm font-medium transition-colors"
               >
                 Clear
               </button>
@@ -410,23 +420,27 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Search and Filter Controls */}
-        <div className="flex flex-wrap items-center gap-3 mb-6">
-          <div className="relative flex-1 min-w-[200px]">
-            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">🔍</span>
+        {/* Search and Dropdowns */}
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <div className="relative flex-1 min-w-[220px]">
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
             <input
               type="text"
-              placeholder="Search by customer, phone, or category..."
+              placeholder="Search customer, phone, category, or notes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
+              className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#FF2E46]/15 focus:border-[#FF2E46] bg-white text-gray-800 placeholder-gray-400"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xl transition-colors"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                ×
+                &times;
               </button>
             )}
           </div>
@@ -434,7 +448,7 @@ const Dashboard = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors min-w-[120px]"
+            className="px-3 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#FF2E46]/15 focus:border-[#FF2E46] bg-white text-gray-800 min-w-[120px]"
           >
             <option value="ALL_STATUS">All Status</option>
             <option value="PENDING">Pending</option>
@@ -446,7 +460,7 @@ const Dashboard = () => {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors min-w-[140px]"
+            className="px-3 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#FF2E46]/15 focus:border-[#FF2E46] bg-white text-gray-800 min-w-[140px]"
           >
             <option value="ALL_CATEGORIES">All Categories</option>
             {uniqueCategories.map((cat, index) => (
@@ -460,7 +474,7 @@ const Dashboard = () => {
               setUserFilterType(e.target.value);
               setSelectedUser('ALL');
             }}
-            className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors min-w-[120px]"
+            className="px-3 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#FF2E46]/15 focus:border-[#FF2E46] bg-white text-gray-800 min-w-[120px]"
           >
             <option value="ALL_USERS">All Users</option>
             <option value="CREATED_BY">Created By</option>
@@ -472,9 +486,9 @@ const Dashboard = () => {
             <select
               value={selectedUser}
               onChange={(e) => setSelectedUser(e.target.value)}
-              className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors min-w-[120px]"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#FF2E46]/15 focus:border-[#FF2E46] bg-white text-gray-800 min-w-[120px]"
             >
-              <option value="ALL">All</option>
+              <option value="ALL">All Users</option>
               {uniqueUsers.map((user, index) => (
                 <option key={index} value={user}>{user}</option>
               ))}
@@ -490,56 +504,67 @@ const Dashboard = () => {
                 setUserFilterType('ALL_USERS');
                 setSelectedUser('ALL');
               }}
-              className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+              className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs sm:text-sm font-medium transition-colors"
             >
-              Clear All
+              Reset
             </button>
           )}
         </div>
 
-        {/* Tabs */}
-        <div className="border-t border-gray-100 pt-4">
-          <div className="flex overflow-x-auto scrollbar-hide gap-1">
-            {getFilterOptions().map(f => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-4 py-2 text-sm font-medium whitespace-nowrap rounded-lg transition-all ${
-                  filter === f
-                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
-              >
-                {f.replace(/_/g, ' ')}
-              </button>
-            ))}
+        {/* Filter Segmented Control Tabs */}
+        <div className="pt-3 border-t border-gray-100">
+          <div className="flex overflow-x-auto scrollbar-hide gap-1.5 py-1 bg-gray-100/70 p-1 rounded-lg border border-gray-200/60">
+            {getFilterOptions().map(f => {
+              const active = filter === f;
+              return (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
+                    active
+                      ? 'bg-white text-gray-900 shadow-xs border border-gray-200/80'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+                  }`}
+                >
+                  {f.replace(/_/g, ' ')}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      {/* Desktop Table View (hidden on mobile) */}
+      {/* Desktop Table View */}
       <div className="hidden lg:block">
         {user?.role === 'HOST' && completedCalls.length > 0 && (
-          <div className="mb-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4">
+          <div className="mb-4 bg-white p-3.5 rounded-lg shadow-xs border border-gray-200 flex items-center gap-3">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={isAllSelected}
                 onChange={handleSelectAll}
-                className="w-5 h-5 text-red-600 rounded focus:ring-red-500"
+                className="w-4 h-4 text-[#FF2E46] rounded focus:ring-[#FF2E46] accent-[#FF2E46]"
               />
-              <span className="font-medium text-gray-700">Select All Completed ({completedCalls.length})</span>
+              <span className="font-medium text-xs sm:text-sm text-gray-800">
+                Select All Completed Calls ({completedCalls.length})
+              </span>
             </label>
             {selectedCalls.length > 0 && (
-              <span className="text-sm text-gray-600">
-                {selectedCalls.length} selected
+              <span className="text-xs font-semibold text-[#FF2E46] bg-[#FFE8EB] px-2 py-0.5 rounded-md border border-[#FF2E46]/20">
+                {selectedCalls.length} Selected
               </span>
             )}
           </div>
         )}
         {filteredCalls.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No calls found</p>
+          <div className="bg-white border border-gray-200 rounded-xl text-center py-16 px-4">
+            <div className="w-12 h-12 bg-gray-100 text-gray-400 rounded-lg flex items-center justify-center mx-auto mb-3">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h4 className="text-base font-semibold text-gray-900 mb-1">No Calls Found</h4>
+            <p className="text-xs text-gray-500">Try adjusting your search criteria or filter parameters.</p>
           </div>
         ) : (
           <CallTable 
@@ -551,30 +576,33 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* Mobile Card View (hidden on desktop) */}
+      {/* Mobile Card View */}
       <div className="lg:hidden">
         {user?.role === 'HOST' && completedCalls.length > 0 && (
-          <div className="mb-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4">
+          <div className="mb-4 bg-white p-3.5 rounded-lg shadow-xs border border-gray-200 flex items-center gap-3">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={isAllSelected}
                 onChange={handleSelectAll}
-                className="w-5 h-5 text-red-600 rounded focus:ring-red-500"
+                className="w-4 h-4 text-[#FF2E46] rounded focus:ring-[#FF2E46] accent-[#FF2E46]"
               />
-              <span className="font-medium text-gray-700">Select All Completed ({completedCalls.length})</span>
+              <span className="font-medium text-xs sm:text-sm text-gray-800">
+                Select All Completed ({completedCalls.length})
+              </span>
             </label>
             {selectedCalls.length > 0 && (
-              <span className="text-sm text-gray-600">
-                {selectedCalls.length} selected
+              <span className="text-xs font-semibold text-[#FF2E46] bg-[#FFE8EB] px-2 py-0.5 rounded-md border border-[#FF2E46]/20">
+                {selectedCalls.length} Selected
               </span>
             )}
           </div>
         )}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredCalls.length === 0 ? (
-            <div className="col-span-full text-center py-12">
-              <p className="text-gray-500 text-lg">No calls found</p>
+            <div className="col-span-full bg-white border border-gray-200 rounded-xl text-center py-16 px-4">
+              <h4 className="text-base font-semibold text-gray-900 mb-1">No Calls Found</h4>
+              <p className="text-xs text-gray-500">Try adjusting your search criteria or filter parameters.</p>
             </div>
           ) : (
             filteredCalls.map(call => (

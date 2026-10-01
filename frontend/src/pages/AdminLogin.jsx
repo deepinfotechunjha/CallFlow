@@ -175,34 +175,39 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-2xl">
-        <div className="text-center">
-          <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-            Admin Portal
-          </h1>
-          <p className="mt-2 text-sm text-gray-600">Special Administrator Access</p>
+    <div className="flex items-center justify-center min-h-screen bg-[#F8F9FA] p-4">
+      <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-xs border border-[#E0E2E5]">
+        <div className="text-center mb-8">
+          <div className="w-12 h-12 bg-[#2C2C2C] text-white rounded-lg flex items-center justify-center text-xl font-extrabold mx-auto mb-3 shadow-xs">
+            DI
+          </div>
+          <span className="inline-block text-[#FF2E46] text-xs font-bold uppercase tracking-widest bg-[#FFE8EB] px-2.5 py-0.5 rounded-md mb-2 border border-[#FF2E46]/20">
+            RESTRICTED ACCESS
+          </span>
+          <h1 className="text-2xl font-extrabold text-[#2C2C2C] tracking-tight">Admin Portal</h1>
+          <p className="mt-1 text-xs text-[#666666]">Special System Administrator Authentication</p>
         </div>
         
-        <form className="space-y-6" onSubmit={handleSubmit}>
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label className="text-sm font-bold text-gray-700 tracking-wide">Username</label>
+            <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1.5">Admin Username</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full text-base py-2 px-3 border-b-2 border-gray-300 focus:outline-none focus:border-blue-600 transition-colors"
+              className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-2 focus:ring-[#FF2E46]/20 transition-all"
               required
+              autoFocus
             />
           </div>
           
           <div>
-            <label className="text-sm font-bold text-gray-700 tracking-wide">Password</label>
+            <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1.5">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full text-base py-2 px-3 border-b-2 border-gray-300 focus:outline-none focus:border-blue-600 transition-colors"
+              className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-2 focus:ring-[#FF2E46]/20 transition-all"
               required
             />
           </div>
@@ -210,16 +215,16 @@ const AdminLogin = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 px-4 text-lg font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-all shadow-lg"
+            className="w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider text-white bg-[#2C2C2C] hover:bg-[#1A1A1A] rounded-lg shadow-xs disabled:opacity-50 transition-colors mt-2"
           >
-            {isLoading ? 'Signing in...' : 'Sign in'}
+            {isLoading ? 'Authorizing...' : 'Sign in to Console'}
           </button>
         </form>
         
-        <div className="text-center">
+        <div className="text-center mt-6 pt-4 border-t border-[#E0E2E5]">
           <button
             onClick={() => setShowForgotModal(true)}
-            className="text-sm text-blue-600 hover:text-blue-800 underline font-medium"
+            className="text-xs text-[#666666] hover:text-[#FF2E46] font-semibold transition-colors"
           >
             Forgot Username or Password?
           </button>
@@ -228,36 +233,39 @@ const AdminLogin = () => {
 
       {/* Forgot Password/Username Modal */}
       {showForgotModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">Recover Credentials</h2>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-xl p-6 sm:p-7 w-full max-w-md shadow-xl border border-[#E0E2E5]">
+            <div className="flex justify-between items-center pb-3 mb-4 border-b border-[#E0E2E5]">
+              <h2 className="text-base font-bold text-[#2C2C2C]">Recover Admin Credentials</h2>
               <button
                 onClick={() => {
                   setShowForgotModal(false);
                   resetForgotForm();
                   setForgotStep('secret');
                 }}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-[#666666] hover:text-[#2C2C2C] p-1 rounded-md"
               >
-                ×
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
             {forgotStep === 'secret' && (
               <div className="space-y-4">
-                <p className="text-gray-600 text-sm">Enter your secret key to proceed:</p>
+                <p className="text-[#666666] text-xs">Enter your root administrative secret key to proceed:</p>
                 <input
                   type="password"
                   value={secret}
                   onChange={(e) => setSecret(e.target.value)}
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-2 focus:ring-[#FF2E46]/20 transition-all"
                   placeholder="Enter secret key"
                   onKeyPress={(e) => e.key === 'Enter' && handleSecretVerify()}
+                  autoFocus
                 />
                 <button
                   onClick={handleSecretVerify}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                  className="w-full bg-[#FF2E46] hover:bg-[#E02038] text-white py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider shadow-xs transition-colors"
                 >
                   Verify Secret
                 </button>
@@ -266,22 +274,23 @@ const AdminLogin = () => {
 
             {forgotStep === 'email' && (
               <div className="space-y-4">
-                <p className="text-gray-600 text-sm">Enter your registered email address:</p>
+                <p className="text-[#666666] text-xs">Enter your registered recovery email address:</p>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-2 focus:ring-[#FF2E46]/20 transition-all"
                   placeholder="Enter email address"
                   onKeyPress={(e) => e.key === 'Enter' && handleRequestOTP()}
+                  autoFocus
                 />
                 <button
                   onClick={handleRequestOTP}
                   disabled={isSendingOTP}
-                  className={`w-full py-3 rounded-lg font-medium transition-colors ${
+                  className={`w-full py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider shadow-xs transition-colors ${
                     isSendingOTP
-                      ? 'bg-blue-400 text-white cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                      ? 'bg-[#FF5A71] text-white cursor-not-allowed'
+                      : 'bg-[#FF2E46] text-white hover:bg-[#E02038]'
                   }`}
                 >
                   {isSendingOTP ? 'Sending...' : 'Send OTP'}
@@ -291,27 +300,28 @@ const AdminLogin = () => {
 
             {forgotStep === 'otp' && (
               <div className="space-y-4">
-                <p className="text-gray-600 text-sm">
-                  Enter the OTP sent to your email:
+                <p className="text-[#666666] text-xs">
+                  Enter the 6-digit OTP code sent to your email:
                 </p>
                 {timerActive && (
                   <div className="text-center">
-                    <span className="text-lg font-bold text-red-600">{formatTime(timer)}</span>
-                    <p className="text-xs text-gray-500">Time remaining</p>
+                    <span className="text-base font-bold text-[#FF2E46]">{formatTime(timer)}</span>
+                    <p className="text-[11px] text-[#666666]">Time remaining</p>
                   </div>
                 )}
                 <input
                   type="text"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-2xl tracking-widest"
+                  className="w-full px-4 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-center text-xl font-bold tracking-widest text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-2 focus:ring-[#FF2E46]/20 transition-all"
                   placeholder="000000"
                   maxLength={6}
                   onKeyPress={(e) => e.key === 'Enter' && handleVerifyOTP()}
+                  autoFocus
                 />
                 <button
                   onClick={handleVerifyOTP}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                  className="w-full bg-[#FF2E46] hover:bg-[#E02038] text-white py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider shadow-xs transition-colors"
                 >
                   Verify OTP
                 </button>
@@ -320,21 +330,21 @@ const AdminLogin = () => {
 
             {forgotStep === 'update' && (
               <div className="space-y-4">
-                <p className="text-gray-600 text-sm">What would you like to recover?</p>
+                <p className="text-[#666666] text-xs">Select which credential to update:</p>
                 
                 {!recoveryType && (
                   <div className="space-y-3">
                     <button
                       onClick={() => setRecoveryType('username')}
-                      className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                      className="w-full bg-[#2C2C2C] hover:bg-[#1A1A1A] text-white py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors"
                     >
-                      Recover Username
+                      Update Username
                     </button>
                     <button
                       onClick={() => setRecoveryType('password')}
-                      className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 font-medium transition-colors"
+                      className="w-full bg-[#FF2E46] hover:bg-[#E02038] text-white py-2 rounded-lg text-xs font-bold uppercase tracking-wider shadow-xs transition-colors"
                     >
-                      Recover Password
+                      Update Password
                     </button>
                   </div>
                 )}
@@ -345,14 +355,15 @@ const AdminLogin = () => {
                       type="text"
                       value={newUsername}
                       onChange={(e) => setNewUsername(e.target.value)}
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3.5 py-2 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-2 focus:ring-[#FF2E46]/20 transition-all"
                       placeholder="Enter new username"
+                      autoFocus
                     />
                     <button
                       onClick={handleUpdateCredentials}
-                      className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                      className="w-full bg-[#FF2E46] hover:bg-[#E02038] text-white py-2 rounded-lg text-xs font-bold uppercase tracking-wider shadow-xs transition-colors"
                     >
-                      Update Username
+                      Save Username
                     </button>
                   </div>
                 )}
@@ -363,14 +374,15 @@ const AdminLogin = () => {
                       type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3.5 py-2 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-2 focus:ring-[#FF2E46]/20 transition-all"
                       placeholder="Enter new password"
+                      autoFocus
                     />
                     <button
                       onClick={handleUpdateCredentials}
-                      className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                      className="w-full bg-[#FF2E46] hover:bg-[#E02038] text-white py-2 rounded-lg text-xs font-bold uppercase tracking-wider shadow-xs transition-colors"
                     >
-                      Update Password
+                      Save Password
                     </button>
                   </div>
                 )}

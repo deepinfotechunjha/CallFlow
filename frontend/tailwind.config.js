@@ -6,6 +6,37 @@ export default {
   ],
   theme: {
     extend: {
+      colors: {
+        brand: {
+          DEFAULT: '#FF2E46',
+          hover: '#FF5A71',
+          light: '#FFE8EB',
+          dark: '#E02038',
+          accent: '#FF2E46',
+        },
+        charcoal: {
+          DEFAULT: '#2C2C2C',
+          dark: '#1A1A1A',
+          light: '#4A4A4A',
+          muted: '#666666',
+        },
+        canvas: {
+          DEFAULT: '#F8F9FA',
+          card: '#FFFFFF',
+          alt: '#F0F2F5',
+        },
+        stroke: '#E0E2E5',
+      },
+      boxShadow: {
+        'brand-sm': '0 2px 8px rgba(0, 0, 0, 0.06)',
+        'brand-md': '0 4px 16px rgba(0, 0, 0, 0.08)',
+        'brand-lg': '0 8px 32px rgba(0, 0, 0, 0.1)',
+        'brand-glow': '0 4px 16px rgba(255, 46, 70, 0.25)',
+      },
+      borderRadius: {
+        'brand-card': '12px',
+        'brand-pill': '30px',
+      },
       screens: {
         'wide': '1464px',
       },

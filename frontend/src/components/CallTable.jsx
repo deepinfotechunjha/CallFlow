@@ -231,30 +231,30 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
   };
 
   return (
-    <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-xl overflow-hidden border border-gray-200">
+    <div className="bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] overflow-hidden border border-[#E0E2E5]">
       <div className="overflow-x-auto">
         <table className="min-w-full table-auto">
-          <thead className="bg-gradient-to-r from-blue-600 to-purple-600">
+          <thead className="bg-[#2C2C2C]">
             <tr>
-              <th className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 w-12">#</th>
+              <th className="px-2.5 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D] w-12">#</th>
               {showCheckboxes && (
-                <th className="px-1 py-4 text-center text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 w-8 min-w-8">
+                <th className="px-1 py-3.5 text-center text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D] w-8 min-w-8">
                   ✓
                 </th>
               )}
-              <th onClick={() => handleSort('customer')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-0 w-auto">Customer {getSortIcon('customer')}</th>
-              <th onClick={() => handleSort('phone')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-0 w-auto hidden sm:table-cell">Contact {getSortIcon('phone')}</th>
-              <th onClick={() => handleSort('category')} className="px-1 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-0 w-auto hidden md:table-cell">Cat {getSortIcon('category')}</th>
-              <th onClick={() => handleSort('problem')} className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-0 w-auto">Problem {getSortIcon('problem')}</th>
-              <th onClick={() => handleSort('status')} className="px-1 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-0 w-auto">Status {getSortIcon('status')}</th>
-              <th onClick={() => handleSort('assignment')} className="px-1 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-0 w-auto hidden lg:table-cell">Assign {getSortIcon('assignment')}</th>
-              <th onClick={() => handleSort('date')} className="px-1 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 cursor-pointer hover:bg-blue-700 min-w-0 w-auto hidden lg:table-cell">Date {getSortIcon('date')}</th>
-              <th onClick={() => handleSort('engineerRemark')} className="px-1 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden xl:table-cell cursor-pointer hover:bg-blue-700 min-w-0 w-auto">Eng Rem {getSortIcon('engineerRemark')}</th>
-              <th onClick={() => handleSort('completionRemark')} className="px-1 py-4 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-blue-500 hidden xl:table-cell cursor-pointer hover:bg-blue-700 min-w-0 w-auto">Comp Rem {getSortIcon('completionRemark')}</th>
-              <th className="px-2 py-4 text-left text-xs font-bold text-white uppercase tracking-wider min-w-0 w-auto">Actions</th>
+              <th onClick={() => handleSort('customer')} className="px-2.5 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D] cursor-pointer hover:bg-[#1A1A1A] min-w-0 w-auto">Customer {getSortIcon('customer')}</th>
+              <th onClick={() => handleSort('phone')} className="px-2.5 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D] cursor-pointer hover:bg-[#1A1A1A] min-w-0 w-auto hidden sm:table-cell">Contact {getSortIcon('phone')}</th>
+              <th onClick={() => handleSort('category')} className="px-2 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D] cursor-pointer hover:bg-[#1A1A1A] min-w-0 w-auto hidden md:table-cell">Cat {getSortIcon('category')}</th>
+              <th onClick={() => handleSort('problem')} className="px-2.5 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D] cursor-pointer hover:bg-[#1A1A1A] min-w-0 w-auto">Problem {getSortIcon('problem')}</th>
+              <th onClick={() => handleSort('status')} className="px-2 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D] cursor-pointer hover:bg-[#1A1A1A] min-w-0 w-auto">Status {getSortIcon('status')}</th>
+              <th onClick={() => handleSort('assignment')} className="px-2 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D] cursor-pointer hover:bg-[#1A1A1A] min-w-0 w-auto hidden lg:table-cell">Assign {getSortIcon('assignment')}</th>
+              <th onClick={() => handleSort('date')} className="px-2 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D] cursor-pointer hover:bg-[#1A1A1A] min-w-0 w-auto hidden lg:table-cell">Date {getSortIcon('date')}</th>
+              <th onClick={() => handleSort('engineerRemark')} className="px-2 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D] hidden xl:table-cell cursor-pointer hover:bg-[#1A1A1A] min-w-0 w-auto">Eng Rem {getSortIcon('engineerRemark')}</th>
+              <th onClick={() => handleSort('completionRemark')} className="px-2 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D] hidden xl:table-cell cursor-pointer hover:bg-[#1A1A1A] min-w-0 w-auto">Comp Rem {getSortIcon('completionRemark')}</th>
+              <th className="px-2.5 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider min-w-0 w-auto">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white divide-y divide-[#E0E2E5]">
             {sortedCalls.map((call, index) => {
               const canAssign = ['HOST', 'ADMIN'].includes(user?.role) && call.status !== 'COMPLETED';
               const canEdit = ['HOST', 'ADMIN'].includes(user?.role) && call.status !== 'COMPLETED';
@@ -262,11 +262,11 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
 
               return (
                 <React.Fragment key={call.id}>
-                  <tr className={`hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-200 cursor-pointer ${
-                    index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
+                  <tr className={`hover:bg-[#FFE8EB]/20 transition-all duration-150 cursor-pointer ${
+                    index % 2 === 0 ? 'bg-[#F8F9FA]' : 'bg-white'
                   }`} onClick={() => !isActionModalOpen[call.id] && setSelectedCall(call)}>
-                    <td className="px-1 py-3 border-r border-gray-200">
-                      <div className="flex items-center justify-center w-5 h-5 bg-blue-500 text-white font-bold rounded-full text-xs">
+                    <td className="px-2 py-3 border-r border-[#E0E2E5]">
+                      <div className="flex items-center justify-center w-5 h-5 bg-[#FF2E46] text-white font-bold rounded-full text-[11px]">
                         {index + 1}
                       </div>
                     </td>
@@ -401,7 +401,7 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                               setIsActionModalOpen(prev => ({ ...prev, [call.id]: true }));
                               setShowAssign(prev => ({ ...prev, [call.id]: true }));
                             }}
-                            className="bg-blue-500 text-white px-1 py-1 rounded text-xs hover:bg-blue-600 transition-colors font-semibold"
+                            className="bg-[#2C2C2C] text-white px-2 py-1 rounded-full text-[11px] hover:bg-black transition-colors font-bold uppercase tracking-wider"
                           >
                             {call.assignedTo ? 'Reassign' : 'Assign'}
                           </button>
@@ -600,10 +600,10 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                 <button
                   onClick={() => handleAssign(parseInt(callId))}
                   disabled={isAssigning[callId]}
-                  className={`flex-1 py-2 rounded font-medium ${
+                  className={`flex-1 py-2.5 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all shadow-md hover:shadow-lg disabled:shadow-none ${
                     isAssigning[callId] 
-                      ? 'bg-blue-400 text-white cursor-not-allowed' 
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                      ? 'bg-gray-400 text-white cursor-not-allowed' 
+                      : 'bg-[#FF2E46] text-white hover:bg-[#FF5A71]'
                   }`}
                 >
                   {isAssigning[callId] ? 'Processing...' : (call.assignedTo ? 'Reassign' : 'Assign')}

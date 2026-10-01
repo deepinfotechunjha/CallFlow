@@ -283,95 +283,102 @@ const SalesDashboard = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-3">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+      {/* Top Header & Actions */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 pb-6 border-b border-gray-200">
         <div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">Sales Dashboard 📊</h1>
-          <p className="text-gray-600">Hello <span className="font-semibold text-blue-600">{user?.username}</span>, manage your firm entries</p>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[11px] font-semibold text-[#FF2E46] uppercase tracking-wider bg-[#FFE8EB] px-2.5 py-0.5 rounded-md border border-[#FF2E46]/15">
+              Sales &amp; Dealer Network
+            </span>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+            Sales Dashboard
+          </h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Manage your firm directory, track field visits, and log client telecalling activity.
+          </p>
         </div>
-        <div className="flex gap-3 w-full sm:w-auto">
+
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
           {user?.role === 'HOST' && (
             <button
               onClick={() => setShowExportModal(true)}
               disabled={isExporting}
-              className={`px-4 sm:px-6 py-3 rounded-xl font-medium text-sm sm:text-base whitespace-nowrap flex items-center gap-2 shadow-sm transition-all ${
-                isExporting 
-                  ? 'bg-gray-400 cursor-not-allowed text-white' 
-                  : 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800'
-              }`}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-medium text-xs sm:text-sm bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-xs transition-colors disabled:opacity-50"
             >
-              {isExporting ? '⏳ Exporting...' : '📊 Export'}
+              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              {isExporting ? 'Exporting...' : 'Export Excel'}
             </button>
           )}
+
           <button
             onClick={() => setShowShareModal(true)}
-            className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-purple-700 hover:to-purple-800 font-medium text-sm sm:text-base whitespace-nowrap shadow-sm transition-all flex items-center gap-2"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-medium text-xs sm:text-sm bg-[#2C2C2C] hover:bg-black text-white shadow-xs transition-colors"
           >
-            🔗 Share
+            <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            Share Intake
           </button>
+
           <button
             onClick={() => setShowAddForm(true)}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium text-sm sm:text-base whitespace-nowrap shadow-sm transition-all"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-medium text-xs sm:text-sm text-white bg-[#FF2E46] hover:bg-[#FF5A71] shadow-xs transition-colors"
           >
-            + Add Entry
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+            </svg>
+            Add Firm Entry
           </button>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 sm:p-6 rounded-xl shadow-sm border border-blue-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm sm:text-base font-medium text-blue-700 mb-1">Total Entries</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-blue-800">{stats.totalEntries}</p>
-            </div>
-            <div className="text-blue-500 text-2xl">🏢</div>
-          </div>
+      {/* Enterprise Metric Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs">
+          <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Total Entries</p>
+          <p className="text-2xl font-bold text-gray-900 mt-2">{stats.totalEntries}</p>
+          <p className="text-[11px] text-gray-400 mt-0.5">Directory records</p>
         </div>
-        <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 sm:p-6 rounded-xl shadow-sm border border-green-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm sm:text-base font-medium text-green-700 mb-1">Total Visits</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-green-800">{stats.totalVisits}</p>
-            </div>
-            <div className="text-green-500 text-2xl">👁️</div>
-          </div>
+
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs">
+          <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Total Visits</p>
+          <p className="text-2xl font-bold text-gray-900 mt-2">{stats.totalVisits}</p>
+          <p className="text-[11px] text-gray-400 mt-0.5">Physical visits logged</p>
         </div>
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 sm:p-6 rounded-xl shadow-sm border border-purple-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm sm:text-base font-medium text-purple-700 mb-1">Total Calls</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-purple-800">{stats.totalCalls}</p>
-            </div>
-            <div className="text-purple-500 text-2xl">📞</div>
-          </div>
+
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs">
+          <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Total Calls</p>
+          <p className="text-2xl font-bold text-gray-900 mt-2">{stats.totalCalls}</p>
+          <p className="text-[11px] text-gray-400 mt-0.5">Calls connected</p>
         </div>
-        <div className="bg-gradient-to-br from-teal-50 to-teal-100 p-4 sm:p-6 rounded-xl shadow-sm border border-teal-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm sm:text-base font-medium text-teal-700 mb-1">Filtered Visits</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-teal-800">{stats.filteredVisits}</p>
-            </div>
-            <div className="text-teal-500 text-2xl">🔍👁️</div>
-          </div>
+
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs border-l-4 border-l-amber-500">
+          <p className="text-xs font-medium uppercase tracking-wider text-amber-700">Filtered Visits</p>
+          <p className="text-2xl font-bold text-amber-600 mt-2">{stats.filteredVisits}</p>
+          <p className="text-[11px] text-amber-600/70 mt-0.5">In active filter</p>
         </div>
-        <div className="bg-gradient-to-br from-pink-50 to-pink-100 p-4 sm:p-6 rounded-xl shadow-sm border border-pink-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm sm:text-base font-medium text-pink-700 mb-1">Filtered Calls</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-pink-800">{stats.filteredCalls}</p>
-            </div>
-            <div className="text-pink-500 text-2xl">🔍📞</div>
-          </div>
+
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs border-l-4 border-l-emerald-500">
+          <p className="text-xs font-medium uppercase tracking-wider text-emerald-700">Filtered Calls</p>
+          <p className="text-2xl font-bold text-emerald-600 mt-2">{stats.filteredCalls}</p>
+          <p className="text-[11px] text-emerald-600/70 mt-0.5">In active filter</p>
         </div>
       </div>
 
       {/* Search & Filters */}
-      <div className="mb-8 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="mb-6 bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 flex items-center justify-between">
-          <h2 className="text-white font-semibold text-base flex items-center gap-2">🔍 Search & Filters</h2>
+        <div className="bg-gray-50/75 border-b border-gray-200 px-5 py-3 flex items-center justify-between">
+          <h2 className="text-gray-900 font-semibold text-xs uppercase tracking-wider flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            Filter &amp; Query Directory
+          </h2>
           {(searchQuery || cityFilter !== 'ALL' || areaFilter !== 'ALL' || salesExecutiveFilter !== 'ALL' || entryFilter !== 'ALL' || dateRange.startDate || dateRange.endDate) && (
             <button
               onClick={() => {
@@ -382,24 +389,23 @@ const SalesDashboard = () => {
                 setEntryFilter('ALL');
                 setDateRange({ startDate: '', endDate: '' });
               }}
-              className="text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg font-medium transition-colors"
+              className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2.5 py-1 rounded-md font-medium transition-colors"
             >
-              ✕ Clear All
+              Reset Filters
             </button>
           )}
         </div>
 
         <div className="p-4 sm:p-5">
-          {/* Responsive grid: 1 col → 2 col → 4 col */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
 
             {/* ── Card 1: Search ── */}
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 flex flex-col gap-2 overflow-visible">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">🔍 Search</p>
+            <div className="bg-gray-50/50 rounded-lg border border-gray-200 p-3.5 flex flex-col gap-2">
+              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Search</p>
               <select
                 value={filterField}
                 onChange={(e) => { setFilterField(e.target.value); setSearchQuery(''); setHighlightedIndex(-1); }}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#FF2E46]/15 focus:border-[#FF2E46] bg-white text-gray-800"
               >
                 <option value="firmName">Firm Name</option>
                 <option value="anyName">Any Name (All Contacts)</option>
@@ -409,13 +415,12 @@ const SalesDashboard = () => {
                 <option value="accountContactNumber">Account Number</option>
               </select>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
                 <input
                   type="text"
-                  placeholder={`Search by ${
+                  placeholder={`Search ${
                     filterField === 'firmName' ? 'firm name'
-                    : filterField === 'anyName' ? 'any contact name'
-                    : filterField === 'anyNumber' ? 'any contact number'
+                    : filterField === 'anyName' ? 'contact name'
+                    : filterField === 'anyNumber' ? 'contact number'
                     : filterField === 'gstNo' ? 'GST number'
                     : filterField === 'accountContactName' ? 'account name'
                     : filterField === 'accountContactNumber' ? 'account number'
@@ -441,13 +446,13 @@ const SalesDashboard = () => {
                     else if (e.key === 'Tab' && filteredOptions.length === 1) { e.preventDefault(); setSearchQuery(filteredOptions[0]); setShowDropdown(false); setHighlightedIndex(-1); }
                     else if (e.key === 'Escape') { setShowDropdown(false); setHighlightedIndex(-1); }
                   }}
-                  className="w-full pl-9 pr-9 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#FF2E46]/15 focus:border-[#FF2E46] bg-white text-gray-800"
                 />
                 {searchQuery && (
-                  <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg leading-none">×</button>
+                  <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm font-bold">×</button>
                 )}
                 {showDropdown && filteredOptions.length > 0 && (
-                  <div className={`absolute z-50 left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-xl max-h-52 overflow-y-auto ${
+                  <div className={`absolute z-50 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto ${
                     dropdownAbove ? 'bottom-full mb-1' : 'top-full mt-1'
                   }`}>
                     {filteredOptions.map((option, index) => (
@@ -455,7 +460,7 @@ const SalesDashboard = () => {
                         key={index}
                         onMouseDown={(e) => { e.preventDefault(); setSearchQuery(option); setShowDropdown(false); setHighlightedIndex(-1); }}
                         onMouseEnter={() => setHighlightedIndex(index)}
-                        className={`px-4 py-2 cursor-pointer text-sm text-gray-700 border-b border-gray-100 last:border-b-0 ${index === highlightedIndex ? 'bg-blue-100' : 'hover:bg-blue-50'}`}
+                        className={`px-3 py-1.5 cursor-pointer text-xs text-gray-700 border-b border-gray-100 last:border-b-0 ${index === highlightedIndex ? 'bg-[#FFE8EB] text-[#FF2E46] font-medium' : 'hover:bg-gray-50'}`}
                       >
                         {option}
                       </div>
@@ -466,26 +471,24 @@ const SalesDashboard = () => {
             </div>
 
             {/* ── Card 2: City & Area ── */}
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 flex flex-col gap-2">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">🏙️ City & Area</p>
+            <div className="bg-gray-50/50 rounded-lg border border-gray-200 p-3.5 flex flex-col gap-2">
+              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Location</p>
               <div>
-                <p className="text-xs text-gray-400 mb-1">City</p>
                 <select
                   value={cityFilter}
                   onChange={(e) => { setCityFilter(e.target.value); if (e.target.value === 'ALL') setAreaFilter('ALL'); }}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#FF2E46]/15 focus:border-[#FF2E46] bg-white text-gray-800"
                 >
                   <option value="ALL">All Cities</option>
                   {uniqueCities.map((city, i) => <option key={i} value={city}>{city}</option>)}
                 </select>
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">Area</p>
                 <select
                   value={areaFilter}
                   onChange={(e) => setAreaFilter(e.target.value)}
                   disabled={cityFilter === 'ALL'}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#FF2E46]/15 focus:border-[#FF2E46] bg-white text-gray-800 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   <option value="ALL">{cityFilter === 'ALL' ? 'Select city first' : 'All Areas'}</option>
                   {uniqueAreas.map((area, i) => <option key={i} value={area}>{area}</option>)}
@@ -493,26 +496,25 @@ const SalesDashboard = () => {
               </div>
             </div>
 
-            {/* ── Card 3: Sales Executive + Entry Filter (HOST/SALES_ADMIN only) ── */}
+            {/* ── Card 3: Sales Executive + Entry Filter ── */}
             {(user?.role === 'HOST' || user?.role === 'SALES_ADMIN') ? (
-              <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 flex flex-col gap-2">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">👤 Sales Executive</p>
+              <div className="bg-gray-50/50 rounded-lg border border-gray-200 p-3.5 flex flex-col gap-2">
+                <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Representative</p>
                 <select
                   value={salesExecutiveFilter}
                   onChange={(e) => setSalesExecutiveFilter(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#FF2E46]/15 focus:border-[#FF2E46] bg-white text-gray-800"
                 >
                   <option value="ALL">All Sales Executives</option>
                   {salesExecutives.map((ex, i) => <option key={i} value={ex}>{ex}</option>)}
                 </select>
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">Filter by activity</p>
                   <select
                     value={entryFilter}
                     onChange={(e) => setEntryFilter(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#FF2E46]/15 focus:border-[#FF2E46] bg-white text-gray-800"
                   >
-                    <option value="ALL">All</option>
+                    <option value="ALL">All Activities</option>
                     <option value="CREATED_BY">Created By</option>
                     <option value="VISITED_BY">Visited By</option>
                     <option value="CALLED_BY">Called By</option>
@@ -520,29 +522,26 @@ const SalesDashboard = () => {
                 </div>
               </div>
             ) : (
-              /* placeholder so date card stays in col-4 on xl */
               <div className="hidden xl:block" />
             )}
 
             {/* ── Card 4: Date Range ── */}
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 flex flex-col gap-2">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">📅 Date Range</p>
+            <div className="bg-gray-50/50 rounded-lg border border-gray-200 p-3.5 flex flex-col gap-2">
+              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Date Period</p>
               <div>
-                <p className="text-xs text-gray-400 mb-1">From</p>
                 <input
                   type="date"
                   value={dateRange.startDate}
                   onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#FF2E46]/15 focus:border-[#FF2E46] bg-white text-gray-800"
                 />
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">To</p>
                 <input
                   type="date"
                   value={dateRange.endDate}
                   onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#FF2E46]/15 focus:border-[#FF2E46] bg-white text-gray-800"
                 />
               </div>
             </div>
@@ -550,6 +549,7 @@ const SalesDashboard = () => {
           </div>
         </div>
       </div>
+
 
       {/* Desktop Table View */}
       <div className="hidden lg:block">

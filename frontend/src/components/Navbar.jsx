@@ -14,11 +14,8 @@ const Navbar = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
 
-  // Close settings dropdown on outside click
-  const handleNavClick = () => setShowSettingsDropdown(false);
-
   const isActive = (path) => {
-    if (path === '/') return location.pathname === '/';
+    if (path === '/') return location.pathname === '/' || location.pathname === '';
     return location.pathname.startsWith(path);
   };
 
@@ -27,40 +24,71 @@ const Navbar = () => {
     navigate('/login');
   };
 
-  const navLink = (to, label, extraClass = '') => (
-    <Link
-      to={to}
-      className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${extraClass} ${
-        isActive(to) ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'
-      }`}
-    >
-      {label}
-      {isActive(to) && (
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
-      )}
-    </Link>
-  );
+  const navLink = (to, label, extraClass = '') => {
+    const active = isActive(to);
+    return (
+      <Link
+        to={to}
+        className={`relative px-3 py-1.5 rounded-lg text-xs xl:text-sm font-medium transition-all duration-150 whitespace-nowrap ${extraClass} ${
+          active
+            ? 'text-[#FF2E46] bg-[#FFE8EB]/70 font-semibold'
+            : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100/70'
+        }`}
+      >
+        {label}
+        {active && (
+          <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-[#FF2E46] rounded-full" />
+        )}
+      </Link>
+    );
+  };
 
   const mobileLink = (to, label) => (
     <Link
       to={to}
       onClick={() => setShowMobileMenu(false)}
-      className="text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
+      className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
+        isActive(to)
+          ? 'text-[#FF2E46] bg-[#FFE8EB] font-semibold'
+          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+      }`}
     >
       {label}
     </Link>
   );
 
   return (
-    <nav className="bg-white shadow-lg border-b">
-      <div className="w-full px-2 sm:px-4">
+    <header className="sticky top-0 z-50 bg-white shadow-xs border-b border-gray-200">
+      {/* Top Utility Bar */}
+      <div className="bg-[#2C2C2C] text-white text-[11px] sm:text-xs py-1 px-4 sm:px-6">
+        <div className="max-w-screen-2xl mx-auto flex justify-between items-center flex-wrap gap-2">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 font-semibold text-[#FF2E46]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FF2E46]"></span>
+              Since 2003 • 20+ Years of Trust
+            </span>
+            <span className="hidden md:inline text-gray-500">|</span>
+            <span className="hidden md:inline text-gray-300">Unjha • Mehsana • Ahmedabad, Gujarat</span>
+          </div>
+          <div className="flex items-center gap-4 text-gray-300">
+            <span className="hidden sm:inline">Authorized Dell &amp; HP Dealer</span>
+            <span className="text-gray-500">|</span>
+            <span className="text-gray-200 font-medium">CallFlow Enterprise</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Navbar */}
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-2 sm:space-x-4">
+          {/* Left: Hamburger & Brand */}
+          <div className="flex items-center space-x-3 lg:space-x-6">
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="lg:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100"
+              className="lg:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+              aria-label="Toggle menu"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {showMobileMenu ? (
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 ) : (
@@ -69,15 +97,19 @@ const Navbar = () => {
               </svg>
             </button>
 
-            <Link to="/" className="flex items-center">
-              <img src="/deep.png" alt="Deep Infotech" className="h-8 sm:h-9 lg:h-10 w-auto max-w-none" />
+            <Link to="/" className="flex items-center gap-2">
+              <img
+                src="/deep.png"
+                alt="Deep Infotech"
+                className="h-8 sm:h-9 w-auto object-contain"
+              />
             </Link>
 
-            {/* Desktop Nav */}
-            <div className="hidden lg:flex space-x-1 xl:space-x-5">
+            {/* Desktop Navigation links */}
+            <div className="hidden lg:flex items-center space-x-1">
               {!HIDE_MAIN_DASHBOARD.includes(user?.role) && navLink('/', 'Dashboard')}
 
-              {user?.role !== 'SALES_EXECUTIVE' && user?.role !== 'TALLY_CALLER' && user?.role !== 'SALES_ADMIN' && user?.role !== 'ACCOUNTANT' && user?.role !== 'COMPANY_PAYROLL' && user?.role !== 'COMPANY_BASED_ACCESS' && navLink('/carry-in-service', 'CarryInService')}
+              {user?.role !== 'SALES_EXECUTIVE' && user?.role !== 'TALLY_CALLER' && user?.role !== 'SALES_ADMIN' && user?.role !== 'ACCOUNTANT' && user?.role !== 'COMPANY_PAYROLL' && user?.role !== 'COMPANY_BASED_ACCESS' && navLink('/carry-in-service', 'Carry In Service')}
 
               {(user?.role === 'HOST' || user?.role === 'ADMIN') && navLink('/dc', 'DC')}
 
@@ -86,39 +118,42 @@ const Navbar = () => {
                   {navLink('/users', 'Role Management')}
                   {navLink('/customers', 'Customers')}
                   {navLink('/analytics', 'Engineer Analytics')}
+
                   {/* Settings dropdown */}
                   <div className="relative">
                     <button
-                      onClick={() => setShowSettingsDropdown(prev => !prev)}
-                      className={`relative px-1.5 xl:px-2 py-2 text-xs xl:text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                        isActive('/settings') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'
+                      onClick={() => setShowSettingsDropdown((prev) => !prev)}
+                      className={`relative px-3 py-1.5 rounded-lg text-xs xl:text-sm font-medium transition-all duration-150 flex items-center gap-1 ${
+                        isActive('/settings')
+                          ? 'text-[#FF2E46] bg-[#FFE8EB]/70 font-semibold'
+                          : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100/70'
                       }`}
                     >
-                      Settings ▾
-                      {isActive('/settings') && (
-                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
-                      )}
+                      Settings
+                      <svg className={`w-3.5 h-3.5 text-gray-500 transition-transform ${showSettingsDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
                     </button>
                     {showSettingsDropdown && (
-                      <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[160px]">
+                      <div className="absolute top-full left-0 mt-1.5 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[170px] py-1 animate-fadeIn">
                         <Link
                           to="/settings/categories"
                           onClick={() => setShowSettingsDropdown(false)}
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg"
+                          className="block px-4 py-2 text-xs xl:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-[#FF2E46]"
                         >
                           Categories
                         </Link>
                         <Link
                           to="/settings/brands"
                           onClick={() => setShowSettingsDropdown(false)}
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          className="block px-4 py-2 text-xs xl:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-[#FF2E46]"
                         >
                           Brands
                         </Link>
                         <Link
                           to="/settings/locations"
                           onClick={() => setShowSettingsDropdown(false)}
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-lg"
+                          className="block px-4 py-2 text-xs xl:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-[#FF2E46]"
                         >
                           Locations
                         </Link>
@@ -129,46 +164,49 @@ const Navbar = () => {
               )}
 
               {SALES_DASHBOARD_ROLES.includes(user?.role) && navLink('/sales-dashboard', 'Sales Dashboard')}
-
               {ORDERS_ROLES.includes(user?.role) && navLink('/orders', 'Orders')}
             </div>
           </div>
 
-          <div className="flex items-center space-x-0.5 sm:space-x-1">
+          {/* Right: Notification, Profile, Logout */}
+          <div className="flex items-center gap-2 sm:gap-3">
             <NotificationBell />
 
-            <span className="text-xs text-gray-700">
-              {user?.username} <span className="hidden xl:inline">({user?.role})</span>
-            </span>
+            <div className="hidden sm:flex flex-col text-right">
+              <span className="text-xs font-semibold text-gray-900 leading-none">{user?.username}</span>
+              <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mt-0.5">{user?.role}</span>
+            </div>
 
             <Link
               to="/profile"
-              className={`relative hidden sm:block px-1 sm:px-2 py-2 text-xs sm:text-sm font-medium transition-all duration-300 ${
-                isActive('/profile') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'
+              className={`hidden sm:inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                isActive('/profile')
+                  ? 'border-[#FF2E46]/30 bg-[#FFE8EB] text-[#FF2E46]'
+                  : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
               Profile
-              {isActive('/profile') && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 via-blue-600 to-purple-600 rounded-full"></div>
-              )}
             </Link>
 
             <button
               onClick={handleLogout}
-              className="bg-red-600 text-white px-1.5 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium hover:bg-red-700"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white bg-[#FF2E46] hover:bg-[#FF5A71] shadow-xs transition-colors"
             >
-              Logout
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span>Logout</span>
             </button>
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Navigation Drawer */}
         {showMobileMenu && (
-          <div className="lg:hidden border-t border-gray-200 py-2">
+          <div className="lg:hidden border-t border-gray-200 py-3 animate-fadeIn">
             <div className="flex flex-col space-y-1">
               {!HIDE_MAIN_DASHBOARD.includes(user?.role) && mobileLink('/', 'Dashboard')}
 
-              {user?.role !== 'SALES_EXECUTIVE' && user?.role !== 'TALLY_CALLER' && user?.role !== 'SALES_ADMIN' && user?.role !== 'ACCOUNTANT' && user?.role !== 'COMPANY_PAYROLL' && user?.role !== 'COMPANY_BASED_ACCESS' && mobileLink('/carry-in-service', 'CarryInService')}
+              {user?.role !== 'SALES_EXECUTIVE' && user?.role !== 'TALLY_CALLER' && user?.role !== 'SALES_ADMIN' && user?.role !== 'ACCOUNTANT' && user?.role !== 'COMPANY_PAYROLL' && user?.role !== 'COMPANY_BASED_ACCESS' && mobileLink('/carry-in-service', 'Carry In Service')}
 
               {(user?.role === 'HOST' || user?.role === 'ADMIN') && mobileLink('/dc', 'DC')}
 
@@ -177,22 +215,23 @@ const Navbar = () => {
                   {mobileLink('/users', 'Role Management')}
                   {mobileLink('/customers', 'Customers')}
                   {mobileLink('/analytics', 'Engineer Analytics')}
-                  {mobileLink('/settings/categories', 'Categories')}
-                  {mobileLink('/settings/brands', 'Brands')}
-                  {mobileLink('/settings/locations', 'Locations')}
+                  <div className="pt-2 pb-1 px-3.5 text-[11px] font-bold uppercase text-gray-500 tracking-wider">
+                    Settings
+                  </div>
+                  {mobileLink('/settings/categories', '• Categories')}
+                  {mobileLink('/settings/brands', '• Brands')}
+                  {mobileLink('/settings/locations', '• Locations')}
                 </>
               )}
 
               {SALES_DASHBOARD_ROLES.includes(user?.role) && mobileLink('/sales-dashboard', 'Sales Dashboard')}
-
               {ORDERS_ROLES.includes(user?.role) && mobileLink('/orders', 'Orders')}
-
-              {mobileLink('/profile', 'Profile')}
+              {mobileLink('/profile', 'My Profile')}
             </div>
           </div>
         )}
       </div>
-    </nav>
+    </header>
   );
 };
 

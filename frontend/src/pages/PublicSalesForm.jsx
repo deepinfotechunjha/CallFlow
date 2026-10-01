@@ -57,13 +57,11 @@ const PublicSalesForm = () => {
       setFormData(prev => ({ ...prev, city: city ? city.name : '' }));
       setShowCityDropdown(false);
       setCitySearch('');
-      // Load areas for the selected city
       if (city) {
         loadAreas(city);
       } else {
         setAreas([]);
       }
-      // Clear area selection when city changes
       setFormData(prev => ({ ...prev, area: '' }));
     }
   };
@@ -221,7 +219,7 @@ const PublicSalesForm = () => {
 
       if (response.ok && data.success) {
         setIsSubmitted(true);
-        toast.success('Dealer data submitted successfully!');
+        toast.success('Dealer information submitted successfully!');
       } else {
         toast.error(data.error || 'Failed to submit dealer data');
       }
@@ -243,10 +241,10 @@ const PublicSalesForm = () => {
 
   if (isValidating) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Validating link...</p>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#FF2E46] mx-auto mb-3"></div>
+          <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Validating access link...</p>
         </div>
       </div>
     );
@@ -254,18 +252,20 @@ const PublicSalesForm = () => {
 
   if (!isValidLink) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl">❌</span>
+      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-xl border border-[#E0E2E5] p-8 max-w-md w-full text-center">
+          <div className="w-14 h-14 bg-[#FFE8EB] text-[#FF2E46] rounded-xl flex items-center justify-center mx-auto mb-4 border border-[#FF2E46]/20">
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
           </div>
-          <h1 className="text-xl font-bold text-gray-800 mb-2">Invalid Link</h1>
-          <p className="text-gray-600 mb-4">
-            This share link is either invalid, expired, or has already been used.
+          <h1 className="text-xl font-bold text-[#2C2C2C] mb-2">Invalid or Expired Link</h1>
+          <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+            This share link is either invalid, has expired after 1 hour, or has already been used.
           </p>
-          <p className="text-sm text-gray-500">
-            Share links expire after 1 hour and can only be used once.
-          </p>
+          <div className="bg-[#F8F9FA] rounded-lg p-3 text-xs text-gray-500 border border-[#E0E2E5]">
+            Please contact Deep Infotech to request a new dealer onboarding link.
+          </div>
         </div>
       </div>
     );
@@ -273,17 +273,20 @@ const PublicSalesForm = () => {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl">✅</span>
+      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-xl border border-[#E0E2E5] p-8 max-w-md w-full text-center animate-in fade-in duration-150">
+          <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-4 border border-emerald-200">
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+            </svg>
           </div>
-          <h1 className="text-xl font-bold text-gray-800 mb-2">Dealer Data Submitted Successfully!</h1>
-          <p className="text-gray-600 mb-4">
-            Your dealer data has been submitted and will be processed by our team.
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF2E46] block mb-1">DEEP INFOTECH CALLFLOW</span>
+          <h1 className="text-xl font-bold text-[#2C2C2C] mb-2">Dealer Profile Submitted!</h1>
+          <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+            Your partner record and billing particulars have been registered successfully. Our team will verify and connect with you shortly.
           </p>
-          <p className="text-sm text-gray-500">
-            This link has been deactivated and cannot be used again.
+          <p className="text-xs text-gray-400">
+            This secure one-time link has now been deactivated.
           </p>
         </div>
       </div>
@@ -291,24 +294,39 @@ const PublicSalesForm = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-[#F8F9FA] py-10 px-4">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-6 text-white">
-            <h1 className="text-2xl font-bold mb-2">Submit Dealer Data</h1>
-            <p className="text-purple-100">
-              Please fill out the form below to submit your dealer data.
+        {/* Brand Header */}
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-white border border-[#E0E2E5] text-[#FF2E46] text-xs font-bold uppercase tracking-wider mb-3 shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-[#FF2E46]"></span>
+            Since 2003 • 20+ Years of Trust
+          </div>
+          <h2 className="text-2xl font-black text-[#2C2C2C] tracking-tight">
+            DEEP <span className="text-[#FF2E46]">INFOTECH</span>
+          </h2>
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mt-0.5">Dealer / Partner Onboarding Portal</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-xl border border-[#E0E2E5] overflow-hidden">
+          <div className="bg-[#2C2C2C] p-6 text-white border-b-4 border-[#FF2E46]">
+            <span className="text-[10px] font-bold text-[#FF2E46] uppercase tracking-widest block mb-1">Partner Registration</span>
+            <h1 className="text-xl font-bold">Submit Dealer / Firm Particulars</h1>
+            <p className="text-xs text-gray-300 mt-1">
+              Please submit accurate firm, contact, GST, and address details to register in our supplier & customer network.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6">
             {/* Basic Information */}
-            <div className="border-b border-gray-200 pb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Basic Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="border-b border-[#E0E2E5] pb-6">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-600 mb-4 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#FF2E46]"></span> 1. Basic Firm Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Firm Name <span className="text-red-500">*</span>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                    Firm / Company Name <span className="text-[#FF2E46]">*</span>
                   </label>
                   <input
                     type="text"
@@ -316,14 +334,14 @@ const PublicSalesForm = () => {
                     value={formData.firmName}
                     onChange={handleChange}
                     required
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    placeholder="Enter dealer / firm name"
+                    className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all font-semibold placeholder:text-gray-400"
+                    placeholder="Enter registered firm name"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    GST Number <span className="text-red-500">*</span>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                    GST Number <span className="text-[#FF2E46]">*</span>
                   </label>
                   <input
                     type="text"
@@ -331,7 +349,7 @@ const PublicSalesForm = () => {
                     value={formData.gstNo}
                     onChange={handleChange}
                     required
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all uppercase font-mono font-bold placeholder:text-gray-400"
                     placeholder="22AAAAA0000A1Z5"
                     maxLength={15}
                   />
@@ -340,12 +358,14 @@ const PublicSalesForm = () => {
             </div>
 
             {/* Contact Information */}
-            <div className="border-b border-gray-200 pb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Contact Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="border-b border-gray-100 pb-6">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#FF2E46]"></span> 2. Key Contacts
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Contact Person 1 Name <span className="text-red-500">*</span>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                    Contact Person 1 Name <span className="text-[#FF2E46]">*</span>
                   </label>
                   <input
                     type="text"
@@ -353,14 +373,14 @@ const PublicSalesForm = () => {
                     value={formData.contactPerson1Name}
                     onChange={handleChange}
                     required
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    placeholder="Enter contact person name"
+                    className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all"
+                    placeholder="Primary contact name"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Contact Person 1 Number <span className="text-red-500">*</span>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                    Contact Person 1 Number <span className="text-[#FF2E46]">*</span>
                   </label>
                   <input
                     type="tel"
@@ -368,72 +388,75 @@ const PublicSalesForm = () => {
                     value={formData.contactPerson1Number}
                     onChange={handleChange}
                     required
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    placeholder="Enter phone number"
+                    className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all font-mono font-medium"
+                    placeholder="10-digit number"
+                    maxLength={10}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Contact Person 2 Name
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                    Contact Person 2 Name <span className="text-gray-400 font-normal text-xs lowercase">(optional)</span>
                   </label>
                   <input
                     type="text"
                     name="contactPerson2Name"
                     value={formData.contactPerson2Name}
                     onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    placeholder="Enter contact person name (optional)"
+                    className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all"
+                    placeholder="Secondary contact name"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Contact Person 2 Number
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                    Contact Person 2 Number <span className="text-gray-400 font-normal text-xs lowercase">(optional)</span>
                   </label>
                   <input
                     type="tel"
                     name="contactPerson2Number"
                     value={formData.contactPerson2Number}
                     onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    placeholder="Enter phone number (optional)"
+                    className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all font-mono"
+                    placeholder="10-digit number"
+                    maxLength={10}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Account Contact Name
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                    Account Contact Name <span className="text-gray-400 font-normal text-xs lowercase">(optional)</span>
                   </label>
                   <input
                     type="text"
                     name="accountContactName"
                     value={formData.accountContactName}
                     onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    placeholder="Enter account contact name (optional)"
+                    className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all"
+                    placeholder="Billing / Accounts person"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Account Contact Number
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                    Account Contact Number <span className="text-gray-400 font-normal text-xs lowercase">(optional)</span>
                   </label>
                   <input
                     type="tel"
                     name="accountContactNumber"
                     value={formData.accountContactNumber}
                     onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    placeholder="Enter account contact number (optional)"
+                    className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all font-mono"
+                    placeholder="10-digit number"
+                    maxLength={10}
                   />
                 </div>
               </div>
 
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                    Email Address <span className="text-gray-400 font-normal text-xs lowercase">(optional)</span>
                   </label>
                   <input
                     type="text"
@@ -441,22 +464,22 @@ const PublicSalesForm = () => {
                     value={formData.email}
                     onChange={(e) => { handleChange(e); if (emailError) setEmailError(''); }}
                     onBlur={(e) => setEmailError(validateEmail(e.target.value))}
-                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${emailError ? 'border-red-400' : 'border-gray-300'}`}
-                    placeholder="Enter email address (optional)"
+                    className={`w-full px-3.5 py-2.5 bg-[#F8F9FA] border rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all ${emailError ? 'border-red-400' : 'border-gray-200'}`}
+                    placeholder="company@mail.com"
                   />
-                  {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
+                  {emailError && <p className="text-[#FF2E46] text-xs mt-1 font-semibold">{emailError}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    💬 WhatsApp Number
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                    💬 WhatsApp Number <span className="text-gray-400 font-normal text-xs lowercase">(optional)</span>
                   </label>
                   <input
                     type="tel"
                     name="whatsappNumber"
                     value={formData.whatsappNumber}
                     onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    placeholder="Leave blank to use Contact-1 number"
+                    className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all font-mono"
+                    placeholder="Defaults to Contact-1 number if blank"
                     maxLength={10}
                   />
                 </div>
@@ -465,41 +488,43 @@ const PublicSalesForm = () => {
 
             {/* Address Information */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Address Information</h3>
-              <div className="space-y-6">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#FF2E46]"></span> 3. Location & Billing Address
+              </h3>
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Address <span className="text-red-500">*</span>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                    Registered Address <span className="text-[#FF2E46]">*</span>
                   </label>
                   <textarea
                     name="address"
                     value={formData.address}
                     onChange={handleChange}
                     required
-                    rows={3}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    placeholder="Enter complete address"
+                    rows={2}
+                    className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all"
+                    placeholder="Shop/Office number, building, complex, road"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Landmark
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                      Landmark <span className="text-gray-400 font-normal text-xs lowercase">(optional)</span>
                     </label>
                     <input
                       type="text"
                       name="landmark"
                       value={formData.landmark}
                       onChange={handleChange}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                      placeholder="Enter landmark (optional)"
+                      className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all"
+                      placeholder="Near landmark"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      City <span className="text-red-500">*</span>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                      City <span className="text-[#FF2E46]">*</span>
                     </label>
                     {showOtherCity ? (
                       <div className="relative">
@@ -509,7 +534,7 @@ const PublicSalesForm = () => {
                           value={formData.city}
                           onChange={handleChange}
                           required
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                          className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all"
                           placeholder="Enter city name"
                         />
                         <button
@@ -523,8 +548,8 @@ const PublicSalesForm = () => {
                     ) : (
                       <div className="relative" ref={cityDropdownRef}>
                         {selectedCity ? (
-                          <div className="w-full p-3 border border-gray-300 rounded-lg bg-blue-50 flex items-center justify-between">
-                            <span>{selectedCity.name}</span>
+                          <div className="w-full px-3.5 py-2.5 border border-[#FF2E46]/30 rounded-xl bg-[#FFE8EB]/20 flex items-center justify-between text-sm">
+                            <span className="font-bold text-[#2C2C2C]">{selectedCity.name}</span>
                             <button
                               type="button"
                               onClick={() => {
@@ -533,7 +558,7 @@ const PublicSalesForm = () => {
                                 setAreas([]);
                                 setFormData(prev => ({ ...prev, area: '' }));
                               }}
-                              className="text-red-500 hover:text-red-700 font-bold text-lg leading-none"
+                              className="w-6 h-6 rounded-full bg-white text-gray-400 hover:text-[#FF2E46] flex items-center justify-center font-bold text-sm leading-none border border-gray-200 transition-colors"
                             >
                               ×
                             </button>
@@ -549,32 +574,32 @@ const PublicSalesForm = () => {
                             onFocus={() => setShowCityDropdown(true)}
                             onClick={() => setShowCityDropdown(true)}
                             placeholder={loadingData ? "Loading cities..." : "Select or search city"}
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all placeholder:text-gray-400"
                             disabled={loadingData}
                             required
                           />
                         )}
                         {showCityDropdown && !loadingData && !selectedCity && (
-                          <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-hidden">
+                          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-60 overflow-hidden">
                             <div 
                               onClick={() => handleCitySelect('OTHER')}
-                              className="sticky top-0 px-4 py-3 bg-purple-50 hover:bg-purple-100 cursor-pointer font-medium text-purple-700 border-b-2 border-purple-200 z-10"
+                              className="sticky top-0 px-3.5 py-2.5 bg-[#FFE8EB]/50 hover:bg-[#FFE8EB] cursor-pointer font-bold text-xs uppercase tracking-wider text-[#FF2E46] border-b border-[#FF2E46]/20 z-10 transition-colors"
                             >
                               ✏️ Other (Custom City)
                             </div>
                             <div className="overflow-y-auto max-h-52">
                               {filteredCities.length > 0 ? (
-                                filteredCities.map((city, index) => (
+                                filteredCities.map((city) => (
                                   <div
                                     key={city.id}
                                     onClick={() => handleCitySelect(city)}
-                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                                    className="px-3.5 py-2 hover:bg-[#FFE8EB]/20 cursor-pointer text-sm font-medium text-[#2C2C2C] transition-colors"
                                   >
                                     {city.name}
                                   </div>
                                 ))
                               ) : (
-                                <div className="px-4 py-2 text-gray-500 text-sm">No cities found</div>
+                                <div className="px-3.5 py-2 text-gray-400 text-xs">No cities found</div>
                               )}
                             </div>
                           </div>
@@ -584,8 +609,8 @@ const PublicSalesForm = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Area <span className="text-red-500">*</span>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                      Area <span className="text-[#FF2E46]">*</span>
                     </label>
                     {showOtherArea ? (
                       <div className="relative">
@@ -594,7 +619,7 @@ const PublicSalesForm = () => {
                           name="area"
                           value={formData.area}
                           onChange={handleChange}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                          className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all"
                           placeholder="Enter area name"
                         />
                         <button
@@ -608,15 +633,15 @@ const PublicSalesForm = () => {
                     ) : (
                       <div className="relative" ref={areaDropdownRef}>
                         {formData.area && !showOtherArea ? (
-                          <div className="w-full p-3 border border-gray-300 rounded-lg bg-green-50 flex items-center justify-between">
-                            <span>{formData.area}</span>
+                          <div className="w-full px-3.5 py-2.5 border border-[#FF2E46]/30 rounded-xl bg-[#FFE8EB]/20 flex items-center justify-between text-sm">
+                            <span className="font-bold text-[#2C2C2C]">{formData.area}</span>
                             <button
                               type="button"
                               onClick={() => {
                                 setFormData(prev => ({ ...prev, area: '' }));
                                 setAreaSearch('');
                               }}
-                              className="text-red-500 hover:text-red-700 font-bold text-lg leading-none"
+                              className="w-6 h-6 rounded-full bg-white text-gray-400 hover:text-[#FF2E46] flex items-center justify-center font-bold text-sm leading-none border border-gray-200 transition-colors"
                             >
                               ×
                             </button>
@@ -631,16 +656,16 @@ const PublicSalesForm = () => {
                             }}
                             onFocus={() => setShowAreaDropdown(true)}
                             onClick={() => setShowAreaDropdown(true)}
-                            placeholder={loadingData ? "Loading areas..." : selectedCity ? "Select or search area" : "Please select a city first"}
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            placeholder={loadingData ? "Loading areas..." : selectedCity ? "Select or search area" : "Select city first"}
+                            className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all placeholder:text-gray-400 disabled:opacity-50"
                             disabled={loadingData || (!selectedCity && !showOtherCity)}
                           />
                         )}
                         {showAreaDropdown && !loadingData && !formData.area && (
-                          <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-hidden">
+                          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-60 overflow-hidden">
                             <div 
                               onClick={() => handleAreaSelect('OTHER')}
-                              className="sticky top-0 px-4 py-3 bg-purple-50 hover:bg-purple-100 cursor-pointer font-medium text-purple-700 border-b-2 border-purple-200 z-10"
+                              className="sticky top-0 px-3.5 py-2.5 bg-[#FFE8EB]/50 hover:bg-[#FFE8EB] cursor-pointer font-bold text-xs uppercase tracking-wider text-[#FF2E46] border-b border-[#FF2E46]/20 z-10 transition-colors"
                             >
                               ✏️ Other (Custom Area)
                             </div>
@@ -650,15 +675,15 @@ const PublicSalesForm = () => {
                                   <div
                                     key={index}
                                     onClick={() => handleAreaSelect(area)}
-                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                                    className="px-3.5 py-2 hover:bg-[#FFE8EB]/20 cursor-pointer text-sm font-medium text-[#2C2C2C] transition-colors"
                                   >
                                     {area}
                                   </div>
                                 ))
                               ) : selectedCity ? (
-                                <div className="px-4 py-2 text-gray-500 text-sm">No areas found for this city</div>
+                                <div className="px-3.5 py-2 text-gray-400 text-xs">No areas found for this city</div>
                               ) : (
-                                <div className="px-4 py-2 text-gray-500 text-sm">Please select a city first</div>
+                                <div className="px-3.5 py-2 text-gray-400 text-xs">Please select a city first</div>
                               )}
                             </div>
                           </div>
@@ -668,10 +693,10 @@ const PublicSalesForm = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Pincode <span className="text-red-500">*</span>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                      Pincode <span className="text-[#FF2E46]">*</span>
                     </label>
                     <input
                       type="text"
@@ -679,8 +704,8 @@ const PublicSalesForm = () => {
                       value={formData.pincode}
                       onChange={handleChange}
                       required
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                      placeholder="Enter pincode"
+                      className="w-full px-3.5 py-2.5 bg-[#F8F9FA] border border-gray-200 rounded-xl text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-4 focus:ring-[#FF2E46]/10 transition-all font-mono font-semibold"
+                      placeholder="Enter 6-digit pincode"
                       maxLength={6}
                     />
                   </div>
@@ -688,13 +713,15 @@ const PublicSalesForm = () => {
               </div>
             </div>
 
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <span className="text-purple-600 text-lg">ℹ️</span>
+            <div className="bg-[#FFE8EB]/40 border border-[#FF2E46]/20 rounded-lg p-3.5">
+              <div className="flex items-start gap-2.5">
+                <svg className="w-4 h-4 text-[#FF2E46] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 <div>
-                  <h4 className="font-medium text-purple-800 mb-1">Important:</h4>
-                  <p className="text-sm text-purple-700">
-                    This form can only be submitted once. Please ensure all information is correct before submitting.
+                  <h4 className="font-bold text-[#2C2C2C] text-xs uppercase tracking-wider mb-0.5">Single-Use Link:</h4>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Once submitted, this dealer registration is recorded in Deep Infotech's central management portal and cannot be resubmitted with this link.
                   </p>
                 </div>
               </div>
@@ -703,19 +730,15 @@ const PublicSalesForm = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
-                isSubmitting
-                  ? 'bg-gray-400 cursor-not-allowed text-white'
-                  : 'bg-purple-600 hover:bg-purple-700 text-white'
-              }`}
+              className="w-full py-2.5 px-6 bg-[#FF2E46] text-white rounded-lg hover:bg-[#E02038] disabled:opacity-50 text-xs font-bold uppercase tracking-wider transition-all shadow-xs"
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Submitting...
+                  Submitting Information...
                 </span>
               ) : (
-                'Submit Dealer Data'
+                'Submit Dealer Registration'
               )}
             </button>
           </form>

@@ -54,7 +54,6 @@ const AddOrderModal = ({ onClose }) => {
     fetchLocations();
   }, [canSetCalledBy, fetchUsers, fetchBrands, fetchLocations]);
 
-  // When brand changes, fetch its products
   useEffect(() => {
     if (!brandName) {
       setBrandProducts([]);
@@ -172,62 +171,71 @@ const AddOrderModal = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div ref={modalRef} className="bg-white rounded-xl w-full max-w-2xl shadow-xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 bg-[#2C2C2C]/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
+      <div ref={modalRef} className="bg-white rounded-xl w-full max-w-2xl shadow-2xl border border-[#E0E2E5] flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E0E2E5] bg-[#F8F9FA]">
           <div>
             {step === 1 ? (
-              <h3 className="text-lg font-bold text-gray-800">🔍 Search Firm</h3>
+              <>
+                <span className="inline-block text-[#FF2E46] text-[10px] font-bold uppercase tracking-wider bg-[#FFE8EB] px-2.5 py-0.5 rounded-md mb-1 border border-[#FF2E46]/20">
+                  STEP 1 OF 2
+                </span>
+                <h3 className="text-lg font-bold text-[#2C2C2C]">Search Customer / Firm</h3>
+              </>
             ) : (
               <>
-                <h3 className="text-xl font-bold text-gray-800">{selectedFirm?.firmName}</h3>
-                <p className="text-sm text-gray-500 mt-0.5 truncate max-w-lg">
+                <span className="inline-block text-[#FF2E46] text-[10px] font-bold uppercase tracking-wider bg-[#FFE8EB] px-2.5 py-0.5 rounded-md mb-1 border border-[#FF2E46]/20">
+                  STEP 2 OF 2 • ORDER SPECIFICATIONS
+                </span>
+                <h3 className="text-lg font-bold text-[#2C2C2C]">{selectedFirm?.firmName}</h3>
+                <p className="text-xs text-[#666666] mt-0.5 truncate max-w-lg">
                   {[selectedFirm?.gstNo, selectedFirm?.city && selectedFirm?.area ? `${selectedFirm.city} · ${selectedFirm.area}` : selectedFirm?.city].filter(Boolean).join(' · ')}
-                  {selectedFirm?.contactPerson1Number && <> · {selectedFirm.contactPerson1Number} <button type="button" onClick={() => setConfirmCall({ name: selectedFirm.contactPerson1Name || 'Contact 1', number: selectedFirm.contactPerson1Number })} className="inline text-green-600 hover:text-green-800">📞</button></>}
-                  {selectedFirm?.contactPerson2Number && <> · {selectedFirm.contactPerson2Number} <button type="button" onClick={() => setConfirmCall({ name: selectedFirm.contactPerson2Name || 'Contact 2', number: selectedFirm.contactPerson2Number })} className="inline text-green-600 hover:text-green-800">📞</button></>}
                 </p>
               </>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
-          </div>
+          <button 
+            onClick={onClose} 
+            className="w-8 h-8 rounded-lg bg-white text-gray-500 hover:text-[#2C2C2C] hover:bg-gray-100 flex items-center justify-center text-sm transition-colors border border-gray-200"
+          >
+            ✕
+          </button>
         </div>
 
-        <div className="p-5 overflow-y-auto flex-1">
+        <div className="p-6 overflow-y-auto flex-1 space-y-4">
           {step === 1 && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Search by Firm Name, Phone, or GST No
+                <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1.5">
+                  Search Firm Name, Phone, or GST Number
                 </label>
                 <div className="relative">
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={handleSearchChange}
-                    placeholder="Type to search..."
+                    placeholder="Type at least 2 characters..."
                     autoFocus
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all"
                   />
                   {searching && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                      <div className="animate-spin h-4 w-4 border-2 border-[#FF2E46] border-t-transparent rounded-full"></div>
                     </div>
                   )}
                 </div>
 
                 {searchResults.length > 0 && (
-                  <div className="mt-1 border border-gray-200 rounded-lg shadow-md max-h-60 overflow-y-auto">
+                  <div className="mt-2 border border-[#E0E2E5] rounded-lg shadow-lg max-h-60 overflow-y-auto bg-white divide-y divide-[#E0E2E5]">
                     {searchResults.map(firm => (
                       <button
                         key={firm.id}
                         onClick={() => handleSelectFirm(firm)}
-                        className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                        className="w-full text-left px-4 py-3 hover:bg-[#FFE8EB]/20 transition-colors"
                       >
-                        <div className="font-medium text-sm text-gray-800">{firm.firmName}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">
+                        <div className="font-bold text-sm text-[#2C2C2C]">{firm.firmName}</div>
+                        <div className="text-xs text-[#666666] mt-0.5">
                           {firm.city}{firm.area ? ` · ${firm.area}` : ''} · {firm.contactPerson1Number}
                         </div>
                       </button>
@@ -235,56 +243,47 @@ const AddOrderModal = ({ onClose }) => {
                   </div>
                 )}
 
-                {searchQuery.trim() && !searching && searchResults.length === 0 && (
-                  <p className="mt-2 text-sm text-gray-500">No firms found for "{searchQuery}"</p>
+                {searchQuery.trim() && !searching && searchResults.length === 0 && !selectedFirm && (
+                  <p className="mt-2 text-xs text-[#666666]">No records matching "{searchQuery}"</p>
                 )}
               </div>
 
               {selectedFirm && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-2">Selected Firm</p>
-                  <p className="font-bold text-gray-800 text-base mb-2">{selectedFirm.firmName}</p>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600">
-                    {selectedFirm.gstNo && <span><span className="font-medium text-gray-500">GST:</span> {selectedFirm.gstNo}</span>}
-                    {selectedFirm.panNo && <span><span className="font-medium text-gray-500">PAN:</span> {selectedFirm.panNo}</span>}
-                    {(selectedFirm.city || selectedFirm.area) && <span><span className="font-medium text-gray-500">Location:</span> {selectedFirm.city}{selectedFirm.area ? ` · ${selectedFirm.area}` : ''}</span>}
-                    {selectedFirm.address && <span><span className="font-medium text-gray-500">Address:</span> {selectedFirm.address}</span>}
+                <div className="bg-[#F8F9FA] border border-[#FF2E46]/30 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF2E46] bg-[#FFE8EB] px-2 py-0.5 rounded-md">
+                      Selected Target Firm
+                    </span>
+                  </div>
+                  <p className="font-bold text-[#2C2C2C] text-base mb-2">{selectedFirm.firmName}</p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-[#666666]">
+                    {selectedFirm.gstNo && <span><strong className="text-[#2C2C2C]">GST:</strong> {selectedFirm.gstNo}</span>}
+                    {selectedFirm.panNo && <span><strong className="text-[#2C2C2C]">PAN:</strong> {selectedFirm.panNo}</span>}
+                    {(selectedFirm.city || selectedFirm.area) && <span><strong className="text-[#2C2C2C]">Location:</strong> {selectedFirm.city}{selectedFirm.area ? ` · ${selectedFirm.area}` : ''}</span>}
                     {selectedFirm.contactPerson1Name && (
-                      <span className="flex items-center gap-1">
-                        <span className="font-medium text-gray-500">C1:</span> {selectedFirm.contactPerson1Name}
-                        {selectedFirm.contactPerson1Number && <> ({selectedFirm.contactPerson1Number}) <button type="button" onClick={() => setConfirmCall({ name: selectedFirm.contactPerson1Name, number: selectedFirm.contactPerson1Number })} className="text-green-600 hover:text-green-800">📞</button></>}
-                      </span>
+                      <span><strong className="text-[#2C2C2C]">Contact:</strong> {selectedFirm.contactPerson1Name} ({selectedFirm.contactPerson1Number})</span>
                     )}
-                    {selectedFirm.contactPerson2Name && (
-                      <span className="flex items-center gap-1">
-                        <span className="font-medium text-gray-500">C2:</span> {selectedFirm.contactPerson2Name}
-                        {selectedFirm.contactPerson2Number && <> ({selectedFirm.contactPerson2Number}) <button type="button" onClick={() => setConfirmCall({ name: selectedFirm.contactPerson2Name, number: selectedFirm.contactPerson2Number })} className="text-green-600 hover:text-green-800">📞</button></>}
-                      </span>
-                    )}
-                    {selectedFirm.accountContactName && (
-                      <span className="flex items-center gap-1">
-                        <span className="font-medium text-gray-500">Acc:</span> {selectedFirm.accountContactName}
-                        {selectedFirm.accountContactNumber && <> ({selectedFirm.accountContactNumber}) <button type="button" onClick={() => setConfirmCall({ name: selectedFirm.accountContactName, number: selectedFirm.accountContactNumber })} className="text-green-600 hover:text-green-800">📞</button></>}
-                      </span>
-                    )}
-                    {selectedFirm.email && <span className="col-span-2"><span className="font-medium text-gray-500">Email:</span> {selectedFirm.email}</span>}
                   </div>
                 </div>
               )}
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-4 border-t border-[#E0E2E5]">
                 <button
                   onClick={onClose}
-                  className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
+                  className="flex-1 py-2 border border-[#E0E2E5] rounded-lg text-[#2C2C2C] hover:bg-[#F8F9FA] text-xs font-bold uppercase tracking-wider transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleNext}
                   disabled={!selectedFirm}
-                  className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300 text-sm font-medium"
+                  className={`flex-1 py-2 rounded-lg font-bold text-xs uppercase tracking-wider shadow-xs transition-all ${
+                    !selectedFirm
+                      ? 'bg-[#E0E2E5] text-[#999999] cursor-not-allowed'
+                      : 'bg-[#FF2E46] hover:bg-[#E02038] text-white'
+                  }`}
                 >
-                  Next →
+                  Next Step →
                 </button>
               </div>
             </div>
@@ -294,13 +293,13 @@ const AddOrderModal = ({ onClose }) => {
             <div className="space-y-4">
               {/* Brand */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Brand <span className="text-red-500">*</span>
+                <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1.5">
+                  Brand <span className="text-[#FF2E46]">*</span>
                 </label>
                 <select
                   value={brandName}
                   onChange={e => setBrandName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="w-full px-3.5 py-2 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all font-semibold"
                   required
                 >
                   <option value="">— Select brand —</option>
@@ -308,47 +307,44 @@ const AddOrderModal = ({ onClose }) => {
                     <option key={b.id} value={b.name}>{b.name}</option>
                   ))}
                 </select>
-                {!brandName && <p className="text-xs text-red-500 mt-1">Please select a brand</p>}
               </div>
 
-              {/* Order Items / Remark */}
+              {/* Order Items */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Order Items <span className="text-red-500">*</span>
+                <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1.5">
+                  Order Items <span className="text-[#FF2E46]">*</span>
                 </label>
 
                 {loadingProducts ? (
-                  <div className="flex items-center gap-2 text-sm text-gray-500 py-3">
-                    <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-                    Loading products...
+                  <div className="flex items-center gap-2 text-xs text-[#666666] py-3">
+                    <div className="animate-spin h-4 w-4 border-2 border-[#FF2E46] border-t-transparent rounded-full"></div>
+                    Loading brand catalog...
                   </div>
                 ) : hasProducts ? (
                   <div className="space-y-2">
-                    {/* Filter bar */}
                     <input
                       type="text"
                       value={productSearch}
                       onChange={e => setProductSearch(e.target.value)}
-                      placeholder="Filter by code or configuration..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                      placeholder="Filter product codes or configuration..."
+                      className="w-full px-3.5 py-2 bg-white border border-[#E0E2E5] rounded-lg text-xs text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all"
                     />
 
-                    {/* Single unified table */}
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="border border-[#E0E2E5] rounded-lg overflow-hidden shadow-xs">
                       <div className="max-h-64 overflow-y-auto">
-                        <table className="min-w-full text-xs">
-                          <thead className="bg-gray-50 sticky top-0 z-10">
+                        <table className="min-w-full text-xs divide-y divide-[#E0E2E5]">
+                          <thead className="bg-[#2C2C2C] sticky top-0 z-10">
                             <tr>
-                              <th className="px-2 py-2 text-left font-semibold text-gray-600">Code</th>
-                              <th className="px-2 py-2 text-left font-semibold text-gray-600">Configuration</th>
-                              <th className="px-2 py-2 text-right font-semibold text-gray-600">Price (₹)</th>
-                              <th className="px-2 py-2 text-right font-semibold text-gray-600">Qty</th>
-                              <th className="px-2 py-2 text-right font-semibold text-gray-600">Total</th>
-                              <th className="px-2 py-2"></th>
+                              <th className="px-3 py-2 text-left font-bold text-white uppercase text-[11px]">Code</th>
+                              <th className="px-3 py-2 text-left font-bold text-white uppercase text-[11px]">Configuration</th>
+                              <th className="px-3 py-2 text-right font-bold text-white uppercase text-[11px]">Price (₹)</th>
+                              <th className="px-3 py-2 text-right font-bold text-white uppercase text-[11px]">Qty</th>
+                              <th className="px-3 py-2 text-right font-bold text-white uppercase text-[11px]">Total</th>
+                              <th className="px-3 py-2"></th>
                             </tr>
                           </thead>
-                          <tbody>
-                            {filteredProducts.map((p, idx) => {
+                          <tbody className="bg-white divide-y divide-[#E0E2E5]">
+                            {filteredProducts.map((p) => {
                               const added = orderItems.find(i => i.code === p.code);
                               const price = added ? parseFloat(added.price) || 0 : 0;
                               const qty = added ? parseInt(added.qty) || 0 : 0;
@@ -356,13 +352,11 @@ const AddOrderModal = ({ onClose }) => {
                               return (
                                 <tr
                                   key={p.code}
-                                  className={`border-b border-gray-100 last:border-b-0 ${
-                                    added ? 'bg-green-50' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                                  }`}
+                                  className={added ? 'bg-[#FFE8EB]/20' : 'hover:bg-[#F8F9FA]'}
                                 >
-                                  <td className="px-2 py-1.5 font-medium text-gray-800 whitespace-nowrap">{p.code}</td>
-                                  <td className="px-2 py-1.5 text-gray-600 max-w-[110px] truncate">{p.configuration}</td>
-                                  <td className="px-2 py-1.5 text-right">
+                                  <td className="px-3 py-2 font-bold text-[#2C2C2C] whitespace-nowrap">{p.code}</td>
+                                  <td className="px-3 py-2 text-[#666666] max-w-[120px] truncate">{p.configuration}</td>
+                                  <td className="px-3 py-2 text-right">
                                     {added ? (
                                       <input
                                         type="number"
@@ -370,78 +364,69 @@ const AddOrderModal = ({ onClose }) => {
                                         value={added.price}
                                         onChange={e => updateItem(p.code, 'price', e.target.value)}
                                         placeholder="0"
-                                        className="w-20 px-1.5 py-1 border border-gray-300 rounded text-xs text-right focus:ring-1 focus:ring-blue-500"
+                                        className="w-20 px-2 py-1 bg-white border border-[#E0E2E5] rounded-md text-xs text-right focus:ring-1 focus:ring-[#FF2E46]"
                                       />
-                                    ) : <span className="text-gray-300">—</span>}
+                                    ) : <span className="text-[#999999]">—</span>}
                                   </td>
-                                  <td className="px-2 py-1.5 text-right">
+                                  <td className="px-3 py-2 text-right">
                                     {added ? (
                                       <input
                                         type="number"
                                         min="1"
                                         value={added.qty}
                                         onChange={e => updateItem(p.code, 'qty', e.target.value)}
-                                        className="w-14 px-1.5 py-1 border border-gray-300 rounded text-xs text-right focus:ring-1 focus:ring-blue-500"
+                                        className="w-14 px-2 py-1 bg-white border border-[#E0E2E5] rounded-md text-xs text-right focus:ring-1 focus:ring-[#FF2E46]"
                                       />
-                                    ) : <span className="text-gray-300">—</span>}
+                                    ) : <span className="text-[#999999]">—</span>}
                                   </td>
-                                  <td className="px-2 py-1.5 text-right font-semibold text-gray-800 whitespace-nowrap">
-                                    {added && total > 0 ? `₹${total.toLocaleString('en-IN')}` : <span className="text-gray-300">—</span>}
+                                  <td className="px-3 py-2 text-right font-bold text-[#2C2C2C] whitespace-nowrap">
+                                    {added && total > 0 ? `₹${total.toLocaleString('en-IN')}` : <span className="text-[#999999]">—</span>}
                                   </td>
-                                  <td className="px-2 py-1.5 text-center">
+                                  <td className="px-3 py-2 text-center">
                                     {added ? (
-                                      <button type="button" onClick={() => removeItem(p.code)} className="text-red-500 hover:text-red-700 font-bold text-sm leading-none">&times;</button>
+                                      <button type="button" onClick={() => removeItem(p.code)} className="text-[#FF2E46] hover:text-[#E02038] font-bold text-sm leading-none p-1">✕</button>
                                     ) : (
-                                      <button type="button" onClick={() => addItem(p)} className="text-blue-600 hover:text-blue-800 font-bold text-base leading-none">+</button>
+                                      <button type="button" onClick={() => addItem(p)} className="text-[#2C2C2C] hover:text-[#FF2E46] font-bold text-base leading-none p-1">+</button>
                                     )}
                                   </td>
                                 </tr>
                               );
                             })}
-                            {filteredProducts.length === 0 && (
-                              <tr><td colSpan={6} className="px-3 py-4 text-center text-xs text-gray-400 italic">No products match your filter.</td></tr>
-                            )}
                           </tbody>
                         </table>
                       </div>
-                      {/* Grand total footer */}
-                      <div className="bg-blue-50 border-t border-gray-200 px-3 py-2 flex items-center justify-between">
-                        <span className="text-xs font-semibold text-gray-600">
+                      <div className="bg-[#F8F9FA] border-t border-[#E0E2E5] px-4 py-2.5 flex items-center justify-between">
+                        <span className="text-xs font-semibold text-[#666666]">
                           {orderItems.length} item{orderItems.length !== 1 ? 's' : ''} selected
                         </span>
-                        <span className="text-sm font-bold text-blue-700">Grand Total: ₹{grandTotal.toLocaleString('en-IN')}</span>
+                        <span className="text-sm font-bold text-[#FF2E46]">Grand Total: ₹{grandTotal.toLocaleString('en-IN')}</span>
                       </div>
                     </div>
-
-                    {orderItems.length > 0 && !isTableValid && (
-                      <p className="text-xs text-red-500">Please enter price and quantity for all selected items.</p>
-                    )}
                   </div>
                 ) : (
-                  // No products imported for this brand — show old plain textarea (unchanged)
                   <textarea
                     value={orderRemark}
                     onChange={e => setOrderRemark(e.target.value)}
-                    rows={5}
-                    placeholder="Enter order remarks..."
+                    rows={4}
+                    placeholder="Enter order descriptions and quantities..."
                     autoFocus
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all"
                   />
                 )}
               </div>
 
-              {/* Called By — only for privileged roles */}
+              {/* Called By */}
               {canSetCalledBy && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Called By <span className="text-gray-400 text-xs">(optional)</span>
+                  <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1.5">
+                    Order Caller <span className="text-[#666666] text-xs font-normal">(optional)</span>
                   </label>
                   <select
                     value={calledBy}
                     onChange={e => setCalledBy(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+                    className="w-full px-3.5 py-2 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all"
                   >
-                    <option value="">— Select user —</option>
+                    <option value="">— Select staff member —</option>
                     {users.filter(u => !['ADMIN', 'ENGINEER'].includes(u.role)).map(u => (
                       <option key={u.id} value={u.username}>
                         {u.username} ({u.role})
@@ -453,13 +438,13 @@ const AddOrderModal = ({ onClose }) => {
 
               {/* Dispatch From */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Dispatch From <span className="text-red-500">*</span>
+                <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1.5">
+                  Dispatch Hubs <span className="text-[#FF2E46]">*</span>
                 </label>
                 {locations.length === 0 ? (
-                  <p className="text-xs text-gray-400 italic">No locations configured. Add locations in Settings → Locations.</p>
+                  <p className="text-xs text-[#666666] italic">No dispatch hubs available. Add in Settings → Locations.</p>
                 ) : (
-                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="border border-[#E0E2E5] rounded-lg overflow-hidden divide-y divide-[#E0E2E5]">
                     {locations.map(loc => {
                       const selected = dispatchFrom.includes(loc.name);
                       return (
@@ -467,70 +452,49 @@ const AddOrderModal = ({ onClose }) => {
                           key={loc.id}
                           type="button"
                           onClick={() => toggleDispatchLocation(loc.name)}
-                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors border-b border-gray-100 last:border-b-0 ${
-                            selected ? 'bg-blue-50 hover:bg-blue-100' : 'bg-white hover:bg-gray-50'
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs text-left transition-colors ${
+                            selected ? 'bg-[#FFE8EB]/40 font-bold text-[#FF2E46]' : 'bg-white hover:bg-[#F8F9FA] text-[#2C2C2C]'
                           }`}
                         >
-                          <span className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-                            selected ? 'border-blue-600 bg-blue-600' : 'border-gray-300'
+                          <span className={`w-4 h-4 rounded-md border flex items-center justify-center flex-shrink-0 ${
+                            selected ? 'border-[#FF2E46] bg-[#FF2E46] text-white' : 'border-[#E0E2E5]'
                           }`}>
-                            {selected && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                            {selected && '✓'}
                           </span>
-                          <span className={selected ? 'font-medium text-blue-700' : 'text-gray-700'}>📦 {loc.name}</span>
+                          <span className="flex items-center gap-1.5 font-medium">
+                            <svg className="w-3.5 h-3.5 text-[#FF2E46]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            {loc.name}
+                          </span>
                         </button>
                       );
                     })}
                   </div>
                 )}
-                {dispatchFrom.length === 0 && locations.length > 0 && (
-                  <p className="text-xs text-red-500 mt-1">Please select at least one dispatch location</p>
-                )}
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-4 border-t border-[#E0E2E5]">
                 <button
                   onClick={handleBack}
                   disabled={isSubmitting}
-                  className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
+                  className="flex-1 py-2 border border-[#E0E2E5] rounded-lg text-[#2C2C2C] hover:bg-[#F8F9FA] text-xs font-bold uppercase tracking-wider transition-colors"
                 >
                   ← Back
                 </button>
                 <button
                   onClick={handleConfirm}
                   disabled={(hasProducts ? !isTableValid : !orderRemark.trim()) || !brandName || dispatchFrom.length === 0 || isSubmitting}
-                  className="flex-1 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-green-300 text-sm font-medium"
+                  className="flex-1 bg-[#FF2E46] hover:bg-[#E02038] text-white py-2 rounded-lg font-bold text-xs uppercase tracking-wider shadow-xs transition-all disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Creating...' : '✓ Confirm Order'}
+                  {isSubmitting ? 'Submitting...' : 'Submit Order'}
                 </button>
               </div>
             </div>
           )}
         </div>
       </div>
-
-      {/* Call confirmation dialog */}
-      {confirmCall && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-4" onClick={e => e.stopPropagation()}>
-          <div className="bg-white rounded-xl p-6 max-w-xs w-full shadow-xl" onClick={e => e.stopPropagation()}>
-            <p className="text-base font-bold text-gray-800 mb-1">📞 Are you sure you want to call?</p>
-            <p className="text-sm text-gray-700 mb-5 font-medium">{confirmCall.name} ({confirmCall.number})</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmCall(null)}
-                className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => { window.location.href = `tel:${confirmCall.number}`; setConfirmCall(null); }}
-                className="flex-1 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
-              >
-                Yes, Call
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -42,8 +42,6 @@ const NotificationBell = () => {
 
   const deleteNotifications = async (notificationIds) => {
     try {
-      // Immediately update UI for better UX
-      const originalNotifications = notifications;
       setNotifications(prev => {
         const filtered = prev.filter(n => !notificationIds.includes(n.id));
         setSelectedNotifications(new Set());
@@ -62,7 +60,6 @@ const NotificationBell = () => {
       fetchUnreadCount();
     } catch (error) {
       console.error('Failed to delete notifications:', error);
-      // Revert UI changes on error
       fetchNotifications();
       fetchUnreadCount();
     }
@@ -76,7 +73,6 @@ const NotificationBell = () => {
       } else {
         newSet.add(notificationId);
       }
-      // Update selectAll state based on whether all notifications are selected
       setSelectAll(newSet.size === notifications.length);
       return newSet;
     });
@@ -101,19 +97,14 @@ const NotificationBell = () => {
     if (user) {
       fetchUnreadCount();
       
-      // Listen for real-time notification updates
       const handleNotificationUpdate = (event) => {
         fetchUnreadCount();
         if (showDropdown) {
           fetchNotifications();
         }
         
-        // Handle specific notification data if provided
         if (event.detail && event.detail.userId === user.username) {
-          // Immediately update unread count for current user
           setUnreadCount(prev => prev + 1);
-          
-          // If dropdown is open, refresh notifications
           if (showDropdown) {
             setTimeout(fetchNotifications, 100);
           }
@@ -122,11 +113,10 @@ const NotificationBell = () => {
       
       window.addEventListener('notification_update', handleNotificationUpdate);
       
-      // Poll for new notifications every 30 seconds as backup
       const interval = setInterval(() => {
         fetchUnreadCount();
         if (showDropdown) {
-          fetchNotifications(); // Refresh notifications to remove old ones
+          fetchNotifications();
         }
       }, 30000);
       
@@ -151,66 +141,74 @@ const NotificationBell = () => {
     <div className="relative">
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className="relative p-2 text-gray-700 hover:text-blue-600 focus:outline-none"
+        className={`relative w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+          showDropdown ? 'bg-[#FFE8EB] text-[#FF2E46]' : 'text-gray-600 hover:text-[#FF2E46] hover:bg-gray-100'
+        }`}
+        title="Notifications"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="bi bi-bell" viewBox="0 0 16 16">
-  <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2M8 1.918l-.797.161A4 4 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4 4 0 0 0-3.203-3.92zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5 5 0 0 1 13 6c0 .88.32 4.2 1.22 6"/>
-</svg>
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 bg-[#FF2E46] text-white text-[10px] font-bold rounded-md px-1 min-w-[16px] h-4 flex items-center justify-center shadow-xs">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {showDropdown && (
-        <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-lg shadow-lg border z-50 max-h-[80vh] overflow-hidden flex flex-col">
-          <div className="p-2 sm:p-3 border-b">
-            <div className="flex justify-between items-center">
-              <h3 className="font-medium text-gray-900 text-sm sm:text-base">Notifications</h3>
-              {notifications.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <label className="flex items-center text-xs">
-                    <input
-                      type="checkbox"
-                      checked={selectAll}
-                      onChange={handleSelectAll}
-                      className="mr-1"
-                    />
-                    All
-                  </label>
-                  {selectedNotifications.size > 0 && (
-                    <button
-                      onClick={handleDeleteSelected}
-                      className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600"
-                    >
-                      Delete ({selectedNotifications.size})
-                    </button>
-                  )}
-                </div>
-              )}
+        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-[#E0E2E5] z-50 max-h-[80vh] overflow-hidden flex flex-col animate-in fade-in duration-150">
+          <div className="px-4 py-3 border-b border-[#E0E2E5] bg-[#F8F9FA] flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-[#FFE8EB] text-[#FF2E46] flex items-center justify-center">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+              </div>
+              <h3 className="font-bold text-[#2C2C2C] text-sm">Notifications</h3>
             </div>
+            {notifications.length > 0 && (
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-1.5 text-xs text-gray-600 font-semibold cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectAll}
+                    onChange={handleSelectAll}
+                    className="accent-[#FF2E46] rounded"
+                  />
+                  All
+                </label>
+                {selectedNotifications.size > 0 && (
+                  <button
+                    onClick={handleDeleteSelected}
+                    className="bg-[#FF2E46] text-white px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider hover:bg-[#E02038] transition-colors shadow-xs"
+                  >
+                    Delete ({selectedNotifications.size})
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto divide-y divide-[#E0E2E5]">
             {notifications.length === 0 ? (
-              <div className="p-4 text-center text-gray-500 text-sm">
-                No notifications
+              <div className="p-8 text-center text-gray-400 text-xs font-medium">
+                No notifications to display
               </div>
             ) : (
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-2 sm:p-3 border-b hover:bg-gray-50 ${
-                    !notification.isRead && notification.type !== 'VISITED_DUPLICATE_CALL' ? 'bg-blue-50' : ''
-                  } ${selectedNotifications.has(notification.id) ? 'bg-yellow-50' : ''}`}
+                  className={`p-3.5 transition-colors ${
+                    !notification.isRead && notification.type !== 'VISITED_DUPLICATE_CALL' ? 'bg-[#FFE8EB]/20' : 'hover:bg-gray-50'
+                  } ${selectedNotifications.has(notification.id) ? 'bg-amber-50/50' : ''}`}
                 >
-                  <div className="flex items-start gap-2">
+                  <div className="flex items-start gap-3">
                     <input
                       type="checkbox"
                       checked={selectedNotifications.has(notification.id)}
                       onChange={() => handleSelectNotification(notification.id)}
-                      className="mt-1 flex-shrink-0"
+                      className="mt-1 flex-shrink-0 accent-[#FF2E46] rounded"
                       onClick={(e) => e.stopPropagation()}
                     />
                     <div 
@@ -221,21 +219,19 @@ const NotificationBell = () => {
                         }
                       }}
                     >
-                      <p className={`text-xs sm:text-sm break-words ${
-                        !notification.isRead ? 'font-medium' : ''
+                      <p className={`text-xs break-words leading-relaxed ${
+                        !notification.isRead ? 'font-bold text-[#2C2C2C]' : 'text-gray-600'
                       } ${
-                        notification.type === 'VISITED_DUPLICATE_CALL' ? 'text-purple-800 font-bold' : ''
+                        notification.type === 'VISITED_DUPLICATE_CALL' ? 'text-[#FF2E46] font-bold' : ''
                       }`}>
                         {notification.message}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-[10px] text-gray-400 mt-1 font-medium">
                         {new Date(notification.createdAt).toLocaleString()}
                       </p>
                     </div>
                     {!notification.isRead && (
-                      <div className={`w-2 h-2 rounded-full mt-1 flex-shrink-0 ${
-                        notification.type === 'VISITED_DUPLICATE_CALL' ? 'bg-purple-500' : 'bg-blue-500'
-                      }`}></div>
+                      <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 bg-[#FF2E46]"></div>
                     )}
                   </div>
                 </div>
@@ -244,10 +240,10 @@ const NotificationBell = () => {
           </div>
           
           {notifications.length > 0 && (
-            <div className="p-2 sm:p-3 border-t text-center">
+            <div className="p-2.5 border-t border-[#E0E2E5] bg-[#F8F9FA] text-center">
               <button
                 onClick={() => setShowDropdown(false)}
-                className="text-xs sm:text-sm text-blue-600 hover:text-blue-800"
+                className="text-xs font-bold text-gray-500 hover:text-[#2C2C2C] uppercase tracking-wider"
               >
                 Close
               </button>

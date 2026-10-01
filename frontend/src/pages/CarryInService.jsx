@@ -443,180 +443,207 @@ const CarryInService = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-3">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 space-y-6">
+      {/* Top Header & Action Controls */}
+      <div className="bg-white p-5 sm:p-6 rounded-xl border border-[#E0E2E5] shadow-xs flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">Carry-In Service 🔧</h1>
-          <p className="text-gray-600">Manage device repairs and service requests</p>
+          <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#FF2E46] bg-[#FFE8EB] px-2.5 py-0.5 rounded-md mb-2 border border-[#FF2E46]/20">
+            Workshop &bull; Hardware Service Desk
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#2C2C2C]">
+            Carry-In Service
+          </h1>
+          <p className="text-xs sm:text-sm text-[#666666] mt-1">
+            Manage bench repairs, intake diagnostics, parts replacement, and customer deliveries.
+          </p>
         </div>
-        <div className={`flex gap-3 w-full sm:w-auto ${selectedServices.length > 0 ? 'flex-wrap' : ''}`}>
+
+        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
           {user?.role === 'HOST' && selectedServices.length > 0 && (
             <button
               onClick={() => setShowBulkDeleteModal(true)}
-              className="px-4 sm:px-6 py-3 rounded-xl font-medium text-sm sm:text-base whitespace-nowrap flex items-center gap-2 shadow-sm transition-all bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-semibold text-xs sm:text-sm text-white bg-red-600 hover:bg-red-700 shadow-xs transition-all"
             >
-              🗑️ Delete ({selectedServices.length})
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Delete ({selectedServices.length})
             </button>
           )}
+
           {user?.role === 'HOST' && (
             <button
               onClick={() => setShowExportModal(true)}
               disabled={isExporting}
-              className={`px-4 sm:px-6 py-3 rounded-xl font-medium text-sm sm:text-base whitespace-nowrap flex items-center gap-2 shadow-sm transition-all ${
-                isExporting 
-                  ? 'bg-gray-400 cursor-not-allowed text-white' 
-                  : 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800'
-              }`}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-semibold text-xs sm:text-sm bg-white border border-[#E0E2E5] text-[#2C2C2C] hover:border-[#FF2E46] hover:text-[#FF2E46] hover:bg-[#FFE8EB]/20 shadow-xs transition-all disabled:opacity-50"
             >
-              {isExporting ? '⏳ Exporting...' : '📊 Export'}
+              <svg className="w-4 h-4 text-[#FF2E46]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              {isExporting ? 'Exporting...' : 'Export Excel'}
             </button>
           )}
+
           <button
             onClick={() => setShowShareServiceModal(true)}
-            className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-purple-700 hover:to-purple-800 font-medium text-sm sm:text-base whitespace-nowrap shadow-sm transition-all flex items-center gap-2"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-semibold text-xs sm:text-sm bg-[#2C2C2C] hover:bg-black text-white shadow-xs transition-colors"
           >
-            🔗 Share
+            <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            Share Intake
           </button>
+
           <button
             onClick={() => setShowAddForm(true)}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium text-sm sm:text-base whitespace-nowrap shadow-sm transition-all"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm text-white bg-[#FF2E46] hover:bg-[#E02038] shadow-xs transition-colors"
           >
-            + Add Service
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+            </svg>
+            Add Service Ticket
           </button>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 sm:p-6 rounded-xl shadow-sm border border-blue-200">
+      {/* Enterprise Stats Cards Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white p-4 sm:p-5 rounded-xl border border-[#E0E2E5] shadow-xs">
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm sm:text-base font-medium text-blue-700 mb-1">All Services</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-blue-800">{counts.ALL}</p>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">All Services</span>
+            <div className="w-7 h-7 rounded-md bg-[#F8F9FA] text-[#2C2C2C] flex items-center justify-center">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
             </div>
-            <div className="text-blue-500 text-2xl">📊</div>
           </div>
+          <p className="text-2xl sm:text-3xl font-bold text-[#2C2C2C] mt-2">{counts.ALL}</p>
+          <p className="text-[11px] text-gray-500 mt-0.5">Total registered tickets</p>
         </div>
-        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 sm:p-6 rounded-xl shadow-sm border border-yellow-200">
+
+        <div className="bg-white p-4 sm:p-5 rounded-xl border border-[#E0E2E5] shadow-xs border-l-4 border-l-amber-500">
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm sm:text-base font-medium text-yellow-700 mb-1">Pending</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-yellow-800">{counts.PENDING}</p>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">In Progress / Pending</span>
+            <div className="w-7 h-7 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </div>
-            <div className="text-yellow-500 text-2xl">⏳</div>
           </div>
+          <p className="text-2xl sm:text-3xl font-bold text-amber-600 mt-2">{counts.PENDING}</p>
+          <p className="text-[11px] text-amber-700/70 mt-0.5">Active under bench service</p>
         </div>
-        <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-4 sm:p-6 rounded-xl shadow-sm border border-indigo-200">
+
+        <div className="bg-white p-4 sm:p-5 rounded-xl border border-[#E0E2E5] shadow-xs border-l-4 border-l-blue-500">
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm sm:text-base font-medium text-indigo-700 mb-1">Completed</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-indigo-800">{counts.COMPLETED_NOT_COLLECTED}</p>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700">Ready for Pickup</span>
+            <div className="w-7 h-7 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
             </div>
-            <div className="text-indigo-500 text-2xl">🔧</div>
           </div>
+          <p className="text-2xl sm:text-3xl font-bold text-blue-600 mt-2">{counts.COMPLETED_NOT_COLLECTED}</p>
+          <p className="text-[11px] text-blue-700/70 mt-0.5">Completed, awaiting collection</p>
         </div>
-        <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 sm:p-6 rounded-xl shadow-sm border border-green-200">
+
+        <div className="bg-white p-4 sm:p-5 rounded-xl border border-[#E0E2E5] shadow-xs border-l-4 border-l-emerald-500">
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm sm:text-base font-medium text-green-700 mb-1">Delivered</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-green-800">{counts.COMPLETED_AND_COLLECTED}</p>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Delivered / Closed</span>
+            <div className="w-7 h-7 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </div>
-            <div className="text-green-500 text-2xl">✅</div>
           </div>
+          <p className="text-2xl sm:text-3xl font-bold text-emerald-600 mt-2">{counts.COMPLETED_AND_COLLECTED}</p>
+          <p className="text-[11px] text-emerald-700/70 mt-0.5">Collected by customer</p>
         </div>
       </div>
 
-      {/* Search and Filters */}
-      <div className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <span>🔍</span> Search & Filters
-        </h2>
-        
-        {/* Date Filter */}
-        <div className="mb-6 pb-6 border-b border-gray-100">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="flex-1 min-w-[140px]">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Date Type</label>
-              <select
-                value={dateFilter.type}
-                onChange={(e) => setDateFilter(prev => ({ ...prev, type: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-              >
-                <option value="">Select</option>
-                <option value="createdAt">Created Date</option>
-                <option value="completedAt">Completed Date</option>
-                <option value="deliveredAt">Delivered Date</option>
-              </select>
+      {/* Filter & Search Toolbar Card */}
+      <div className="bg-white p-4 sm:p-5 rounded-xl shadow-xs border border-[#E0E2E5] space-y-4">
+        {/* Date Filter Row */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-[#E0E2E5]">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md bg-[#FFE8EB] text-[#FF2E46] flex items-center justify-center">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
             </div>
-            
-            <div className="flex-1 min-w-[140px]">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-              <input
-                type="date"
-                value={dateFilter.start}
-                onChange={(e) => setDateFilter(prev => ({ ...prev, start: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                disabled={!dateFilter.type}
-              />
-            </div>
-            
-            <div className="flex-1 min-w-[140px]">
-              <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
-              <input
-                type="date"
-                value={dateFilter.end}
-                onChange={(e) => setDateFilter(prev => ({ ...prev, end: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                disabled={!dateFilter.type}
-              />
-            </div>
-            
-            <div className="flex gap-2">
-              <button
-                onClick={applyDateFilter}
-                disabled={!dateFilter.type || !dateFilter.start || !dateFilter.end}
-                className="px-4 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-              >
-                Apply
-              </button>
-              
-              {appliedDateFilter.type && (
-                <button
-                  onClick={clearDateFilter}
-                  className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
+            <span className="text-xs font-bold uppercase tracking-wider text-[#2C2C2C]">Date Filtering</span>
           </div>
-          
-          {appliedDateFilter.type && (
-            <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-800">
-                <span className="font-medium">Active Filter:</span> {appliedDateFilter.type === 'createdAt' ? 'Created' : appliedDateFilter.type === 'completedAt' ? 'Completed' : 'Delivered'} between {new Date(appliedDateFilter.start).toLocaleDateString()} and {new Date(appliedDateFilter.end).toLocaleDateString()}
-              </p>
-            </div>
-          )}
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            <select
+              value={dateFilter.type}
+              onChange={(e) => setDateFilter(prev => ({ ...prev, type: e.target.value }))}
+              className="px-3 py-1.5 border border-[#E0E2E5] rounded-lg text-xs sm:text-sm focus:ring-1 focus:ring-[#FF2E46] focus:border-[#FF2E46] bg-white text-gray-800"
+            >
+              <option value="">Select Date Field</option>
+              <option value="createdAt">Created Date</option>
+              <option value="completedAt">Completed Date</option>
+              <option value="deliveredAt">Delivered Date</option>
+            </select>
+
+            <input
+              type="date"
+              value={dateFilter.start}
+              onChange={(e) => setDateFilter(prev => ({ ...prev, start: e.target.value }))}
+              className="px-3 py-1.5 border border-[#E0E2E5] rounded-lg text-xs sm:text-sm focus:ring-1 focus:ring-[#FF2E46] focus:border-[#FF2E46] bg-white text-gray-800 disabled:bg-gray-50"
+              disabled={!dateFilter.type}
+            />
+
+            <span className="text-xs text-gray-400">to</span>
+
+            <input
+              type="date"
+              value={dateFilter.end}
+              onChange={(e) => setDateFilter(prev => ({ ...prev, end: e.target.value }))}
+              className="px-3 py-1.5 border border-[#E0E2E5] rounded-lg text-xs sm:text-sm focus:ring-1 focus:ring-[#FF2E46] focus:border-[#FF2E46] bg-white text-gray-800 disabled:bg-gray-50"
+              disabled={!dateFilter.type}
+            />
+
+            <button
+              onClick={applyDateFilter}
+              disabled={!dateFilter.type || !dateFilter.start || !dateFilter.end}
+              className="px-3.5 py-1.5 bg-[#FF2E46] hover:bg-[#E02038] text-white rounded-lg text-xs sm:text-sm font-semibold disabled:opacity-40 transition-colors shadow-xs"
+            >
+              Apply
+            </button>
+
+            {appliedDateFilter.type && (
+              <button
+                onClick={clearDateFilter}
+                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-[#2C2C2C] rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Search Bar and Filters */}
+        {/* Search Bar and Dropdown Filters */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex-1 min-w-[200px] relative">
-            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">🔍</span>
+          <div className="flex-1 min-w-[220px] relative">
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
             <input
               type="text"
-              placeholder="Search by customer, phone, category, or description..."
+              placeholder="Search customer, phone, category, description..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
+              className="w-full pl-9 pr-8 py-2 border border-[#E0E2E5] rounded-lg text-xs sm:text-sm focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] bg-white text-gray-800 placeholder-gray-400"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xl transition-colors"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-base"
               >
-                ×
+                &times;
               </button>
             )}
           </div>
@@ -624,18 +651,18 @@ const CarryInService = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
+            className="px-3 py-2 border border-[#E0E2E5] rounded-lg text-xs sm:text-sm focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] bg-white text-gray-800 min-w-[130px]"
           >
             <option value="ALL_STATUS">All Status</option>
             <option value="PENDING">Pending</option>
-            <option value="COMPLETED_NOT_COLLECTED">Completed</option>
+            <option value="COMPLETED_NOT_COLLECTED">Ready for Pickup</option>
             <option value="COMPLETED_AND_COLLECTED">Delivered</option>
           </select>
           
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors"
+            className="px-3 py-2 border border-[#E0E2E5] rounded-lg text-xs sm:text-sm focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] bg-white text-gray-800 min-w-[140px]"
           >
             <option value="ALL_CATEGORIES">All Categories</option>
             {serviceCategories.map(cat => (
@@ -649,7 +676,7 @@ const CarryInService = () => {
               setUserFilterType(e.target.value);
               setSelectedUser('ALL');
             }}
-            className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors min-w-[120px]"
+            className="px-3 py-2 border border-[#E0E2E5] rounded-lg text-xs sm:text-sm focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] bg-white text-gray-800 min-w-[130px]"
           >
             <option value="ALL_USERS">All Users</option>
             <option value="CREATED_BY">Created By</option>
@@ -661,7 +688,7 @@ const CarryInService = () => {
             <select
               value={selectedUser}
               onChange={(e) => setSelectedUser(e.target.value)}
-              className="px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white hover:border-gray-400 transition-colors min-w-[120px]"
+              className="px-3 py-2 border border-[#E0E2E5] rounded-lg text-xs sm:text-sm focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] bg-white text-gray-800 min-w-[130px]"
             >
               <option value="ALL">All</option>
               {uniqueUsers.map((user, index) => (
@@ -680,31 +707,40 @@ const CarryInService = () => {
                 setSelectedUser('ALL');
                 clearDateFilter();
               }}
-              className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+              className="px-3.5 py-2 bg-[#F8F9FA] hover:bg-gray-200 text-[#2C2C2C] border border-[#E0E2E5] rounded-lg text-xs sm:text-sm font-semibold transition-colors"
             >
-              Clear All
+              Reset
             </button>
           )}
         </div>
       </div>
 
       {/* Services - Responsive Layout */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-4 sm:px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2 justify-between">
-            <span className="flex items-center gap-2"><span>📊</span> Service Records</span>
-            <span className="flex items-center gap-3 text-xs font-medium">
-              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-blue-200"></span> Warranty</span>
-              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-green-200"></span> Repairing</span>
-            </span>
-          </h2>
+      <div className="bg-white rounded-xl shadow-xs border border-[#E0E2E5] overflow-hidden">
+        <div className="px-4 sm:px-6 py-4 border-b border-[#E0E2E5] bg-[#F8F9FA]">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-[#2C2C2C] flex items-center gap-2">
+              <svg className="w-4 h-4 text-[#FF2E46]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              Service Records
+            </h2>
+            <div className="flex items-center gap-3 text-xs font-semibold">
+              <span className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-blue-200"></span> Warranty</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-green-200"></span> Repairing</span>
+            </div>
+          </div>
         </div>
 
         {filteredServices.length === 0 ? (
-          <div className="px-6 py-8 text-center text-gray-500">
-            <div className="text-4xl mb-4">🔧</div>
-            <p className="text-lg font-medium">No services found</p>
-            <p className="text-sm">Try adjusting your search or filters</p>
+          <div className="px-6 py-12 text-center text-gray-500">
+            <div className="w-12 h-12 rounded-xl bg-[#FFE8EB] text-[#FF2E46] flex items-center justify-center mx-auto mb-3">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+            </div>
+            <p className="text-base font-bold text-[#2C2C2C]">No service tickets found</p>
+            <p className="text-xs text-gray-400 mt-1">Try adjusting your search query or filters</p>
           </div>
         ) : (
           <>
@@ -745,16 +781,19 @@ const CarryInService = () => {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-medium text-gray-500">#{index + 1}</span>
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(service.status)}`}>
+                          <span className={`px-2 py-0.5 text-xs font-semibold rounded-md border ${getStatusColor(service.status)}`}>
                             {getStatusLabel(service.status)}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-lg">👤</span>
+                          <div className="w-6 h-6 rounded-md bg-[#FFE8EB] text-[#FF2E46] flex items-center justify-center text-xs">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                          </div>
                           <div>
                             <div className="text-sm font-semibold text-gray-900">{service.customerName}</div>
-                            <div className="flex items-center gap-1 text-sm text-gray-600">
-                              <span className="text-gray-400">📞</span>
+                            <div className="flex items-center gap-1 text-xs text-gray-600 font-mono">
                               {service.phone}
                             </div>
                           </div>
@@ -762,7 +801,7 @@ const CarryInService = () => {
                       </div>
                       <button
                         onClick={() => setSelectedService(service)}
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        className="text-xs font-bold text-[#FF2E46] hover:underline"
                       >
                         View Details
                       </button>
@@ -801,7 +840,7 @@ const CarryInService = () => {
                       {(['HOST', 'ADMIN'].includes(user?.role)) && service.status === 'PENDING' && (
                         <button
                           onClick={() => openEditModal(service)}
-                          className="bg-orange-600 text-white px-3 py-2 rounded-lg text-xs font-medium hover:bg-orange-700 transition-colors flex-1 sm:flex-none"
+                          className="bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-orange-700 transition-colors flex-1 sm:flex-none shadow-xs"
                         >
                           Edit
                         </button>
@@ -809,13 +848,13 @@ const CarryInService = () => {
                       {service.status === 'PENDING' && (
                         <>
                           {service.checkRemark && (
-                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 self-center">
+                            <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-purple-100 text-purple-800 self-center">
                               Checks: {service.checkRemark.split('\n').length}
                             </span>
                           )}
                           <button
                             onClick={() => { setCompleteAction('complete'); setShowCompleteConfirm(service.id); }}
-                            className="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors flex-1 sm:flex-none"
+                            className="bg-[#2C2C2C] text-white px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-black transition-colors flex-1 sm:flex-none shadow-xs"
                           >
                             Complete
                           </button>
@@ -824,7 +863,7 @@ const CarryInService = () => {
                       {service.status === 'COMPLETED_NOT_COLLECTED' && (
                         <button
                           onClick={() => setShowDeliverConfirm(service.id)}
-                          className="bg-green-600 text-white px-3 py-2 rounded-lg text-xs font-medium hover:bg-green-700 transition-colors flex-1 sm:flex-none"
+                          className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-green-700 transition-colors flex-1 sm:flex-none shadow-xs"
                         >
                           Deliver
                         </button>
@@ -855,39 +894,39 @@ const CarryInService = () => {
                   )}
                 </div>
               )}
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-[#E0E2E5]">
+                <thead className="bg-[#2C2C2C]">
                   <tr>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
-                      Sr.No
+                    <th className="px-3 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider w-16 border-r border-[#3D3D3D]">
+                      #
                     </th>
                     {user?.role === 'HOST' && (
-                      <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                      <th className="px-1 py-3.5 text-center text-xs font-bold text-white uppercase tracking-wider w-12 border-r border-[#3D3D3D]">
                         ✓
                       </th>
                     )}
-                    <th onClick={() => handleSort('customer')} className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-48">
+                    <th onClick={() => handleSort('customer')} className="px-3 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-[#1A1A1A] w-48 border-r border-[#3D3D3D]">
                       Customer {getSortIcon('customer')}
                     </th>
-                    <th onClick={() => handleSort('phone')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-32">
+                    <th onClick={() => handleSort('phone')} className="px-3 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-[#1A1A1A] w-32 border-r border-[#3D3D3D]">
                       Phone {getSortIcon('phone')}
                     </th>
-                    <th onClick={() => handleSort('category')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-28">
+                    <th onClick={() => handleSort('category')} className="px-3 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-[#1A1A1A] w-28 border-r border-[#3D3D3D]">
                       Category {getSortIcon('category')}
                     </th>
-                    <th onClick={() => handleSort('description')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-40">
+                    <th onClick={() => handleSort('description')} className="px-3 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-[#1A1A1A] w-40 border-r border-[#3D3D3D]">
                       Description {getSortIcon('description')}
                     </th>
-                    <th onClick={() => handleSort('status')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-28">
+                    <th onClick={() => handleSort('status')} className="px-3 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-[#1A1A1A] w-28 border-r border-[#3D3D3D]">
                       Status {getSortIcon('status')}
                     </th>
-                    <th onClick={() => handleSort('date')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-32">
+                    <th onClick={() => handleSort('date')} className="px-3 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-[#1A1A1A] w-32 border-r border-[#3D3D3D]">
                       Date & Time {getSortIcon('date')}
                     </th>
-                    <th onClick={() => handleSort('users')} className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24">
+                    <th onClick={() => handleSort('users')} className="px-3 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-[#1A1A1A] w-24 border-r border-[#3D3D3D]">
                       Users {getSortIcon('users')}
                     </th>
-                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                    <th className="px-3 py-3.5 text-left text-xs font-bold text-white uppercase tracking-wider w-32">
                       Actions
                     </th>
                   </tr>
@@ -936,16 +975,16 @@ const CarryInService = () => {
                         </div>
                       </td>
                       <td className="px-2 py-3 whitespace-nowrap w-28">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(service.status)}`}>
+                        <span className={`px-2 py-0.5 text-xs font-semibold rounded-md border ${getStatusColor(service.status)}`}>
                           {service.status === 'PENDING' ? 'Pending' :
                            service.status === 'COMPLETED_NOT_COLLECTED' ? 'Completed' :
                            'Delivered'}
                         </span>
                       </td>
                       <td className="px-1 py-3 border-r border-gray-200 w-32">
-                        <div className="bg-gray-100 p-1 rounded space-y-1">
-                          <div className="text-xs font-medium text-gray-900">{new Date(service.createdAt).toLocaleDateString()}</div>
-                          <div className="text-xs text-gray-600">{new Date(service.createdAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', hour12: true})}</div>
+                        <div className="bg-[#F8F9FA] p-1.5 rounded-md border border-[#E0E2E5] space-y-0.5">
+                          <div className="text-xs font-semibold text-gray-900">{new Date(service.createdAt).toLocaleDateString()}</div>
+                          <div className="text-[11px] text-gray-600 font-mono">{new Date(service.createdAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', hour12: true})}</div>
                         </div>
                       </td>
                       <td className="px-2 py-3 text-xs text-gray-500 w-24">
@@ -961,7 +1000,7 @@ const CarryInService = () => {
                           {(['HOST', 'ADMIN'].includes(user?.role)) && service.status === 'PENDING' && (
                             <button
                               onClick={() => openEditModal(service)}
-                              className="bg-orange-600 text-white px-2 py-1 rounded text-xs hover:bg-orange-700 transition-colors"
+                              className="bg-orange-600 text-white px-2 py-1 rounded-md text-xs hover:bg-orange-700 transition-colors shadow-xs"
                             >
                               Edit
                             </button>
@@ -969,13 +1008,13 @@ const CarryInService = () => {
                           {service.status === 'PENDING' && (
                             <>
                               {service.checkRemark && (
-                                <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                <span className="px-1.5 py-0.5 rounded-md text-xs font-semibold bg-purple-100 text-purple-800">
                                   {service.checkRemark.split('\n').length}✓
                                 </span>
                               )}
                               <button
                                 onClick={() => { setCompleteAction('complete'); setShowCompleteConfirm(service.id); }}
-                                className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 transition-colors"
+                                className="bg-[#2C2C2C] text-white px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider hover:bg-black transition-colors shadow-xs"
                               >
                                 Complete
                               </button>
@@ -984,7 +1023,7 @@ const CarryInService = () => {
                           {service.status === 'COMPLETED_NOT_COLLECTED' && (
                             <button
                               onClick={() => setShowDeliverConfirm(service.id)}
-                              className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 transition-colors"
+                              className="bg-green-600 text-white px-2 py-1 rounded-md text-xs hover:bg-green-700 transition-colors shadow-xs"
                             >
                               Deliver
                             </button>
@@ -1080,14 +1119,14 @@ const CarryInService = () => {
                 />
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-2 pt-4">
+              <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-[#E0E2E5]">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`flex-1 py-2 rounded font-medium text-sm ${
+                  className={`flex-1 py-2.5 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-xs disabled:shadow-none ${
                     isSubmitting
-                      ? 'bg-blue-400 text-white cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                      ? 'bg-gray-400 text-white cursor-not-allowed'
+                      : 'bg-[#FF2E46] text-white hover:bg-[#E02038]'
                   }`}
                 >
                   {isSubmitting ? 'Adding...' : 'Add Service'}
@@ -1096,7 +1135,7 @@ const CarryInService = () => {
                   type="button"
                   onClick={() => setShowAddForm(false)}
                   disabled={isSubmitting}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 text-sm disabled:opacity-50"
+                  className="flex-1 bg-white border border-[#E0E2E5] text-[#2C2C2C] py-2.5 px-4 rounded-lg hover:bg-[#F8F9FA] text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -1315,7 +1354,7 @@ const CarryInService = () => {
                     ? (isRepairing || !repairingRemark.trim() ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-rose-600 text-white hover:bg-rose-700')
                   : completeAction === 'check'
                     ? (isChecking || !checkRemark.trim() ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-purple-600 text-white hover:bg-purple-700')
-                  : (isCompleting ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700')
+                  : (isCompleting ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-[#FF2E46] text-white hover:bg-[#FF5A71]')
                 }`}
               >
                 {completeAction === 'complete' ? (isCompleting ? 'Processing...' : 'Yes, Complete')
@@ -1424,7 +1463,7 @@ const CarryInService = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                   <div className="mt-1">
-                    <span className={`inline-flex px-3 py-2 text-sm font-semibold rounded-full ${getStatusColor(selectedService.status)}`}>
+                    <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-md border ${getStatusColor(selectedService.status)}`}>
                       {getStatusLabel(selectedService.status)}
                     </span>
                   </div>

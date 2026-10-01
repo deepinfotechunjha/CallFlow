@@ -2,20 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --color-primary: #2C2C2C;
+    --color-primary-dark: #1A1A1A;
+    --color-primary-light: #4A4A4A;
+    --color-accent: #FF2E46;
+    --color-accent-light: #FF5A71;
+    --color-accent-bg: #FFE8EB;
+    --color-bg: #FFFFFF;
+    --color-bg-alt: #F8F9FA;
+    --color-bg-secondary: #F0F2F5;
+    --color-border: #E5E7EB;
+    --color-text: #1F2937;
+    --color-text-muted: #6B7280;
+  }
+
+  body {
+    background-color: #F8F9FA;
+    color: #1F2937;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: #1F2937;
+    letter-spacing: -0.015em;
+  }
+}
+
+@layer components {
+  /* Professional Enterprise Buttons */
+  .btn-brand-primary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm text-white bg-[#FF2E46] transition-all duration-150 shadow-xs hover:bg-[#FF5A71] active:bg-[#E02038] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-brand-outline {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm text-[#FF2E46] bg-white border border-[#FF2E46]/40 transition-all duration-150 hover:bg-[#FFE8EB]/50 hover:border-[#FF2E46] active:bg-[#FFE8EB] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-brand-charcoal {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm text-white bg-[#2C2C2C] transition-all duration-150 hover:bg-[#1A1A1A] active:bg-black shadow-xs disabled:opacity-50;
+  }
+
+  .btn-brand-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:text-gray-900 transition-all duration-150 disabled:opacity-50;
+  }
+
+  /* Enterprise Eyebrow badge */
+  .eyebrow-badge {
+    @apply inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#FF2E46] bg-[#FFE8EB] px-2.5 py-0.5 rounded-md border border-[#FF2E46]/15;
+  }
+
+  /* Enterprise Card */
+  .brand-card {
+    @apply bg-white border border-gray-200 rounded-xl shadow-xs hover:border-gray-300 transition-all duration-150;
+  }
+
+  /* Enterprise Input */
+  .brand-input {
+    @apply w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-lg text-[#1F2937] placeholder-gray-400 focus:outline-none focus:border-[#FF2E46] focus:ring-2 focus:ring-[#FF2E46]/15 transition-all duration-150 disabled:bg-gray-50 disabled:text-gray-500;
+  }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
 @keyframes slideIn {
-  from { transform: translateY(-20px); opacity: 0; }
+  from { transform: translateY(-10px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.2s ease-out;
+  animation: fadeIn 0.15s ease-out;
 }
 
 .animate-slideIn {
-  animation: slideIn 0.3s ease-out;
+  animation: slideIn 0.2s ease-out;
 }

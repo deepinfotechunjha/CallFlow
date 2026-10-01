@@ -49,43 +49,60 @@ const OrderEditModal = ({ order, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div ref={modalRef} className="bg-white rounded-xl w-full max-w-md shadow-xl">
-        <div className="flex items-center justify-between p-5 border-b">
-          <h3 className="text-lg font-bold text-gray-800">✏️ Edit Order</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
+      <div ref={modalRef} className="bg-white rounded-xl w-full max-w-md shadow-xl border border-[#E0E2E5] overflow-hidden max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E0E2E5] bg-[#F8F9FA]">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#FF2E46]"></span>
+            <h3 className="text-base font-bold text-[#2C2C2C]">Edit Order</h3>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="w-7 h-7 rounded-lg bg-white text-[#666666] hover:text-[#FF2E46] hover:bg-[#FFE8EB] flex items-center justify-center transition-colors border border-[#E0E2E5]"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          <p className="text-sm text-gray-600">Firm: <span className="font-semibold text-gray-800">{order.salesEntry?.firmName}</span></p>
+        <form onSubmit={handleSubmit} className="p-5 space-y-3.5 overflow-y-auto flex-1">
+          <div className="bg-[#F8F9FA] border border-[#E0E2E5] rounded-lg p-3 flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase text-[#666666] tracking-wider">Firm</span>
+            <span className="text-xs font-bold text-[#2C2C2C]">{order.salesEntry?.firmName}</span>
+          </div>
 
           {/* Brand */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Brand <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#2C2C2C] mb-1">
+              Brand <span className="text-[#FF2E46]">*</span>
+            </label>
             <select
               value={brandName}
               onChange={e => setBrandName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full px-3 py-2 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-2 focus:ring-[#FF2E46]/20 transition-all font-medium"
               required
             >
-              <option value="">— Select brand —</option>
+              <option value="">Select brand</option>
               {brands.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
             </select>
           </div>
 
           {/* Order Remark */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Order Remark <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#2C2C2C] mb-1">
+              Order Remark <span className="text-[#FF2E46]">*</span>
+            </label>
             {isTableRemark ? (
-              <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
-                <p className="text-xs text-gray-500 mb-2 italic">Table order — view only (cannot edit table orders)</p>
+              <div className="border border-[#E0E2E5] rounded-lg p-3 bg-[#F8F9FA]">
+                <p className="text-[11px] text-[#666666] mb-1.5 italic">Table order — structured catalog items</p>
                 <OrderRemarkDisplay remark={order.orderRemark} />
               </div>
             ) : (
               <textarea
                 value={orderRemark}
                 onChange={e => setOrderRemark(e.target.value)}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                className="w-full px-3 py-2 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-2 focus:ring-[#FF2E46]/20 transition-all placeholder:text-gray-400"
                 required
               />
             )}
@@ -93,13 +110,15 @@ const OrderEditModal = ({ order, onClose }) => {
 
           {/* Called By */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Called By <span className="text-gray-400 text-xs">(optional)</span></label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#2C2C2C] mb-1">
+              Called By <span className="text-[#666666] font-normal text-xs">(optional)</span>
+            </label>
             <select
               value={calledBy}
               onChange={e => setCalledBy(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full px-3 py-2 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-2 focus:ring-[#FF2E46]/20 transition-all font-medium"
             >
-              <option value="">— Select user —</option>
+              <option value="">Select user</option>
               {users.filter(u => !['ADMIN', 'ENGINEER'].includes(u.role)).map(u => (
                 <option key={u.id} value={u.username}>{u.username} ({u.role})</option>
               ))}
@@ -108,42 +127,46 @@ const OrderEditModal = ({ order, onClose }) => {
 
           {/* Dispatch From */}
           <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Dispatch From <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#2C2C2C] mb-1">
+              Dispatch From <span className="text-[#FF2E46]">*</span>
+            </label>
             <button
               type="button"
               onClick={() => setDispatchDropdownOpen(p => !p)}
-              className={`w-full px-3 py-2 border rounded-lg text-sm text-left flex items-center justify-between bg-white ${dispatchFrom.length === 0 ? 'border-gray-300 text-gray-400' : 'border-blue-500 text-gray-800'}`}
+              className={`w-full px-3 py-2 border rounded-lg text-sm text-left flex items-center justify-between bg-white transition-all ${
+                dispatchFrom.length === 0 ? 'border-[#E0E2E5] text-gray-400' : 'border-[#FF2E46]/50 bg-[#FFE8EB]/20 text-[#2C2C2C] font-semibold'
+              }`}
             >
-              <span className="truncate">{dispatchFrom.length === 0 ? '— Select locations —' : dispatchFrom.map(n => `📦 ${n}`).join(', ')}</span>
-              <svg className={`w-4 h-4 ml-2 flex-shrink-0 text-gray-400 transition-transform ${dispatchDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              <span className="truncate">{dispatchFrom.length === 0 ? 'Select locations' : dispatchFrom.join(', ')}</span>
+              <svg className={`w-4 h-4 ml-2 flex-shrink-0 text-[#666666] transition-transform ${dispatchDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </button>
             {dispatchDropdownOpen && (
-              <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+              <div className="absolute z-10 mt-1 w-full bg-white border border-[#E0E2E5] rounded-lg shadow-xl overflow-hidden py-1">
                 {locations.map(loc => {
                   const selected = dispatchFrom.includes(loc.name);
                   return (
                     <button key={loc.id} type="button" onClick={() => toggleLocation(loc.name)}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-sm text-left">
-                      <span className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${selected ? 'border-blue-600 bg-blue-600' : 'border-gray-300'}`}>
-                        {selected && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                      className="w-full flex items-center gap-2.5 px-3 py-1.5 hover:bg-[#F8F9FA] text-xs text-left transition-colors">
+                      <span className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center flex-shrink-0 transition-all ${selected ? 'border-[#FF2E46] bg-[#FF2E46]' : 'border-gray-300'}`}>
+                        {selected && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                       </span>
-                      <span className={selected ? 'font-medium text-blue-700' : 'text-gray-700'}>📦 {loc.name}</span>
+                      <span className={selected ? 'font-semibold text-[#FF2E46]' : 'text-[#2C2C2C]'}>{loc.name}</span>
                     </button>
                   );
                 })}
               </div>
             )}
-            {dispatchFrom.length === 0 && <p className="text-xs text-red-500 mt-1">Please select at least one dispatch location</p>}
+            {dispatchFrom.length === 0 && <p className="text-xs text-[#FF2E46] mt-1 font-medium">Please select at least one dispatch location</p>}
           </div>
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-2 pt-2">
             <button type="button" onClick={onClose} disabled={isSubmitting}
-              className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">
+              className="flex-1 py-2 px-3 bg-[#F0F2F5] text-[#2C2C2C] rounded-lg hover:bg-[#E02038] hover:text-white text-xs font-semibold uppercase tracking-wider transition-colors">
               Cancel
             </button>
             <button type="submit" disabled={(!isTableRemark && !orderRemark.trim()) || !brandName || dispatchFrom.length === 0 || isSubmitting}
-              className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300 text-sm font-medium">
-              {isSubmitting ? 'Saving...' : '✓ Save Changes'}
+              className="flex-1 py-2 px-3 bg-[#FF2E46] text-white rounded-lg hover:bg-[#E02038] disabled:opacity-50 text-xs font-semibold uppercase tracking-wider transition-colors shadow-xs">
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>

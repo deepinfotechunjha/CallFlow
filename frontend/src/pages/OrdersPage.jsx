@@ -236,77 +236,92 @@ const OrdersPage = () => {
   }
 
   return (
-    <div className="w-full p-4">
+    <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-3">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 bg-white p-5 sm:p-6 rounded-xl border border-[#E0E2E5] shadow-xs">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">Orders 📦</h1>
-          <p className="text-gray-600">Hello <span className="font-semibold text-blue-600">{user?.username}</span>, manage your orders</p>
+          <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#FF2E46] bg-[#FFE8EB] px-2.5 py-1 rounded-md mb-2">
+            Operations &bull; Order Fulfillment
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#2C2C2C]">
+            Orders &amp; Dispatch
+          </h1>
+          <p className="text-sm text-[#666666] mt-1">
+            Track customer purchase orders, manage billing, and update dispatch logistics.
+          </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
           {user?.role === 'HOST' && (
             <button
               onClick={() => setShowExportModal(true)}
               disabled={isExporting}
-              className={`px-5 py-3 rounded-xl font-medium text-sm shadow-sm transition-all flex items-center gap-2 ${
+              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-semibold text-xs sm:text-sm border transition-all ${
                 isExporting
-                  ? 'bg-gray-400 cursor-not-allowed text-white'
-                  : 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800'
+                  ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                  : 'bg-white border-[#E0E2E5] text-[#2C2C2C] hover:border-[#FF2E46] hover:text-[#FF2E46] hover:bg-[#FFE8EB]/20 shadow-xs'
               }`}
             >
-              {isExporting ? '⏳ Exporting...' : '📊 Export'}
+              <svg className="w-4 h-4 text-[#FF2E46]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              {isExporting ? 'Exporting...' : 'Export Excel'}
             </button>
           )}
           {!isReadOnly && (
             <button
               onClick={() => setShowShareModal(true)}
-              className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-5 py-3 rounded-xl hover:from-purple-700 hover:to-purple-800 font-medium text-sm shadow-sm transition-all flex items-center gap-2"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-semibold text-xs sm:text-sm bg-[#2C2C2C] hover:bg-[#1A1A1A] text-white shadow-xs transition-all"
             >
-              🔗 Share
+              <svg className="w-4 h-4 text-[#FF2E46]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+              Share Intake
             </button>
           )}
           {!isReadOnly && (
             <button
               onClick={() => setShowAddModal(true)}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium text-sm shadow-sm transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm text-white bg-[#FF2E46] hover:bg-[#FF5A71] shadow-xs hover:shadow-sm transition-all"
             >
-              + Add Entry
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Order
             </button>
           )}
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-8">
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-center">
-          <p className="text-xl font-bold text-blue-700">{stats.total}</p>
-          <p className="text-xs text-blue-600 mt-0.5">Total</p>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        <div className="bg-white border border-[#E0E2E5] rounded-xl p-3.5 text-center shadow-xs">
+          <p className="text-2xl font-extrabold text-[#2C2C2C]">{stats.total}</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-[#666666] mt-1">Total</p>
         </div>
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-center">
-          <p className="text-xl font-bold text-gray-700">{stats.pending}</p>
-          <p className="text-xs text-gray-600 mt-0.5">Pending</p>
+        <div className="bg-white border border-[#E0E2E5] rounded-xl p-3.5 text-center shadow-xs">
+          <p className="text-2xl font-extrabold text-[#FF2E46]">{stats.pending}</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-[#666666] mt-1">Pending</p>
         </div>
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-center">
-          <p className="text-xl font-bold text-yellow-700">{stats.onHold}</p>
-          <p className="text-xs text-yellow-600 mt-0.5">On Hold</p>
+        <div className="bg-white border border-[#E0E2E5] rounded-xl p-3.5 text-center shadow-xs">
+          <p className="text-2xl font-extrabold text-amber-600">{stats.onHold}</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-[#666666] mt-1">On Hold</p>
         </div>
-        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-center">
-          <p className="text-xl font-bold text-indigo-700">{stats.billed}</p>
-          <p className="text-xs text-indigo-600 mt-0.5">Billed</p>
+        <div className="bg-white border border-[#E0E2E5] rounded-xl p-3.5 text-center shadow-xs">
+          <p className="text-2xl font-extrabold text-[#2C2C2C]">{stats.billed}</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-[#666666] mt-1">Billed</p>
         </div>
-        <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-center">
-          <p className="text-xl font-bold text-green-700">{stats.completed}</p>
-          <p className="text-xs text-green-600 mt-0.5">Transported</p>
+        <div className="bg-white border border-[#E0E2E5] rounded-xl p-3.5 text-center shadow-xs">
+          <p className="text-2xl font-extrabold text-emerald-600">{stats.completed}</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-[#666666] mt-1">Transported</p>
         </div>
-        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
-          <p className="text-xl font-bold text-red-700">{stats.cancelled}</p>
-          <p className="text-xs text-red-600 mt-0.5">Cancelled</p>
+        <div className="bg-white border border-[#E0E2E5] rounded-xl p-3.5 text-center shadow-xs">
+          <p className="text-2xl font-extrabold text-red-600">{stats.cancelled}</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-[#666666] mt-1">Cancelled</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6 space-y-4">
-
+      <div className="bg-white rounded-xl shadow-xs border border-[#E0E2E5] p-4 sm:p-5 mb-6 space-y-3.5">
         {/* Search + Created By + Date Range */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-1">
@@ -315,7 +330,7 @@ const OrdersPage = () => {
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search orders..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3.5 py-2 border border-[#E0E2E5] rounded-lg text-xs sm:text-sm bg-[#F8F9FA] focus:bg-white focus:ring-2 focus:ring-[#FF2E46]/20 focus:border-[#FF2E46] text-[#2C2C2C] transition-all"
             />
           </div>
 
@@ -324,7 +339,7 @@ const OrdersPage = () => {
               <select
                 value={createdByFilter}
                 onChange={e => setCreatedByFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+                className="w-full px-3.5 py-2 border border-[#E0E2E5] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#FF2E46]/20 focus:border-[#FF2E46] bg-white text-[#2C2C2C]"
               >
                 <option value="ALL">All Users</option>
                 {uniqueCreators.map(c => <option key={c} value={c}>{c}</option>)}
@@ -337,36 +352,40 @@ const OrdersPage = () => {
               type="date"
               value={dateRange.startDate}
               onChange={e => setDateRange(p => ({ ...p, startDate: e.target.value }))}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-3 py-2 border border-[#E0E2E5] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#FF2E46]/20 focus:border-[#FF2E46] bg-white text-[#2C2C2C]"
             />
-            <span className="text-gray-400 text-sm">to</span>
+            <span className="text-[#666666] text-xs font-medium">to</span>
             <input
               type="date"
               value={dateRange.endDate}
               onChange={e => setDateRange(p => ({ ...p, endDate: e.target.value }))}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-3 py-2 border border-[#E0E2E5] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#FF2E46]/20 focus:border-[#FF2E46] bg-white text-[#2C2C2C]"
             />
           </div>
         </div>
 
         {/* Status buttons */}
-        <div className="flex flex-wrap gap-2">
-          {STATUS_BUTTONS.map(({ value, label }) => (
-            <button
-              key={value}
-              onClick={() => setStatusFilter(value)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                statusFilter === value
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#F0F2F5]">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#666666] mr-1">Status:</span>
+          {STATUS_BUTTONS.map(({ value, label }) => {
+            const active = statusFilter === value;
+            return (
+              <button
+                key={value}
+                onClick={() => setStatusFilter(value)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  active
+                    ? 'bg-[#FF2E46] text-white shadow-xs'
+                    : 'bg-[#F8F9FA] text-[#666666] border border-[#E0E2E5] hover:border-[#FF2E46] hover:text-[#FF2E46]'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
           {hasFilters && (
-            <button onClick={clearFilters} className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 ml-auto">
-              Clear Filters
+            <button onClick={clearFilters} className="ml-auto text-xs text-[#FF2E46] hover:underline font-bold">
+              Reset Filters
             </button>
           )}
         </div>
@@ -375,96 +394,95 @@ const OrdersPage = () => {
       {/* Desktop Table */}
       <div className="hidden xl:block">
         {loading ? (
-          <div className="text-center py-16">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
-            <p className="text-gray-500">Loading orders...</p>
+          <div className="text-center py-16 bg-white rounded-xl border border-[#E0E2E5]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF2E46] mx-auto mb-3"></div>
+            <p className="text-[#666666] font-medium text-sm">Loading orders...</p>
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
-            <p className="text-gray-400 text-lg">No orders found</p>
+          <div className="text-center py-16 bg-white rounded-xl border border-[#E0E2E5]">
+            <p className="text-[#666666] font-semibold text-sm">No orders found</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl shadow-xs border border-[#E0E2E5] overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+              <table className="min-w-full divide-y divide-[#E0E2E5]">
+                <thead className="bg-[#2C2C2C]">
                   <tr>
-                    <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-10">#</th>
-                    <th onClick={() => handleSort('firm')} className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap">
+                    <th className="px-3.5 py-3 text-left text-xs font-bold text-white uppercase tracking-wider w-10 border-r border-[#3D3D3D]">#</th>
+                    <th onClick={() => handleSort('firm')} className="px-3.5 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-[#1A1A1A] transition-colors whitespace-nowrap border-r border-[#3D3D3D]">
                       <div className="flex items-center gap-1">Firm {getSortIcon('firm')}</div>
                     </th>
                     {user?.role === 'HOST' && (
-                      <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Brand</th>
+                      <th className="px-3.5 py-3 text-left text-xs font-bold text-white uppercase tracking-wider whitespace-nowrap border-r border-[#3D3D3D]">Brand</th>
                     )}
-                    <th onClick={() => handleSort('remark')} className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap">
+                    <th onClick={() => handleSort('remark')} className="px-3.5 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-[#1A1A1A] transition-colors whitespace-nowrap border-r border-[#3D3D3D]">
                       <div className="flex items-center gap-1">Order Remark {getSortIcon('remark')}</div>
                     </th>
-                    <th onClick={() => handleSort('calledBy')} className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap">
+                    <th onClick={() => handleSort('calledBy')} className="px-3.5 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-[#1A1A1A] transition-colors whitespace-nowrap border-r border-[#3D3D3D]">
                       <div className="flex items-center gap-1">Called By {getSortIcon('calledBy')}</div>
                     </th>
-                    <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Dispatch From</th>
-                    <th onClick={() => handleSort('status')} className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap">
+                    <th className="px-3.5 py-3 text-left text-xs font-bold text-white uppercase tracking-wider whitespace-nowrap border-r border-[#3D3D3D]">Dispatch From</th>
+                    <th onClick={() => handleSort('status')} className="px-3.5 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-[#1A1A1A] transition-colors whitespace-nowrap border-r border-[#3D3D3D]">
                       <div className="flex items-center gap-1">Status {getSortIcon('status')}</div>
                     </th>
-                    <th onClick={() => handleSort('createdBy')} className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap">
+                    <th onClick={() => handleSort('createdBy')} className="px-3.5 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-[#1A1A1A] transition-colors whitespace-nowrap border-r border-[#3D3D3D]">
                       <div className="flex items-center gap-1">Created By {getSortIcon('createdBy')}</div>
                     </th>
-                    <th onClick={() => handleSort('date')} className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap">
+                    <th onClick={() => handleSort('date')} className="px-3.5 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-[#1A1A1A] transition-colors whitespace-nowrap border-r border-[#3D3D3D]">
                       <div className="flex items-center gap-1">Created At {getSortIcon('date')}</div>
                     </th>
-                    <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Actions</th>
+                    <th className="px-3.5 py-3 text-left text-xs font-bold text-white uppercase tracking-wider whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-100">
+                <tbody className="bg-white divide-y divide-[#F0F2F5]">
                   {sortedOrders.map((order, index) => {
-                    const colSpan = user?.role === 'HOST' ? 10 : 9;
                     return (
                     <React.Fragment key={order.id}>
                       <tr
-                      className={`cursor-pointer hover:bg-slate-50 transition-colors align-top ${order.status === 'CANCELLED' ? 'opacity-70' : ''}`}
+                      className={`cursor-pointer hover:bg-[#F8F9FA] transition-colors align-top ${order.status === 'CANCELLED' ? 'opacity-70 bg-gray-50/50' : ''}`}
                       onClick={() => openDetail(order)}
                     >
-                        <td className="px-4 py-4 text-sm font-medium text-gray-500">{index + 1}</td>
-                        <td className="px-4 py-4">
-                          <p className={`font-semibold text-sm text-gray-900 ${order.status === 'CANCELLED' ? 'line-through' : ''}`}>{order.salesEntry?.firmName}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">{order.salesEntry?.city}{order.salesEntry?.area ? ` · ${order.salesEntry.area}` : ''}</p>
+                        <td className="px-3.5 py-3.5 text-xs font-medium text-gray-500">{index + 1}</td>
+                        <td className="px-3.5 py-3.5">
+                          <p className={`font-semibold text-xs sm:text-sm text-[#2C2C2C] ${order.status === 'CANCELLED' ? 'line-through' : ''}`}>{order.salesEntry?.firmName}</p>
+                          <p className="text-xs text-[#666666] mt-0.5">{order.salesEntry?.city}{order.salesEntry?.area ? ` · ${order.salesEntry.area}` : ''}</p>
                         </td>
                         {user?.role === 'HOST' && (
-                          <td className="px-4 py-4 text-xs font-medium text-teal-700 whitespace-nowrap">
+                          <td className="px-3.5 py-3.5 text-xs font-semibold text-[#FF2E46] whitespace-nowrap">
                             {order.brandName || '—'}
                           </td>
                         )}
-                        <td className="px-4 py-4 text-sm text-gray-700 max-w-[200px]">
+                        <td className="px-3.5 py-3.5 text-xs sm:text-sm text-[#2C2C2C] max-w-[200px]">
                           <p className="break-words whitespace-pre-wrap" title={order.orderRemark}>{order.orderRemark || '—'}</p>
                         </td>
-                        <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">{order.calledBy || '—'}</td>
-                        <td className="px-4 py-4">
+                        <td className="px-3.5 py-3.5 text-xs sm:text-sm text-[#666666] whitespace-nowrap">{order.calledBy || '—'}</td>
+                        <td className="px-3.5 py-3.5">
                           {order.dispatchFrom ? (
                             <div className="flex flex-wrap gap-1">
                               {order.dispatchFrom.split(',').map(loc => (
-                                <span key={loc} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 whitespace-nowrap">
-                                  📦 {loc.trim()}
+                                <span key={loc} className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
+                                  {loc.trim()}
                                 </span>
                               ))}
                             </div>
-                          ) : <span className="text-gray-400">—</span>}
+                          ) : <span className="text-gray-400 text-xs">—</span>}
                         </td>
-                        <td className="px-4 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                        <td className="px-3.5 py-3.5">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${
                             order.status === 'PENDING' ? 'bg-gray-100 text-gray-700 border-gray-200' :
-                            order.status === 'ON_HOLD' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                            order.status === 'BILLED' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                            order.status === 'COMPLETED' ? 'bg-green-100 text-green-700 border-green-200' :
-                            'bg-red-100 text-red-700 border-red-200'
+                            order.status === 'ON_HOLD' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                            order.status === 'BILLED' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                            order.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                            'bg-red-50 text-red-700 border-red-200'
                           }`}>
                             {STATUS_LABEL[order.status] || order.status.replace('_', ' ')}
                           </span>
                         </td>
-                        <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">{order.createdBy}</td>
-                        <td className="px-4 py-4 text-xs text-gray-500 whitespace-nowrap">
+                        <td className="px-3.5 py-3.5 text-xs sm:text-sm text-[#666666] whitespace-nowrap">{order.createdBy}</td>
+                        <td className="px-3.5 py-3.5 text-xs text-[#666666] whitespace-nowrap">
                           <div>{formatDate(order.createdAt)}</div>
                         </td>
-                        <td className="px-4 py-4">
+                        <td className="px-3.5 py-3.5">
                           <ActionButtons
                             order={order}
                             canAction={canAction}
@@ -480,7 +498,6 @@ const OrdersPage = () => {
                           />
                         </td>
                       </tr>
-
                     </React.Fragment>
                     );
                   })}
@@ -492,47 +509,52 @@ const OrdersPage = () => {
       </div>
 
       {/* Mobile Cards */}
-      <div className="xl:hidden space-y-4">
+      <div className="xl:hidden space-y-3">
         {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
-            <p className="text-gray-500">Loading orders...</p>
+          <div className="text-center py-12 bg-white rounded-xl border border-[#E0E2E5]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF2E46] mx-auto mb-3"></div>
+            <p className="text-[#666666] text-sm">Loading orders...</p>
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-400">No orders found</p>
+          <div className="text-center py-12 bg-white rounded-xl border border-[#E0E2E5]">
+            <p className="text-[#666666] text-sm font-medium">No orders found</p>
           </div>
         ) : (
           filteredOrders.map(order => (
             <div
               key={order.id}
               onClick={() => openDetail(order)}
-              className={`cursor-pointer bg-white rounded-xl border shadow-sm p-4 ${order.status === 'CANCELLED' ? 'opacity-70 border-red-200' : 'border-gray-200'} hover:border-blue-300 hover:shadow-md transition`}
+              className={`cursor-pointer bg-white rounded-xl border p-4 ${order.status === 'CANCELLED' ? 'opacity-70 border-red-200 bg-red-50/20' : 'border-[#E0E2E5]'} hover:border-[#FF2E46]/40 shadow-xs transition`}
             >
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <p className={`font-semibold text-gray-800 ${order.status === 'CANCELLED' ? 'line-through' : ''}`}>{order.salesEntry?.firmName}</p>
-                  <p className="text-xs text-gray-500">{order.salesEntry?.city}{order.salesEntry?.area ? ` · ${order.salesEntry.area}` : ''}</p>
+                  <p className={`font-bold text-sm text-[#2C2C2C] ${order.status === 'CANCELLED' ? 'line-through' : ''}`}>{order.salesEntry?.firmName}</p>
+                  <p className="text-xs text-[#666666]">{order.salesEntry?.city}{order.salesEntry?.area ? ` · ${order.salesEntry.area}` : ''}</p>
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_BADGE[order.status] || ''}`}>
+                <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${
+                  order.status === 'PENDING' ? 'bg-gray-100 text-gray-700 border-gray-200' :
+                  order.status === 'ON_HOLD' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                  order.status === 'BILLED' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                  order.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                  'bg-red-50 text-red-700 border-red-200'
+                }`}>
                   {STATUS_LABEL[order.status] || order.status.replace('_', ' ')}
                 </span>
               </div>
 
-              <p className="text-sm text-gray-700 mb-1"><span className="font-medium">Remark:</span> {order.orderRemark}</p>
-              {order.brandName && user?.role === 'HOST' && <p className="text-xs text-teal-700 font-medium mb-1">Brand: {order.brandName}</p>}
-              {order.calledBy && <p className="text-xs text-gray-500 mb-1">Called by: {order.calledBy}</p>}
+              <p className="text-xs sm:text-sm text-[#2C2C2C] mb-1.5"><span className="font-semibold text-[#666666]">Remark:</span> {order.orderRemark || '—'}</p>
+              {order.brandName && user?.role === 'HOST' && <p className="text-xs text-[#FF2E46] font-semibold mb-1">Brand: {order.brandName}</p>}
+              {order.calledBy && <p className="text-xs text-[#666666] mb-1">Called by: {order.calledBy}</p>}
               {order.dispatchFrom && (
-                <div className="flex flex-wrap gap-1 mb-1">
+                <div className="flex flex-wrap gap-1 mb-2">
                   {order.dispatchFrom.split(',').map(loc => (
-                    <span key={loc} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                      📦 {loc}
+                    <span key={loc} className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                      {loc.trim()}
                     </span>
                   ))}
                 </div>
               )}
-              <p className="text-xs text-gray-500 mb-3">By {order.createdBy} · {formatDate(order.createdAt)}</p>
-
+              <p className="text-xs text-[#666666] mb-3">By {order.createdBy} · {formatDate(order.createdAt)}</p>
 
               <ActionButtons
                 order={order}
@@ -553,15 +575,15 @@ const OrdersPage = () => {
       </div>
 
       {confirmCancel && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-xl">
-            <h3 className="text-lg font-bold text-gray-800 mb-2">Cancel Order?</h3>
-            <p className="text-sm text-gray-600 mb-1">Firm: <strong>{confirmCancel.salesEntry?.firmName}</strong></p>
-            <p className="text-sm text-gray-500 mb-5">The order will be marked as cancelled and remain visible.</p>
-            <div className="flex gap-3">
-              <button onClick={() => setConfirmCancel(null)} disabled={isCancelling} className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">Go Back</button>
-              <button onClick={() => handleCancel(confirmCancel)} disabled={isCancelling} className="flex-1 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-400 text-sm font-medium flex items-center justify-center gap-2">
-                {isCancelling ? <><span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span> Cancelling...</> : 'Yes, Cancel'}
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-lg border border-[#E0E2E5]">
+            <h3 className="text-base font-bold text-[#2C2C2C] mb-1.5">Cancel Order?</h3>
+            <p className="text-xs sm:text-sm text-[#666666] mb-1">Firm: <strong className="text-[#2C2C2C]">{confirmCancel.salesEntry?.firmName}</strong></p>
+            <p className="text-xs text-[#666666] mb-5">The order will be marked as cancelled and remain visible in records.</p>
+            <div className="flex gap-2.5">
+              <button onClick={() => setConfirmCancel(null)} disabled={isCancelling} className="flex-1 py-2 bg-gray-100 text-[#2C2C2C] rounded-lg hover:bg-gray-200 text-xs sm:text-sm font-semibold transition-colors">Go Back</button>
+              <button onClick={() => handleCancel(confirmCancel)} disabled={isCancelling} className="flex-1 py-2 bg-[#FF2E46] text-white rounded-lg hover:bg-[#FF5A71] disabled:opacity-50 text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors">
+                {isCancelling ? 'Cancelling...' : 'Yes, Cancel'}
               </button>
             </div>
           </div>
@@ -598,35 +620,35 @@ const ActionButtons = ({ order, canAction, canCancel, onHold, onBill, onComplete
   const isBilled = status === 'BILLED';
 
   return (
-    <div className="flex flex-col gap-1.5 min-w-[90px]">
+    <div className="flex flex-wrap sm:flex-col gap-1.5 min-w-[90px]">
       {isHost && (
-        <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium text-left whitespace-nowrap">
-          ✏️ Edit
+        <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-[#2C2C2C] rounded-md text-xs font-semibold text-left whitespace-nowrap transition-colors">
+          Edit
         </button>
       )}
       {canAction && !isCancelled && !isCompleted && !isBilled && (
-        <button onClick={(e) => { e.stopPropagation(); onHold(); }} className="px-3 py-1.5 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 text-xs font-medium text-left whitespace-nowrap">
-          ⏸ Hold
+        <button onClick={(e) => { e.stopPropagation(); onHold(); }} className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-md text-xs font-semibold text-left whitespace-nowrap transition-colors">
+          Hold
         </button>
       )}
       {canAction && ['PENDING', 'ON_HOLD'].includes(status) && (
-        <button onClick={(e) => { e.stopPropagation(); onBill(); }} className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-xs font-medium text-left whitespace-nowrap">
-          🧾 Bill
+        <button onClick={(e) => { e.stopPropagation(); onBill(); }} className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-md text-xs font-semibold text-left whitespace-nowrap transition-colors">
+          Bill
         </button>
       )}
       {canAction && isBilled && (
-        <button onClick={(e) => { e.stopPropagation(); onComplete(); }} className="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 text-xs font-medium text-left whitespace-nowrap">
-          🚚 Transport
+        <button onClick={(e) => { e.stopPropagation(); onComplete(); }} className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-md text-xs font-semibold text-left whitespace-nowrap transition-colors">
+          Transport
         </button>
       )}
       {canCancel && !isCancelled && !isCompleted && (
-        <button onClick={(e) => { e.stopPropagation(); onCancel(); }} className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-xs font-medium text-left whitespace-nowrap">
-          ✕ Cancel
+        <button onClick={(e) => { e.stopPropagation(); onCancel(); }} className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-md text-xs font-semibold text-left whitespace-nowrap transition-colors">
+          Cancel
         </button>
       )}
       {isHost && isCancelled && (
-        <button onClick={(e) => { e.stopPropagation(); onRevert(); }} className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 text-xs font-medium text-left whitespace-nowrap">
-          🔄 Revert
+        <button onClick={(e) => { e.stopPropagation(); onRevert(); }} className="px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-md text-xs font-semibold text-left whitespace-nowrap transition-colors">
+          Revert
         </button>
       )}
     </div>

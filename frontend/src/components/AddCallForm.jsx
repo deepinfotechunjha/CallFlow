@@ -56,7 +56,6 @@ const AddCallForm = ({ onClose }) => {
         }));
         setCustomerFound(true);
       } else {
-        // Clear fields when no customer is found
         setFormData(prev => ({
           ...prev,
           customerName: '',
@@ -66,7 +65,6 @@ const AddCallForm = ({ onClose }) => {
         setCustomerFound(false);
       }
     } else {
-      // Clear fields when phone is too short
       setFormData(prev => ({
         ...prev,
         customerName: '',
@@ -103,14 +101,12 @@ const AddCallForm = ({ onClose }) => {
     setIsSubmitting(true);
     
     try {
-      // Check for duplicates first
       const isDuplicate = await checkForDuplicate();
       if (isDuplicate) {
         setIsSubmitting(false);
         return;
       }
       
-      // No duplicate, proceed with adding call
       await addCall({
         ...formData,
         createdBy: user.username,
@@ -134,7 +130,6 @@ const AddCallForm = ({ onClose }) => {
       toast.success(message);
       setShowDuplicateModal(false);
       onClose();
-      // Force refresh the calls to ensure UI shows updated callCount
       setTimeout(() => {
         const { fetchCalls } = useCallStore.getState();
         fetchCalls();
@@ -159,64 +154,94 @@ const AddCallForm = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div ref={modalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg sm:text-xl font-bold">Add New Call</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-xl">✕</button>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
+      <div ref={modalRef} className="bg-white rounded-xl p-6 sm:p-7 w-full max-w-lg max-h-[90vh] overflow-y-auto border border-[#E0E2E5] shadow-xl">
+        <div className="flex justify-between items-center mb-5 pb-3 border-b border-[#E0E2E5]">
+          <div>
+            <span className="inline-flex items-center text-[11px] font-bold uppercase tracking-wider text-[#FF2E46] bg-[#FFE8EB] px-2 py-0.5 rounded-md mb-1 border border-[#FF2E46]/20">
+              New Ticket
+            </span>
+            <h2 className="text-lg font-bold text-[#2C2C2C]">Add New Call</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 rounded-lg bg-[#F0F2F5] hover:bg-[#FFE8EB] hover:text-[#FF2E46] text-[#666666] flex items-center justify-center transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
-            <label className="block text-xs sm:text-sm font-medium mb-1">Phone Number *</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#2C2C2C] mb-1">
+              Phone Number <span className="text-[#FF2E46]">*</span>
+            </label>
             <input
               type="tel"
               value={formData.phone}
               onChange={(e) => handlePhoneChange(e.target.value)}
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+              placeholder="e.g. 9876543210"
+              className="w-full px-3 py-2 border border-[#E0E2E5] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#FF2E46]/20 focus:border-[#FF2E46] text-[#2C2C2C] transition-all"
               required
             />
-            {customerFound && <p className="text-green-600 text-xs sm:text-sm">✓ Customer found! Fields auto-filled (you can edit them)</p>}
+            {customerFound && (
+              <p className="text-emerald-600 text-xs font-medium mt-1 flex items-center gap-1">
+                ✓ Customer found! Fields auto-filled (editable).
+              </p>
+            )}
           </div>
 
           <div>
-            <label className="block text-xs sm:text-sm font-medium mb-1">Customer Name *</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#2C2C2C] mb-1">
+              Customer Name <span className="text-[#FF2E46]">*</span>
+            </label>
             <input
               type="text"
               value={formData.customerName}
               onChange={(e) => setFormData(prev => ({ ...prev, customerName: e.target.value }))}
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+              placeholder="Full name or company name"
+              className="w-full px-3 py-2 border border-[#E0E2E5] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#FF2E46]/20 focus:border-[#FF2E46] text-[#2C2C2C] transition-all"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs sm:text-sm font-medium mb-1">Email</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#2C2C2C] mb-1">
+              Email Address
+            </label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+              placeholder="customer@domain.com"
+              className="w-full px-3 py-2 border border-[#E0E2E5] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#FF2E46]/20 focus:border-[#FF2E46] text-[#2C2C2C] transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs sm:text-sm font-medium mb-1">Address *</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#2C2C2C] mb-1">
+              Address <span className="text-[#FF2E46]">*</span>
+            </label>
             <textarea
               value={formData.address}
               onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+              placeholder="Full customer address..."
+              className="w-full px-3 py-2 border border-[#E0E2E5] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#FF2E46]/20 focus:border-[#FF2E46] text-[#2C2C2C] transition-all"
               rows="2"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs sm:text-sm font-medium mb-1">Problem Category *</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#2C2C2C] mb-1">
+              Problem Category <span className="text-[#FF2E46]">*</span>
+            </label>
             <select
               value={formData.category}
               onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-[#E0E2E5] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#FF2E46]/20 focus:border-[#FF2E46] text-[#2C2C2C] transition-all"
               required
             >
               <option value="">Select Category</option>
@@ -227,11 +252,14 @@ const AddCallForm = ({ onClose }) => {
           </div>
 
           <div>
-            <label className="block text-xs sm:text-sm font-medium mb-1">Problem Description *</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#2C2C2C] mb-1">
+              Problem Description <span className="text-[#FF2E46]">*</span>
+            </label>
             <textarea
               value={formData.problem}
               onChange={(e) => setFormData(prev => ({ ...prev, problem: e.target.value }))}
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+              placeholder="Describe issue, device model, or symptoms..."
+              className="w-full px-3 py-2 border border-[#E0E2E5] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#FF2E46]/20 focus:border-[#FF2E46] text-[#2C2C2C] transition-all"
               rows="3"
               required
             />
@@ -239,11 +267,13 @@ const AddCallForm = ({ onClose }) => {
 
           {canAssign && (
             <div>
-              <label className="block text-xs sm:text-sm font-medium mb-1">Assign To</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#2C2C2C] mb-1">
+                Assign To (Optional)
+              </label>
               <select
                 value={formData.assignedTo}
                 onChange={(e) => setFormData(prev => ({ ...prev, assignedTo: e.target.value }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-[#E0E2E5] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#FF2E46]/20 focus:border-[#FF2E46] text-[#2C2C2C] transition-all"
               >
                 <option value="">Select Engineer</option>
                 {users.filter(u => u.role === 'ENGINEER' || u.role === 'ADMIN').map(u => (
@@ -255,11 +285,13 @@ const AddCallForm = ({ onClose }) => {
 
           {formData.assignedTo && (
             <div>
-              <label className="block text-xs sm:text-sm font-medium mb-1">Engineer Instructions</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#2C2C2C] mb-1">
+                Engineer Instructions
+              </label>
               <textarea
                 value={formData.engineerRemark}
                 onChange={(e) => setFormData(prev => ({ ...prev, engineerRemark: e.target.value }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-[#E0E2E5] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#FF2E46]/20 focus:border-[#FF2E46] text-[#2C2C2C] transition-all"
                 rows="2"
                 placeholder="Optional instructions for the assigned engineer..."
                 readOnly={!canAssign}
@@ -267,71 +299,73 @@ const AddCallForm = ({ onClose }) => {
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row gap-2 pt-4">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed font-medium text-sm"
-            >
-              {isSubmitting ? 'Adding...' : 'Add Call'}
-            </button>
+          <div className="flex gap-2.5 pt-3 border-t border-[#E0E2E5]">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed text-sm"
+              className="flex-1 py-2 bg-[#F0F2F5] hover:bg-[#E0E2E5] text-[#2C2C2C] rounded-lg font-semibold text-xs transition-colors"
             >
               Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 bg-[#FF2E46] hover:bg-[#E02038] text-white py-2 rounded-lg font-semibold text-xs shadow-xs disabled:opacity-50 transition-colors"
+            >
+              {isSubmitting ? 'Registering Call...' : 'Create Call Ticket'}
             </button>
           </div>
         </form>
         
         {/* Duplicate Detection Modal */}
         {showDuplicateModal && duplicateCall && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-60 p-4">
-            <div ref={duplicateModalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-              <h3 className="text-base sm:text-lg font-bold mb-4 text-orange-600">Similar Call Found!</h3>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-60 p-4">
+            <div ref={duplicateModalRef} className="bg-white rounded-xl p-5 w-full max-w-lg border border-[#E0E2E5] shadow-xl animate-in fade-in duration-150">
+              <div className="inline-flex items-center text-[11px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md mb-2">
+                Duplicate Detected
+              </div>
+              <h3 className="text-base font-bold text-[#2C2C2C] mb-3">Similar Call Found</h3>
               
-              <div className="mb-4 p-3 bg-gray-50 rounded">
-                <p className="text-xs sm:text-sm text-gray-600 mb-2">Existing call details:</p>
-                <p className="text-xs sm:text-sm break-words"><strong>Call ID:</strong> #{duplicateCall.id}</p>
-                <p className="text-xs sm:text-sm break-words"><strong>Customer:</strong> {duplicateCall.customerName}</p>
-                <p className="text-xs sm:text-sm break-words"><strong>Phone:</strong> {duplicateCall.phone}</p>
-                <p className="text-xs sm:text-sm break-words"><strong>Category:</strong> {duplicateCall.category}</p>
-                <p className="text-xs sm:text-sm break-words"><strong>Problem:</strong> {duplicateCall.problem}</p>
-                <p className="text-xs sm:text-sm"><strong>Status:</strong> {duplicateCall.status}</p>
-                <p className="text-xs sm:text-sm break-words"><strong>Created:</strong> {new Date(duplicateCall.createdAt).toLocaleString()}</p>
-                {duplicateCall.assignedTo && <p className="text-xs sm:text-sm break-words"><strong>Assigned to:</strong> {duplicateCall.assignedTo}</p>}
+              <div className="mb-4 p-3.5 bg-[#F8F9FA] border border-[#E0E2E5] rounded-lg text-xs space-y-1 text-[#2C2C2C]">
+                <p><strong>Call ID:</strong> #{duplicateCall.id}</p>
+                <p><strong>Customer:</strong> {duplicateCall.customerName}</p>
+                <p><strong>Phone:</strong> {duplicateCall.phone}</p>
+                <p><strong>Category:</strong> {duplicateCall.category}</p>
+                <p><strong>Problem:</strong> {duplicateCall.problem}</p>
+                <p><strong>Status:</strong> {duplicateCall.status}</p>
+                <p><strong>Created:</strong> {new Date(duplicateCall.createdAt).toLocaleString()}</p>
+                {duplicateCall.assignedTo && <p><strong>Assigned To:</strong> {duplicateCall.assignedTo}</p>}
                 {duplicateCall.callCount > 1 && (
-                  <p className="text-xs sm:text-sm text-orange-600 font-medium">Called {duplicateCall.callCount}x</p>
+                  <p className="text-[#FF2E46] font-bold">Called {duplicateCall.callCount}x</p>
                 )}
               </div>
               
-              <p className="text-xs sm:text-sm text-gray-700 mb-6">
+              <p className="text-xs text-[#666666] mb-4">
                 A similar call exists for this customer in the same category. What would you like to do?
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex gap-2">
                 <button
                   onClick={handleUpdateExisting}
-                  className="flex-1 bg-orange-600 text-white py-2 px-2 sm:px-4 rounded hover:bg-orange-700 font-medium text-xs sm:text-sm"
+                  className="flex-1 bg-[#2C2C2C] hover:bg-[#1A1A1A] text-white py-2 px-3 rounded-lg font-semibold text-xs transition-colors"
                 >
-                  🔄 Update Existing
+                  Update Existing
                 </button>
                 <button
                   onClick={handleAddNew}
-                  className="flex-1 bg-blue-600 text-white py-2 px-2 sm:px-4 rounded hover:bg-blue-700 font-medium text-xs sm:text-sm"
+                  className="flex-1 bg-[#FF2E46] hover:bg-[#E02038] text-white py-2 px-3 rounded-lg font-semibold text-xs shadow-xs transition-colors"
                 >
-                  ➕ Add New
+                  Add New Ticket
                 </button>
                 <button
                   onClick={() => {
                     setShowDuplicateModal(false);
                     setIsSubmitting(false);
                   }}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-2 sm:px-4 rounded hover:bg-gray-400 text-xs sm:text-sm"
+                  className="px-3 py-2 bg-[#F0F2F5] hover:bg-[#E0E2E5] text-[#2C2C2C] rounded-lg font-semibold text-xs transition-colors"
                 >
-                  ❌ Cancel
+                  Cancel
                 </button>
               </div>
             </div>

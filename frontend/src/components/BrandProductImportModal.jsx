@@ -78,33 +78,48 @@ const BrandProductImportModal = ({ brand, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div ref={modalRef} className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-xl">
-        <div className="flex items-center justify-between p-5 border-b">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
+      <div ref={modalRef} className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-xl border border-[#E0E2E5] overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E0E2E5] bg-[#F8F9FA]">
           <div>
-            <h2 className="text-lg font-bold text-gray-800">📦 Import Products</h2>
-            <p className="text-sm text-gray-500 mt-0.5">Brand: <span className="font-semibold text-blue-600">{brand.name}</span></p>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#FF2E46]"></span>
+              <h2 className="text-base font-bold text-[#2C2C2C]">Import Catalog Products</h2>
+            </div>
+            <p className="text-xs text-[#666666] mt-0.5">Target Brand: <span className="font-bold text-[#FF2E46]">{brand.name}</span></p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+          <button 
+            onClick={onClose} 
+            className="w-7 h-7 rounded-lg bg-white text-[#666666] hover:text-[#FF2E46] hover:bg-[#FFE8EB] flex items-center justify-center transition-colors border border-[#E0E2E5]"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
         <div className="p-5 overflow-y-auto flex-1 space-y-4">
           {/* File upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Upload Excel / CSV file <span className="text-red-500">*</span>
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#2C2C2C] mb-1">
+              Upload Excel / CSV file <span className="text-[#FF2E46]">*</span>
             </label>
-            <p className="text-xs text-gray-500 mb-3">
-              File must have columns: <code className="bg-gray-100 px-1 rounded">code</code> and <code className="bg-gray-100 px-1 rounded">configuration</code> in the first row.
+            <p className="text-xs text-[#666666] mb-2.5">
+              File must have header columns: <code className="bg-[#F0F2F5] text-[#2C2C2C] px-1.5 py-0.5 rounded text-[11px] font-mono font-bold">code</code> and <code className="bg-[#F0F2F5] text-[#2C2C2C] px-1.5 py-0.5 rounded text-[11px] font-mono font-bold">configuration</code>.
             </p>
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+              className="border-2 border-dashed border-[#E0E2E5] rounded-xl p-6 text-center cursor-pointer hover:border-[#FF2E46] hover:bg-[#FFE8EB]/10 transition-all"
             >
-              <div className="text-3xl mb-2">📄</div>
-              <p className="text-sm text-gray-600">
-                {fileName ? <span className="font-medium text-blue-600">{fileName}</span> : 'Click to select .xlsx or .csv file'}
+              <div className="w-10 h-10 bg-[#F0F2F5] rounded-lg flex items-center justify-center mx-auto mb-2 text-[#2C2C2C]">
+                <svg className="w-5 h-5 text-[#2C2C2C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <p className="text-xs font-semibold text-[#2C2C2C]">
+                {fileName ? <span className="font-bold text-[#FF2E46]">{fileName}</span> : 'Click or drop .xlsx / .csv file here'}
               </p>
+              <p className="text-[11px] text-[#666666] mt-0.5">Spreadsheet will be processed securely</p>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -114,64 +129,66 @@ const BrandProductImportModal = ({ brand, onClose }) => {
               />
             </div>
             {parseError && (
-              <p className="text-xs text-red-600 mt-2 bg-red-50 border border-red-200 rounded p-2">{parseError}</p>
+              <p className="text-xs text-[#FF2E46] mt-2 bg-[#FFE8EB] border border-[#FF2E46]/30 rounded-lg p-2.5 font-semibold">{parseError}</p>
             )}
           </div>
 
           {/* Preview */}
           {parsedProducts && (
             <>
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                <p className="text-sm font-semibold text-green-700">✓ {parsedProducts.length} products parsed successfully</p>
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                <p className="text-xs font-semibold text-emerald-800">{parsedProducts.length} products parsed and ready for import</p>
               </div>
 
               {/* Mode selection */}
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-3">How should we handle existing products for <span className="font-bold">{brand.name}</span>?</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#2C2C2C] mb-2">
+                  Import Action for <span className="text-[#FF2E46]">{brand.name}</span>
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <button
                     type="button"
                     onClick={() => setMode('replace')}
-                    className={`p-4 rounded-lg border-2 text-left transition-all ${mode === 'replace' ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-gray-300'}`}
+                    className={`p-3.5 rounded-lg border text-left transition-all ${mode === 'replace' ? 'border-[#FF2E46] bg-[#FFE8EB]/20 shadow-xs' : 'border-[#E0E2E5] hover:border-gray-300 bg-white'}`}
                   >
-                    <p className="font-semibold text-sm text-gray-800">🔄 Replace</p>
-                    <p className="text-xs text-gray-500 mt-1">Delete all existing products for this brand and import the new sheet. Use when the sheet is a full updated list.</p>
+                    <p className="font-bold text-xs text-[#2C2C2C]">Full Replace</p>
+                    <p className="text-[11px] text-[#666666] mt-0.5">Overwrites and deletes existing products for this brand with the new list.</p>
                   </button>
                   <button
                     type="button"
                     onClick={() => setMode('merge')}
-                    className={`p-4 rounded-lg border-2 text-left transition-all ${mode === 'merge' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
+                    className={`p-3.5 rounded-lg border text-left transition-all ${mode === 'merge' ? 'border-[#2C2C2C] bg-[#F0F2F5] shadow-xs' : 'border-[#E0E2E5] hover:border-gray-300 bg-white'}`}
                   >
-                    <p className="font-semibold text-sm text-gray-800">➕ Merge</p>
-                    <p className="text-xs text-gray-500 mt-1">Keep existing products and add only new codes from this sheet. Duplicate codes are skipped automatically.</p>
+                    <p className="font-bold text-xs text-[#2C2C2C]">Append / Merge</p>
+                    <p className="text-[11px] text-[#666666] mt-0.5">Keeps existing products and adds only unique new codes without duplicates.</p>
                   </button>
                 </div>
               </div>
 
               {/* Preview table */}
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Preview (first 10 rows)</p>
-                <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                <p className="text-[11px] font-bold text-[#666666] uppercase tracking-wider mb-1.5">Preview (first 10 items)</p>
+                <div className="overflow-x-auto border border-[#E0E2E5] rounded-lg">
                   <table className="min-w-full text-xs">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-[#2C2C2C] text-white">
                       <tr>
-                        <th className="px-3 py-2 text-left font-semibold text-gray-600 border-b">#</th>
-                        <th className="px-3 py-2 text-left font-semibold text-gray-600 border-b">Code</th>
-                        <th className="px-3 py-2 text-left font-semibold text-gray-600 border-b">Configuration</th>
+                        <th className="px-3 py-2 text-left font-bold uppercase tracking-wider text-[10px] w-12 border-r border-[#3D3D3D]">#</th>
+                        <th className="px-3 py-2 text-left font-bold uppercase tracking-wider text-[10px] border-r border-[#3D3D3D]">Code</th>
+                        <th className="px-3 py-2 text-left font-bold uppercase tracking-wider text-[10px]">Configuration</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-[#E0E2E5] bg-white">
                       {parsedProducts.slice(0, 10).map((p, i) => (
-                        <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                          <td className="px-3 py-2 text-gray-500 border-b border-gray-100">{i + 1}</td>
-                          <td className="px-3 py-2 font-medium text-gray-800 border-b border-gray-100">{p.code}</td>
-                          <td className="px-3 py-2 text-gray-700 border-b border-gray-100">{p.configuration}</td>
+                        <tr key={i} className="hover:bg-[#F8F9FA] transition-colors">
+                          <td className="px-3 py-2 text-[#666666] font-mono">{i + 1}</td>
+                          <td className="px-3 py-2 font-semibold text-[#2C2C2C]">{p.code}</td>
+                          <td className="px-3 py-2 text-[#666666]">{p.configuration}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                   {parsedProducts.length > 10 && (
-                    <p className="text-xs text-gray-400 text-center py-2">... and {parsedProducts.length - 10} more rows</p>
+                    <p className="text-xs text-[#666666] text-center py-1.5 bg-[#F8F9FA] font-medium border-t border-[#E0E2E5]">... and {parsedProducts.length - 10} more rows</p>
                   )}
                 </div>
               </div>
@@ -179,18 +196,18 @@ const BrandProductImportModal = ({ brand, onClose }) => {
           )}
         </div>
 
-        <div className="p-5 border-t flex gap-3">
+        <div className="px-5 py-3.5 border-t border-[#E0E2E5] bg-[#F8F9FA] flex gap-2.5">
           <button
             onClick={onClose}
             disabled={isImporting}
-            className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
+            className="flex-1 py-2 px-3 bg-white border border-[#E0E2E5] text-[#2C2C2C] rounded-lg hover:bg-[#F0F2F5] text-xs font-semibold uppercase tracking-wider transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleImport}
             disabled={!parsedProducts || !mode || isImporting}
-            className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300 text-sm font-medium"
+            className="flex-1 py-2 px-3 bg-[#FF2E46] text-white rounded-lg hover:bg-[#E02038] disabled:opacity-50 text-xs font-semibold uppercase tracking-wider transition-colors shadow-xs"
           >
             {isImporting ? 'Importing...' : `Import ${parsedProducts ? parsedProducts.length : ''} Products`}
           </button>

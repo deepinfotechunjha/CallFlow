@@ -90,94 +90,99 @@ const LocationSettings = () => {
 
   if (user?.role !== 'HOST') {
     return (
-      <div className="max-w-4xl mx-auto p-4">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl">
-          Access denied. Only HOST users can manage locations.
+      <div className="max-w-5xl mx-auto px-2 sm:px-4 py-4">
+        <div className="bg-[#FFE8EB] border border-[#FF2E46]/30 text-[#FF2E46] px-4 py-3 rounded-xl flex items-center gap-3">
+          <span className="font-semibold text-xs sm:text-sm">Access denied. Only HOST users can manage locations.</span>
         </div>
       </div>
     );
   }
 
-
-
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-3">
+    <div className="max-w-5xl mx-auto px-2 sm:px-4 py-2">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 bg-white p-5 sm:p-6 rounded-xl border border-[#E0E2E5] shadow-xs">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Location Settings 📍</h1>
-          <p className="text-gray-600">Manage dispatch locations for orders</p>
+          <span className="inline-block text-[#FF2E46] text-[11px] font-bold uppercase tracking-widest bg-[#FFE8EB] px-2.5 py-1 rounded-md mb-2 border border-[#FF2E46]/20">
+            DISPATCH HUBS
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#2C2C2C]">Location Settings</h1>
+          <p className="text-[#666666] text-xs sm:text-sm mt-1">Manage dispatch hubs and branches for orders and logistics</p>
         </div>
         <button
           onClick={openAdd}
-          className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium text-sm sm:text-base w-full sm:w-auto shadow-sm transition-all"
+          className="inline-flex items-center justify-center gap-2 bg-[#FF2E46] hover:bg-[#FF5A71] text-white px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm shadow-xs transition-all w-full sm:w-auto"
         >
-          + Add Location
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+          </svg>
+          Add Location
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        {/* Mobile */}
-        <div className="lg:hidden divide-y divide-gray-200">
+      <div className="bg-white rounded-xl shadow-xs border border-[#E0E2E5] overflow-hidden">
+        {/* Mobile View */}
+        <div className="lg:hidden divide-y divide-[#E0E2E5]">
           {locations.length === 0 ? (
-            <div className="p-6 text-center text-gray-500">
-              <div className="text-4xl mb-4">📍</div>
-              <p className="text-lg font-medium">No locations found</p>
-              <p className="text-sm">Add your first dispatch location!</p>
+            <div className="p-8 text-center text-[#666666]">
+              <p className="text-sm font-semibold text-[#2C2C2C]">No locations found</p>
+              <p className="text-xs text-[#666666] mt-1">Add your first dispatch location!</p>
             </div>
-          ) : locations.map((location, index) => (
-            <div key={location.id} className="p-4 hover:bg-gray-50">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-sm font-medium text-gray-500">#{index + 1}</span>
-                <span className="text-lg">📍</span>
-                <span className="text-sm font-semibold text-gray-900">{location.name}</span>
+          ) : (
+            locations.map((location, index) => (
+              <div key={location.id} className="p-4 hover:bg-[#F8F9FA] transition-colors">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-[11px] font-bold text-[#FF2E46] bg-[#FFE8EB] px-2 py-0.5 rounded-md">#{index + 1}</span>
+                  <span className="text-sm font-bold text-[#2C2C2C]">{location.name}</span>
+                </div>
+                <div className="text-xs text-[#666666] mb-3">
+                  Created: {new Date(location.createdAt).toLocaleDateString()}
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => openEdit(location)} className="flex-1 bg-gray-100 text-[#2C2C2C] py-1.5 rounded-md text-xs font-semibold hover:bg-gray-200 transition-colors">Edit</button>
+                  <button onClick={() => confirmDelete(location)} className="flex-1 bg-red-50 text-red-700 border border-red-200 py-1.5 rounded-md text-xs font-semibold hover:bg-red-100 transition-colors">Delete</button>
+                </div>
               </div>
-              <div className="text-xs text-gray-500 mb-3">{new Date(location.createdAt).toLocaleDateString()}</div>
-              <div className="flex gap-2">
-                <button onClick={() => openEdit(location)} className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-xs font-medium hover:bg-blue-700">Edit</button>
-                <button onClick={() => confirmDelete(location)} className="flex-1 bg-red-600 text-white py-2 rounded-lg text-xs font-medium hover:bg-red-700">Delete</button>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
-        {/* Desktop */}
+        {/* Desktop View */}
         <div className="hidden lg:block overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-[#E0E2E5]">
+            <thead className="bg-[#2C2C2C]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sr.No</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D] w-16">Sr.No</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D]">Location Name</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D]">Created At</th>
+                <th className="px-4 py-3 text-right text-xs font-bold text-white uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-[#F0F2F5]">
               {locations.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
-                    <div className="text-4xl mb-4">📍</div>
-                    <p className="text-lg font-medium">No locations found</p>
-                    <p className="text-sm">Add your first dispatch location!</p>
+                  <td colSpan="4" className="px-6 py-12 text-center text-[#666666]">
+                    <p className="text-sm font-semibold text-[#2C2C2C]">No locations found</p>
+                    <p className="text-xs text-[#666666] mt-1">Add your first dispatch location!</p>
                   </td>
                 </tr>
-              ) : locations.map((location, index) => (
-                <tr key={location.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">📍</span>
-                      <span className="text-sm font-medium text-gray-900">{location.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(location.createdAt).toLocaleDateString()}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex gap-2">
-                      <button onClick={() => openEdit(location)} className="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-blue-700 transition-colors">Edit</button>
-                      <button onClick={() => confirmDelete(location)} className="bg-red-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-red-700 transition-colors">Delete</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              ) : (
+                locations.map((location, index) => (
+                  <tr key={location.id} className="hover:bg-[#F8F9FA] transition-colors">
+                    <td className="px-4 py-3.5 whitespace-nowrap text-xs font-semibold text-[#666666]">{index + 1}</td>
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <span className="text-xs sm:text-sm font-bold text-[#2C2C2C]">{location.name}</span>
+                    </td>
+                    <td className="px-4 py-3.5 whitespace-nowrap text-xs text-[#666666]">{new Date(location.createdAt).toLocaleDateString()}</td>
+                    <td className="px-4 py-3.5 whitespace-nowrap text-right text-xs">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button onClick={() => openEdit(location)} className="bg-gray-100 hover:bg-gray-200 text-[#2C2C2C] px-3 py-1.5 rounded-md text-xs font-semibold transition-colors">Edit</button>
+                        <button onClick={() => confirmDelete(location)} className="bg-red-50 text-red-700 border border-red-200 px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-red-100 transition-colors">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -185,25 +190,33 @@ const LocationSettings = () => {
 
       {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div ref={addModalRef} className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-md">
-            <h2 className="text-lg sm:text-xl font-bold mb-4">Add New Location</h2>
-            <form onSubmit={submitAdd}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Location Name *</label>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div ref={addModalRef} className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-md shadow-lg border border-[#E0E2E5]">
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#E0E2E5]">
+              <h2 className="text-base font-bold text-[#2C2C2C]">Add New Location</h2>
+              <button
+                onClick={() => { setShowAddModal(false); setNewLocationName(''); }}
+                className="text-[#666666] hover:text-[#2C2C2C] text-lg font-bold leading-none p-1"
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={submitAdd} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1">Location Name <span className="text-[#FF2E46]">*</span></label>
                 <input
                   type="text"
                   value={newLocationName}
                   onChange={e => setNewLocationName(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full px-3.5 py-2 bg-white border border-[#E0E2E5] rounded-lg text-xs sm:text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-2 focus:ring-[#FF2E46]/20 transition-all"
                   placeholder="e.g., UNJHA"
                   required
                   autoFocus
                 />
               </div>
-              <div className="flex gap-2">
-                <button type="submit" className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-medium text-sm">Add Location</button>
-                <button type="button" onClick={() => { setShowAddModal(false); setNewLocationName(''); }} className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 text-sm font-medium">Cancel</button>
+              <div className="flex gap-2.5 pt-3 border-t border-[#E0E2E5]">
+                <button type="button" onClick={() => { setShowAddModal(false); setNewLocationName(''); }} className="flex-1 py-2 border border-[#E0E2E5] rounded-lg text-[#2C2C2C] hover:bg-[#F0F2F5] text-xs sm:text-sm font-semibold transition-colors">Cancel</button>
+                <button type="submit" className="flex-1 bg-[#FF2E46] hover:bg-[#FF5A71] text-white py-2 rounded-lg font-semibold text-xs sm:text-sm shadow-xs transition-all">Next</button>
               </div>
             </form>
           </div>
@@ -212,24 +225,32 @@ const LocationSettings = () => {
 
       {/* Edit Modal */}
       {showEditModal && editingLocation && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div ref={editModalRef} className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-md">
-            <h2 className="text-lg sm:text-xl font-bold mb-4">Edit Location</h2>
-            <form onSubmit={submitEdit}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Location Name *</label>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div ref={editModalRef} className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-md shadow-lg border border-[#E0E2E5]">
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#E0E2E5]">
+              <h2 className="text-base font-bold text-[#2C2C2C]">Edit Location</h2>
+              <button
+                onClick={() => { setShowEditModal(false); setEditingLocation(null); setEditLocationName(''); }}
+                className="text-[#666666] hover:text-[#2C2C2C] text-lg font-bold leading-none p-1"
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={submitEdit} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1">Location Name <span className="text-[#FF2E46]">*</span></label>
                 <input
                   type="text"
                   value={editLocationName}
                   onChange={e => setEditLocationName(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full px-3.5 py-2 bg-white border border-[#E0E2E5] rounded-lg text-xs sm:text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-2 focus:ring-[#FF2E46]/20 transition-all"
                   required
                   autoFocus
                 />
               </div>
-              <div className="flex gap-2">
-                <button type="submit" className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-medium text-sm">Update Location</button>
-                <button type="button" onClick={() => { setShowEditModal(false); setEditingLocation(null); setEditLocationName(''); }} className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 text-sm font-medium">Cancel</button>
+              <div className="flex gap-2.5 pt-3 border-t border-[#E0E2E5]">
+                <button type="button" onClick={() => { setShowEditModal(false); setEditingLocation(null); setEditLocationName(''); }} className="flex-1 py-2 border border-[#E0E2E5] rounded-lg text-[#2C2C2C] hover:bg-[#F0F2F5] text-xs sm:text-sm font-semibold transition-colors">Cancel</button>
+                <button type="submit" className="flex-1 bg-[#FF2E46] hover:bg-[#FF5A71] text-white py-2 rounded-lg font-semibold text-xs sm:text-sm shadow-xs transition-all">Next</button>
               </div>
             </form>
           </div>
@@ -238,35 +259,45 @@ const LocationSettings = () => {
 
       {/* Action Secret Modal */}
       {showActionSecret && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div ref={actionRef} className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Confirm Action</h2>
-            <p className="text-gray-600 mb-4">Enter your secret password to confirm:</p>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div ref={actionRef} className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-md shadow-lg border border-[#E0E2E5]">
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#E0E2E5]">
+              <h2 className="text-base font-bold text-[#2C2C2C]">Security Confirmation</h2>
+              <button
+                onClick={() => { setShowActionSecret(false); setActionPassword(''); setPendingAction(null); setIsConfirming(false); }}
+                className="text-[#666666] hover:text-[#2C2C2C] text-lg font-bold leading-none p-1"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-xs sm:text-sm text-[#666666] mb-4">Please enter your HOST secret password to confirm this location change:</p>
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Secret Password *</label>
+              <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1">Secret Password <span className="text-[#FF2E46]">*</span></label>
               <input
                 type="password"
                 value={actionPassword}
                 onChange={e => setActionPassword(e.target.value)}
                 onKeyPress={e => e.key === 'Enter' && executeAction()}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3.5 py-2 bg-white border border-[#E0E2E5] rounded-lg text-xs sm:text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-2 focus:ring-[#FF2E46]/20 transition-all"
                 placeholder="Enter secret password"
                 autoFocus
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2.5">
+              <button
+                onClick={() => { setShowActionSecret(false); setActionPassword(''); setPendingAction(null); setIsConfirming(false); }}
+                className="flex-1 py-2 border border-[#E0E2E5] rounded-lg text-[#2C2C2C] hover:bg-[#F0F2F5] text-xs sm:text-sm font-semibold transition-colors"
+              >
+                Cancel
+              </button>
               <button
                 onClick={executeAction}
                 disabled={isConfirming}
-                className={`flex-1 py-2 rounded font-medium ${isConfirming ? 'bg-blue-400 text-white cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                className={`flex-1 py-2 rounded-lg font-semibold text-xs sm:text-sm shadow-xs transition-all ${
+                  isConfirming ? 'bg-[#FF5A71] text-white cursor-not-allowed' : 'bg-[#FF2E46] text-white hover:bg-[#FF5A71]'
+                }`}
               >
-                {isConfirming ? 'Processing...' : 'Confirm'}
-              </button>
-              <button
-                onClick={() => { setShowActionSecret(false); setActionPassword(''); setPendingAction(null); setIsConfirming(false); }}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
-              >
-                Cancel
+                {isConfirming ? 'Authorizing...' : 'Confirm Action'}
               </button>
             </div>
           </div>

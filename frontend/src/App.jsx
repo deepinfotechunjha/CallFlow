@@ -54,17 +54,17 @@ function App() {
   // Show loading while initializing
   if (!isInitialized) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="flex items-center justify-center min-h-screen bg-[#F8F9FA]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF2E46] mx-auto mb-4"></div>
+          <p className="text-[#666666] font-medium text-sm">Loading CallFlow Portal...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen font-sans">
+    <div className="bg-[#F8F9FA] min-h-screen font-sans text-[#2C2C2C]">
       {showNavbar && <Navbar />}
       <main className="p-4 sm:p-6 lg:p-8 max-w-screen-2xl mx-auto">
         <Routes>

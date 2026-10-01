@@ -41,7 +41,6 @@ const ShareModal = ({ isOpen, onClose }) => {
       await navigator.clipboard.writeText(shareUrl);
       toast.success('Link copied to clipboard!');
     } catch (error) {
-      // Fallback for older browsers
       const textArea = document.createElement('textarea');
       textArea.value = shareUrl;
       document.body.appendChild(textArea);
@@ -61,127 +60,102 @@ const ShareModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm sm:max-w-md max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
-        <div className="p-4 sm:p-6">
-          <div className="flex justify-between items-center mb-4 sm:mb-6">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
-              <span>🔗</span> Share Call Form
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-3 sm:p-4 animate-in fade-in duration-150">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm sm:max-w-md max-h-[95vh] overflow-y-auto border border-[#E0E2E5]">
+        <div className="p-5 sm:p-6">
+          <div className="flex justify-between items-center mb-4 pb-3 border-b border-[#E0E2E5]">
+            <h2 className="text-base font-bold text-[#2C2C2C] flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#FF2E46]"></span>
+              Share Call Form
             </h2>
             <button
               onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600 text-xl sm:text-2xl font-bold transition-colors"
+              className="w-7 h-7 rounded-lg bg-[#F0F2F5] hover:bg-[#FFE8EB] hover:text-[#FF2E46] text-[#666666] flex items-center justify-center transition-colors"
             >
-              ×
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
 
           {!linkGenerated ? (
             <div className="text-center">
-              <div className="mb-4 sm:mb-6">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                  <span className="text-xl sm:text-2xl">📤</span>
+              <div className="mb-4">
+                <div className="w-11 h-11 bg-[#FFE8EB] text-[#FF2E46] rounded-lg flex items-center justify-center mx-auto mb-2.5">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
                 </div>
-                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">Generate Share Link</h3>
-                <p className="text-gray-600 text-xs sm:text-sm px-2">
-                  Create a one-time use link that allows anyone to submit a call directly to your system.
+                <h3 className="text-sm font-bold text-[#2C2C2C] mb-1">Generate Public Intake Link</h3>
+                <p className="text-[#666666] text-xs">
+                  Create a secure, one-time link that allows customers or staff to submit ticket details directly.
                 </p>
               </div>
 
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-                <div className="flex items-start gap-2 sm:gap-3">
-                  <span className="text-yellow-600 text-base sm:text-lg">⚠️</span>
-                  <div className="text-left">
-                    <h4 className="font-medium text-yellow-800 mb-1 text-sm sm:text-base">Important Notes:</h4>
-                    <ul className="text-xs sm:text-sm text-yellow-700 space-y-1">
-                      <li>• Link expires after 24 hours</li>
-                      <li>• Can only be used once</li>
-                      <li>• Automatically deleted after use</li>
-                      <li>• No authentication required</li>
-                    </ul>
-                  </div>
-                </div>
+              <div className="bg-[#F8F9FA] border border-[#E0E2E5] rounded-lg p-3.5 mb-4 text-left text-xs text-[#666666] space-y-1">
+                <p className="font-bold text-[#2C2C2C]">Security &amp; Policy:</p>
+                <p>&bull; Link expires automatically after 24 hours</p>
+                <p>&bull; Can be submitted only once</p>
+                <p>&bull; Directly logs to CallFlow database</p>
               </div>
 
               <button
                 onClick={generateShareLink}
                 disabled={isGenerating}
-                className={`w-full py-2.5 sm:py-3 px-4 rounded-lg font-medium text-sm sm:text-base transition-all ${
-                  isGenerating
-                    ? 'bg-gray-400 cursor-not-allowed text-white'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                }`}
+                className="w-full py-2.5 px-4 rounded-lg font-semibold text-xs text-white bg-[#FF2E46] hover:bg-[#E02038] shadow-xs disabled:opacity-50 transition-colors"
               >
-                {isGenerating ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white"></div>
-                    Generating...
-                  </span>
-                ) : (
-                  'Generate Share Link'
-                )}
+                {isGenerating ? 'Generating Secure Link...' : 'Generate Share Link'}
               </button>
             </div>
           ) : (
             <div>
-              <div className="mb-4 sm:mb-6">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                  <span className="text-xl sm:text-2xl">✅</span>
+              <div className="mb-4 text-center">
+                <div className="w-11 h-11 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center mx-auto mb-2.5 border border-emerald-200">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
                 </div>
-                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">Link Generated Successfully!</h3>
-                <p className="text-gray-600 text-xs sm:text-sm px-2">
-                  Share this link with anyone who needs to submit a call. It will expire in 24 hours.
+                <h3 className="text-sm font-bold text-[#2C2C2C] mb-1">Link Generated Successfully</h3>
+                <p className="text-[#666666] text-xs">
+                  Copy and send this link to the customer.
                 </p>
               </div>
 
-              <div className="mb-4 sm:mb-6">
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Share Link:</label>
-                <div className="flex gap-1 sm:gap-2">
+              <div className="mb-4">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#2C2C2C] mb-1.5">
+                  Shareable Link:
+                </label>
+                <div className="flex gap-2">
                   <input
                     type="text"
                     value={shareUrl}
                     readOnly
-                    className="flex-1 p-2 sm:p-3 border border-gray-300 rounded-lg bg-gray-50 text-xs sm:text-sm font-mono"
+                    className="flex-1 px-3 py-2 border border-[#E0E2E5] rounded-lg bg-[#F8F9FA] text-xs text-[#2C2C2C] font-mono focus:outline-none"
                   />
                   <button
                     onClick={copyToClipboard}
-                    className="px-2 sm:px-4 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm font-medium whitespace-nowrap"
+                    className="px-3.5 py-2 bg-[#2C2C2C] hover:bg-[#1A1A1A] text-white rounded-lg text-xs font-semibold transition-colors whitespace-nowrap"
                   >
-                    📋 Copy
+                    Copy Link
                   </button>
                 </div>
               </div>
 
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-                <div className="flex items-start gap-2 sm:gap-3">
-                  <span className="text-green-600 text-base sm:text-lg">ℹ️</span>
-                  <div className="text-left">
-                    <h4 className="font-medium text-green-800 mb-1 text-sm sm:text-base">How it works:</h4>
-                    <ul className="text-xs sm:text-sm text-green-700 space-y-1">
-                      <li>• Anyone can open this link</li>
-                      <li>• They'll see a simple call form</li>
-                      <li>• After submission, the link becomes invalid</li>
-                      <li>• The call appears in your dashboard</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <div className="flex gap-2">
                 <button
                   onClick={() => {
                     setLinkGenerated(false);
                     setShareUrl('');
                   }}
-                  className="flex-1 py-2.5 sm:py-3 px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base"
+                  className="flex-1 py-2 px-3 border border-[#E0E2E5] text-[#2C2C2C] rounded-lg hover:bg-[#F8F9FA] font-semibold text-xs transition-colors"
                 >
-                  Generate New
+                  Generate Another
                 </button>
                 <button
                   onClick={handleClose}
-                  className="flex-1 py-2.5 sm:py-3 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium text-sm sm:text-base"
+                  className="flex-1 py-2 px-3 bg-[#FF2E46] text-white rounded-lg hover:bg-[#E02038] font-semibold text-xs transition-colors shadow-xs"
                 >
-                  Close
+                  Done
                 </button>
               </div>
             </div>

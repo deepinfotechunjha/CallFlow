@@ -35,107 +35,110 @@ const OrderBillModal = ({ order, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div ref={modalRef} className="bg-white rounded-xl w-full max-w-md shadow-xl">
-        <div className="flex items-center justify-between p-5 border-b">
-          <h3 className="text-lg font-bold text-gray-800">
-            {step === 1 ? '🧾 Bill Order' : '✅ Complete Order'}
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
+      <div ref={modalRef} className="bg-white rounded-xl w-full max-w-md shadow-xl border border-[#E0E2E5] p-5 sm:p-6">
+        <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#E0E2E5]">
+          <h3 className="text-base font-bold text-[#2C2C2C]">
+            {step === 1 ? 'Bill Order' : 'Transport Order'}
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+          <button onClick={onClose} className="w-7 h-7 rounded-lg bg-[#F0F2F5] hover:bg-[#FFE8EB] hover:text-[#FF2E46] text-[#666666] flex items-center justify-center transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
-        <div className="p-5 space-y-4">
-          <p className="text-sm text-gray-600">
-            Firm: <span className="font-semibold text-gray-800">{order.salesEntry?.firmName}</span>
+        <div className="space-y-3.5">
+          <p className="text-xs text-[#666666]">
+            Firm: <strong className="text-[#2C2C2C]">{order.salesEntry?.firmName}</strong>
           </p>
           {order.orderRemark && (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Order Remark</p>
+            <div className="bg-[#F8F9FA] border border-[#E0E2E5] rounded-lg p-3">
+              <p className="text-[10px] font-bold text-[#666666] uppercase tracking-wider mb-1">Order Remark</p>
               <OrderRemarkDisplay remark={order.orderRemark} />
             </div>
           )}
 
           {/* Step indicator */}
           <div className="flex items-center gap-2 text-xs">
-            <span className={`px-2 py-1 rounded-full font-medium ${step === 1 ? 'bg-blue-600 text-white' : 'bg-green-100 text-green-700'}`}>
+            <span className={`px-2.5 py-0.5 rounded-md font-semibold text-[11px] ${step === 1 ? 'bg-[#FF2E46] text-white shadow-xs' : 'bg-[#2C2C2C] text-white'}`}>
               1. Billing
             </span>
-            <span className="text-gray-300">→</span>
-            <span className={`px-2 py-1 rounded-full font-medium ${step === 2 ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
-              2. Completion
+            <span className="text-[#E0E2E5]">→</span>
+            <span className={`px-2.5 py-0.5 rounded-md font-semibold text-[11px] ${step === 2 ? 'bg-[#FF2E46] text-white shadow-xs' : 'bg-[#F0F2F5] text-[#666666]'}`}>
+              2. Transport
             </span>
           </div>
 
           {step === 1 && (
-            <>
+            <div className="space-y-3 pt-1">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Billing Remark <span className="text-red-500">*</span>
+                <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1">
+                  Billing Remark <span className="text-[#FF2E46]">*</span>
                 </label>
                 <textarea
                   value={billingRemark}
                   onChange={e => setBillingRemark(e.target.value)}
                   rows={3}
-                  placeholder="Enter billing remarks..."
+                  placeholder="Enter invoice number / billing details..."
                   autoFocus
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-2 focus:ring-[#FF2E46]/20 transition-all"
                 />
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-2 pt-2">
                 <button
                   onClick={onClose}
                   disabled={isSubmitting}
-                  className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
+                  className="flex-1 py-2 border border-[#E0E2E5] rounded-lg text-[#2C2C2C] hover:bg-[#F0F2F5] text-xs font-semibold uppercase tracking-wider transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleBill}
                   disabled={!billingRemark.trim() || isSubmitting}
-                  className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300 text-sm font-medium"
+                  className="flex-1 py-2 bg-[#FF2E46] hover:bg-[#E02038] text-white rounded-lg font-semibold text-xs uppercase tracking-wider shadow-xs transition-colors disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Billing...' : 'Next → Complete'}
+                  {isSubmitting ? 'Billing...' : 'Save & Continue'}
                 </button>
               </div>
-            </>
+            </div>
           )}
 
           {step === 2 && (
-            <>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-                ✓ Billed — now add completion details
+            <div className="space-y-3 pt-1">
+              <div className="bg-[#FFE8EB] border border-[#FF2E46]/20 rounded-lg p-2.5 text-xs font-semibold text-[#FF2E46]">
+                Order Billed — enter transport tracking details
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Completion Remark <span className="text-red-500">*</span>
+                <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1">
+                  Transport Remark <span className="text-[#FF2E46]">*</span>
                 </label>
                 <textarea
                   value={completionRemark}
                   onChange={e => setCompletionRemark(e.target.value)}
                   rows={3}
-                  placeholder="Enter completion remarks..."
+                  placeholder="Courier name, LR number, vehicle number..."
                   autoFocus
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-3 py-2 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-2 focus:ring-[#FF2E46]/20 transition-all"
                 />
               </div>
-              <p className="text-xs text-gray-500">Completion time will be recorded as current time on confirm.</p>
-              <div className="flex gap-3">
+              <div className="flex gap-2 pt-2">
                 <button
                   onClick={onClose}
                   disabled={isSubmitting}
-                  className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
+                  className="flex-1 py-2 border border-[#E0E2E5] rounded-lg text-[#2C2C2C] hover:bg-[#F0F2F5] text-xs font-semibold uppercase tracking-wider transition-colors"
                 >
                   Close
                 </button>
                 <button
                   onClick={handleComplete}
                   disabled={!completionRemark.trim() || isSubmitting}
-                  className="flex-1 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-green-300 text-sm font-medium"
+                  className="flex-1 py-2 bg-[#FF2E46] hover:bg-[#E02038] text-white rounded-lg font-semibold text-xs uppercase tracking-wider shadow-xs transition-colors disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Completing...' : '✓ Confirm Complete'}
+                  {isSubmitting ? 'Completing...' : 'Finalize Transport'}
                 </button>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>

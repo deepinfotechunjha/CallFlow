@@ -49,99 +49,115 @@ const DCPage = () => {
     try {
       await completeDC(callId);
       setShowCompleteConfirm(null);
+      toast.success('DC marked as completed');
     } catch (error) {
       console.error('Error completing DC:', error);
+      toast.error('Failed to update DC status');
     } finally {
       setIsCompleting(false);
     }
   };
 
-  const getDCStatusColor = (status) => {
+  const getDCStatusBadge = (status) => {
     return status === 'PENDING' 
-      ? 'bg-yellow-100 text-yellow-800' 
-      : 'bg-green-100 text-green-800';
+      ? 'bg-[#FFE8EB] text-[#FF2E46] border border-[#FF2E46]/30' 
+      : 'bg-[#F0F2F5] text-[#2C2C2C] border border-[#E0E2E5]';
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-3">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">DC Management 📄</h1>
-          <p className="text-gray-600">Manage physical paper documentation</p>
+          <span className="inline-block text-[#FF2E46] text-xs font-bold uppercase tracking-widest bg-[#FFE8EB] px-2.5 py-0.5 rounded-md mb-2 border border-[#FF2E46]/20">
+            DOCUMENTATION & DISPATCH
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#2C2C2C] tracking-tight">DC Management</h1>
+          <p className="text-[#666666] text-sm mt-1">Track physical delivery challan paperwork and documentation completion</p>
         </div>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 sm:p-6 rounded-xl shadow-sm border border-blue-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm sm:text-base font-medium text-blue-700 mb-1">All DC</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-blue-800">{counts.ALL}</p>
-            </div>
-            <div className="text-blue-500 text-2xl">📄</div>
+        <div className="bg-white p-5 rounded-xl shadow-xs border border-[#E0E2E5] flex items-center justify-between">
+          <div>
+            <h3 className="text-xs font-bold text-[#666666] uppercase tracking-wider mb-1">Total Challans</h3>
+            <p className="text-2xl sm:text-3xl font-extrabold text-[#2C2C2C]">{counts.ALL}</p>
+          </div>
+          <div className="w-11 h-11 rounded-lg bg-[#F0F2F5] text-[#2C2C2C] flex items-center justify-center">
+            <svg className="w-5 h-5 text-[#2C2C2C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 sm:p-6 rounded-xl shadow-sm border border-yellow-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm sm:text-base font-medium text-yellow-700 mb-1">Pending DC</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-yellow-800">{counts.PENDING}</p>
-            </div>
-            <div className="text-yellow-500 text-2xl">⏳</div>
+        <div className="bg-white p-5 rounded-xl shadow-xs border border-[#E0E2E5] flex items-center justify-between">
+          <div>
+            <h3 className="text-xs font-bold text-[#FF2E46] uppercase tracking-wider mb-1">Pending DC</h3>
+            <p className="text-2xl sm:text-3xl font-extrabold text-[#FF2E46]">{counts.PENDING}</p>
+          </div>
+          <div className="w-11 h-11 rounded-lg bg-[#FFE8EB] text-[#FF2E46] flex items-center justify-center">
+            <svg className="w-5 h-5 text-[#FF2E46]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 sm:p-6 rounded-xl shadow-sm border border-green-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm sm:text-base font-medium text-green-700 mb-1">Completed DC</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-green-800">{counts.COMPLETED}</p>
-            </div>
-            <div className="text-green-500 text-2xl">✅</div>
+        <div className="bg-white p-5 rounded-xl shadow-xs border border-[#E0E2E5] flex items-center justify-between">
+          <div>
+            <h3 className="text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1">Completed DC</h3>
+            <p className="text-2xl sm:text-3xl font-extrabold text-[#2C2C2C]">{counts.COMPLETED}</p>
+          </div>
+          <div className="w-11 h-11 rounded-lg bg-[#F0F2F5] text-[#2C2C2C] flex items-center justify-center">
+            <svg className="w-5 h-5 text-[#2C2C2C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <span>🔍</span> Search & Filters
-        </h2>
-        
+      <div className="mb-6 bg-white p-4 sm:p-5 rounded-xl shadow-xs border border-[#E0E2E5]">
         <div className="flex flex-wrap items-center gap-3 mb-4">
-          <div className="relative flex-1 min-w-[200px]">
-            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">🔍</span>
+          <div className="relative flex-1 min-w-[240px]">
+            <span className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-[#666666]">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
             <input
               type="text"
               placeholder="Search by customer, phone, email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
+              className="w-full pl-10 pr-9 py-2 bg-[#F8F9FA] border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-2 focus:ring-[#FF2E46]/20 focus:bg-white transition-all"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xl transition-colors"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#666666] hover:text-[#2C2C2C] text-sm font-bold"
               >
-                ×
+                ✕
               </button>
             )}
           </div>
         </div>
 
-        <div className="border-t border-gray-100 pt-4">
-          <div className="flex overflow-x-auto scrollbar-hide gap-1">
-            {['ALL', 'PENDING', 'COMPLETED'].map(f => (
+        <div className="border-t border-[#E0E2E5] pt-3">
+          <div className="flex flex-wrap gap-2">
+            {[
+              { id: 'ALL', label: 'All Records' },
+              { id: 'PENDING', label: 'Pending Papers' },
+              { id: 'COMPLETED', label: 'Completed' }
+            ].map(f => (
               <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-4 py-2 text-sm font-medium whitespace-nowrap rounded-lg transition-all ${
-                  filter === f
-                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                key={f.id}
+                onClick={() => setFilter(f.id)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                  filter === f.id
+                    ? 'bg-[#FF2E46] text-white shadow-xs'
+                    : 'bg-[#F0F2F5] text-[#2C2C2C] hover:bg-[#E0E2E5]'
                 }`}
               >
-                {f} ({counts[f]})
+                {f.label} ({counts[f.id]})
               </button>
             ))}
           </div>
@@ -149,54 +165,49 @@ const DCPage = () => {
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden lg:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-4 sm:px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-            <span>📊</span> DC Records
-          </h2>
-        </div>
-
+      <div className="hidden lg:block bg-white rounded-xl shadow-xs border border-[#E0E2E5] overflow-hidden">
         {filteredCalls.length === 0 ? (
-          <div className="px-6 py-8 text-center text-gray-500">
-            <div className="text-4xl mb-4">📄</div>
-            <p className="text-lg font-medium">No DC records found</p>
+          <div className="px-6 py-12 text-center text-[#666666]">
+            <p className="text-sm font-semibold text-[#2C2C2C]">No DC records found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-[#E0E2E5]">
+              <thead className="bg-[#2C2C2C]">
                 <tr>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sr.No</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Address</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Completed By</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">DC Status</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">DC Remark</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D] w-16">Sr.No</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D]">Customer</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D]">Phone</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D]">Address</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D]">Completed By</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D]">DC Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r border-[#3D3D3D]">DC Remark</th>
+                  <th className="px-4 py-3 text-right text-xs font-bold text-white uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-[#E0E2E5]">
                 {filteredCalls.map((call, index) => (
-                  <tr key={call.id} onClick={() => setSelectedDC(call)} className="cursor-pointer hover:bg-gray-50">
-                    <td className="px-3 py-3 text-sm text-gray-500">{index + 1}</td>
-                    <td className="px-3 py-3 text-sm font-medium text-gray-900">{call.customerName}</td>
-                    <td className="px-3 py-3 text-sm text-gray-900">{call.phone}</td>
-                    <td className="px-3 py-3 text-sm text-gray-600">{call.email || '-'}</td>
-                    <td className="px-3 py-3 text-sm text-gray-600 max-w-xs truncate">{call.address}</td>
-                    <td className="px-3 py-3 text-sm text-gray-900">{call.completedBy}</td>
-                    <td className="px-3 py-3">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getDCStatusColor(call.dcStatus)}`}>
+                  <tr 
+                    key={call.id} 
+                    onClick={() => setSelectedDC(call)} 
+                    className="cursor-pointer hover:bg-[#F8F9FA] transition-colors"
+                  >
+                    <td className="px-4 py-3 whitespace-nowrap text-xs font-semibold text-[#666666]">{index + 1}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-[#2C2C2C]">{call.customerName}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-xs text-[#2C2C2C]">{call.phone}</td>
+                    <td className="px-4 py-3 text-xs text-[#666666] max-w-xs truncate">{call.address}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-xs text-[#666666]">{call.completedBy}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`inline-block px-2 py-0.5 text-[11px] font-semibold rounded-md ${getDCStatusBadge(call.dcStatus)}`}>
                         {call.dcStatus === 'PENDING' ? 'Pending' : 'Completed'}
                       </span>
                     </td>
-                    <td className="px-3 py-3 text-sm text-gray-600 max-w-xs truncate">{call.dcRemark || '-'}</td>
-                    <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-4 py-3 text-xs text-[#666666] max-w-xs truncate">{call.dcRemark || '-'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
                       {call.dcStatus === 'PENDING' && (
                         <button
                           onClick={() => setShowCompleteConfirm(call.id)}
-                          className="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700"
+                          className="bg-[#FF2E46] hover:bg-[#E02038] text-white px-3 py-1 rounded-md text-xs font-semibold shadow-xs transition-colors"
                         >
                           Complete DC
                         </button>
@@ -213,55 +224,42 @@ const DCPage = () => {
       {/* Mobile Card View */}
       <div className="lg:hidden">
         {filteredCalls.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-4xl mb-4">📄</div>
-            <p className="text-gray-500 text-lg">No DC records found</p>
+          <div className="text-center py-10 bg-white rounded-xl border border-[#E0E2E5]">
+            <p className="text-sm font-semibold text-[#2C2C2C]">No DC records found</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-3">
             {filteredCalls.map((call, index) => (
-              <div key={call.id} className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex-1">
+              <div key={call.id} className="bg-white rounded-xl shadow-xs p-4 border border-[#E0E2E5]">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium text-gray-500">#{index + 1}</span>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getDCStatusColor(call.dcStatus)}`}>
+                      <span className="text-[11px] font-bold text-[#FF2E46] bg-[#FFE8EB] px-2 py-0.5 rounded-md">#{index + 1}</span>
+                      <span className={`px-2 py-0.5 text-[11px] font-semibold rounded-md ${getDCStatusBadge(call.dcStatus)}`}>
                         {call.dcStatus === 'PENDING' ? 'Pending' : 'Completed'}
                       </span>
                     </div>
-                    <h3 className="font-semibold text-lg">{call.customerName}</h3>
-                    <p className="text-gray-600 text-sm">{call.phone}</p>
-                    {call.email && <p className="text-gray-600 text-xs">{call.email}</p>}
+                    <h3 className="font-bold text-sm text-[#2C2C2C]">{call.customerName}</h3>
+                    <p className="text-[#666666] text-xs">{call.phone}</p>
                   </div>
                   <button
                     onClick={() => setSelectedDC(call)}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    className="text-[#FF2E46] hover:text-[#E02038] text-xs font-semibold"
                   >
-                    View Details
+                    Details →
                   </button>
                 </div>
 
-                <div className="mb-3">
-                  <div className="text-xs font-medium text-gray-500 mb-1">Address</div>
-                  <div className="text-sm text-gray-900">{call.address}</div>
+                <div className="text-xs text-[#666666] space-y-1 mb-3">
+                  <div><span className="font-semibold text-[#2C2C2C]">Address:</span> {call.address}</div>
+                  <div><span className="font-semibold text-[#2C2C2C]">Completed By:</span> {call.completedBy}</div>
+                  {call.dcRemark && <div><span className="font-semibold text-[#2C2C2C]">Remark:</span> {call.dcRemark}</div>}
                 </div>
-
-                <div className="mb-3">
-                  <div className="text-xs font-medium text-gray-500 mb-1">Completed By</div>
-                  <div className="text-sm text-gray-900">{call.completedBy}</div>
-                </div>
-
-                {call.dcRemark && (
-                  <div className="mb-3">
-                    <div className="text-xs font-medium text-gray-500 mb-1">DC Remark</div>
-                    <div className="text-sm text-gray-600 line-clamp-2">{call.dcRemark}</div>
-                  </div>
-                )}
 
                 {call.dcStatus === 'PENDING' && (
                   <button
                     onClick={() => setShowCompleteConfirm(call.id)}
-                    className="w-full bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700 mt-2"
+                    className="w-full bg-[#FF2E46] hover:bg-[#E02038] text-white py-2 rounded-lg text-xs font-semibold shadow-xs transition-colors"
                   >
                     Complete DC
                   </button>
@@ -274,30 +272,30 @@ const DCPage = () => {
 
       {/* Complete Confirmation Modal */}
       {showCompleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Complete DC</h2>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to mark this physical paper as completed?
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl border border-[#E0E2E5]">
+            <h2 className="text-base font-bold text-[#2C2C2C] mb-2">Complete Delivery Challan</h2>
+            <p className="text-xs text-[#666666] mb-5">
+              Are you sure you want to mark this physical paper documentation as completed?
             </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleCompleteDC(showCompleteConfirm)}
-                disabled={isCompleting}
-                className={`flex-1 py-2 rounded font-medium ${
-                  isCompleting
-                    ? 'bg-green-400 text-white cursor-not-allowed'
-                    : 'bg-green-600 text-white hover:bg-green-700'
-                }`}
-              >
-                {isCompleting ? 'Processing...' : 'Yes, Complete'}
-              </button>
+            <div className="flex gap-3">
               <button
                 onClick={() => setShowCompleteConfirm(null)}
                 disabled={isCompleting}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
+                className="flex-1 py-2 border border-[#E0E2E5] rounded-lg text-[#2C2C2C] hover:bg-[#F0F2F5] text-xs font-semibold transition-colors"
               >
                 Cancel
+              </button>
+              <button
+                onClick={() => handleCompleteDC(showCompleteConfirm)}
+                disabled={isCompleting}
+                className={`flex-1 py-2 rounded-lg font-semibold text-xs shadow-xs transition-colors ${
+                  isCompleting
+                    ? 'bg-[#FF5A71] text-white cursor-not-allowed'
+                    : 'bg-[#FF2E46] text-white hover:bg-[#E02038]'
+                }`}
+              >
+                {isCompleting ? 'Updating...' : 'Yes, Complete'}
               </button>
             </div>
           </div>
@@ -306,92 +304,72 @@ const DCPage = () => {
 
       {/* Details Modal */}
       {selectedDC && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedDC(null)}>
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">DC Details</h2>
-              <button onClick={() => setSelectedDC(null)} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150" onClick={() => setSelectedDC(null)}>
+          <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl border border-[#E0E2E5]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center pb-3 mb-5 border-b border-[#E0E2E5]">
+              <h2 className="text-base font-bold text-[#2C2C2C]">DC Document Details</h2>
+              <button onClick={() => setSelectedDC(null)} className="text-[#666666] hover:text-[#2C2C2C] p-1 rounded-md">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <label className="block text-sm font-medium text-blue-700 mb-1">Customer Name</label>
-                  <div className="text-base font-semibold text-blue-900">{selectedDC.customerName}</div>
-                </div>
-                
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <label className="block text-sm font-medium text-blue-700 mb-1">Phone</label>
-                  <div className="text-base font-semibold text-blue-900">{selectedDC.phone}</div>
-                </div>
-                
-                {selectedDC.email && (
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                    <label className="block text-sm font-medium text-blue-700 mb-1">Email</label>
-                    <div className="text-base text-blue-900 break-all">{selectedDC.email}</div>
-                  </div>
-                )}
-                
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <label className="block text-sm font-medium text-blue-700 mb-1">Address</label>
-                  <div className="text-base text-blue-900">{selectedDC.address}</div>
-                </div>
-                
-                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                  <label className="block text-sm font-medium text-yellow-700 mb-1">DC Status</label>
-                  <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getDCStatusColor(selectedDC.dcStatus)}`}>
-                    {selectedDC.dcStatus === 'PENDING' ? 'Pending' : 'Completed'}
-                  </span>
-                </div>
-                
-                {selectedDC.dcRemark && (
-                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                    <label className="block text-sm font-medium text-yellow-700 mb-1">DC Remark</label>
-                    <div className="text-base text-yellow-900">{selectedDC.dcRemark}</div>
-                  </div>
-                )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="bg-[#F8F9FA] p-3.5 rounded-lg border border-[#E0E2E5]">
+                <label className="block font-bold text-[#666666] uppercase mb-1">Customer Name</label>
+                <div className="font-bold text-[#2C2C2C] text-sm">{selectedDC.customerName}</div>
               </div>
               
-              <div className="space-y-4">
-                <div className="bg-gray-50 p-4 rounded-lg border">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                  <div className="text-base text-gray-900">{selectedDC.category}</div>
-                </div>
-                
-                <div className="bg-gray-50 p-4 rounded-lg border">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Problem</label>
-                  <div className="text-base text-gray-900">{selectedDC.problem}</div>
-                </div>
-                
-                <div className="bg-gray-50 p-4 rounded-lg border">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Created By</label>
-                  <div className="text-base text-gray-900">{selectedDC.createdBy}</div>
-                </div>
-                
-                <div className="bg-gray-50 p-4 rounded-lg border">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Completed By</label>
-                  <div className="text-base text-gray-900">{selectedDC.completedBy}</div>
-                </div>
-                
-                {selectedDC.dcCompletedBy && (
-                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                    <label className="block text-sm font-medium text-green-700 mb-1">DC Completed By</label>
-                    <div className="text-base text-green-900">{selectedDC.dcCompletedBy}</div>
-                  </div>
-                )}
-                
-                <div className="bg-gray-50 p-4 rounded-lg border">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Completed At</label>
-                  <div className="text-base text-gray-900">{new Date(selectedDC.completedAt).toLocaleString()}</div>
-                </div>
-                
-                {selectedDC.dcCompletedAt && (
-                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                    <label className="block text-sm font-medium text-green-700 mb-1">DC Completed At</label>
-                    <div className="text-base text-green-900">{new Date(selectedDC.dcCompletedAt).toLocaleString()}</div>
-                  </div>
-                )}
+              <div className="bg-[#F8F9FA] p-3.5 rounded-lg border border-[#E0E2E5]">
+                <label className="block font-bold text-[#666666] uppercase mb-1">Phone</label>
+                <div className="font-semibold text-[#2C2C2C] text-sm">{selectedDC.phone}</div>
               </div>
+              
+              {selectedDC.email && (
+                <div className="bg-[#F8F9FA] p-3.5 rounded-lg border border-[#E0E2E5] sm:col-span-2">
+                  <label className="block font-bold text-[#666666] uppercase mb-1">Email</label>
+                  <div className="text-[#2C2C2C]">{selectedDC.email}</div>
+                </div>
+              )}
+              
+              <div className="bg-[#F8F9FA] p-3.5 rounded-lg border border-[#E0E2E5] sm:col-span-2">
+                <label className="block font-bold text-[#666666] uppercase mb-1">Address</label>
+                <div className="text-[#2C2C2C]">{selectedDC.address}</div>
+              </div>
+              
+              <div className="bg-[#F8F9FA] p-3.5 rounded-lg border border-[#E0E2E5]">
+                <label className="block font-bold text-[#666666] uppercase mb-1">DC Status</label>
+                <span className={`inline-block px-2.5 py-0.5 text-[11px] font-semibold rounded-md ${getDCStatusBadge(selectedDC.dcStatus)}`}>
+                  {selectedDC.dcStatus === 'PENDING' ? 'Pending' : 'Completed'}
+                </span>
+              </div>
+              
+              <div className="bg-[#F8F9FA] p-3.5 rounded-lg border border-[#E0E2E5]">
+                <label className="block font-bold text-[#666666] uppercase mb-1">Category</label>
+                <div className="font-semibold text-[#2C2C2C]">{selectedDC.category}</div>
+              </div>
+
+              <div className="bg-[#F8F9FA] p-3.5 rounded-lg border border-[#E0E2E5] sm:col-span-2">
+                <label className="block font-bold text-[#666666] uppercase mb-1">Problem Description</label>
+                <div className="text-[#2C2C2C]">{selectedDC.problem}</div>
+              </div>
+
+              {selectedDC.dcRemark && (
+                <div className="bg-[#FFE8EB] p-3.5 rounded-lg border border-[#FF2E46]/20 sm:col-span-2">
+                  <label className="block font-bold text-[#FF2E46] uppercase mb-1">DC Remark</label>
+                  <div className="text-[#2C2C2C] font-medium">{selectedDC.dcRemark}</div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 pt-3 border-t border-[#E0E2E5] flex justify-end">
+              <button
+                onClick={() => setSelectedDC(null)}
+                className="bg-[#2C2C2C] hover:bg-[#1A1A1A] text-white px-5 py-2 rounded-lg text-xs font-semibold transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

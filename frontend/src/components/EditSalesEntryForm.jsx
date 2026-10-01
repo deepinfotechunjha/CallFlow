@@ -94,69 +94,84 @@ const EditSalesEntryForm = ({ entry, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div ref={modalRef} className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg sm:text-xl font-bold">Edit Sales Entry</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-xl">✕</button>
+    <div className="fixed inset-0 bg-[#2C2C2C]/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
+      <div ref={modalRef} className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl border border-[#E0E2E5] overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E0E2E5] bg-[#F8F9FA]">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#FFE8EB] text-[#FF2E46] flex items-center justify-center">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-[#FF2E46] tracking-wider uppercase">CLIENT DIRECTORY</span>
+              <h2 className="text-base font-bold text-[#2C2C2C]">Edit Sales Entry</h2>
+            </div>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="w-8 h-8 rounded-lg bg-white text-gray-500 hover:text-[#2C2C2C] hover:bg-gray-100 flex items-center justify-center text-sm transition-colors border border-gray-200"
+          >
+            ✕
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-xs sm:text-sm font-medium mb-1">Firm Name *</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">Firm Name <span className="text-[#FF2E46]">*</span></label>
               <input
                 type="text"
                 value={formData.firmName}
                 onChange={(e) => setFormData(prev => ({ ...prev, firmName: e.target.value }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all font-semibold"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs sm:text-sm font-medium mb-1">GST Number *</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">GST Number <span className="text-[#FF2E46]">*</span></label>
               <input
                 type="text"
                 value={formData.gstNo}
                 onChange={(e) => setFormData(prev => ({ ...prev, gstNo: e.target.value.toUpperCase() }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm uppercase"
+                className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all uppercase font-mono font-bold"
                 maxLength={15}
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs sm:text-sm font-medium mb-1">Email</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">Email</label>
               <input
                 type="text"
                 value={formData.email}
                 onChange={(e) => { setFormData(prev => ({ ...prev, email: e.target.value })); if (emailError) setEmailError(''); }}
                 onBlur={(e) => setEmailError(validateEmail(e.target.value))}
-                className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm ${emailError ? 'border-red-400' : ''}`}
+                className={`w-full px-3.5 py-2.5 bg-white border rounded-lg text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all ${emailError ? 'border-red-400' : 'border-[#E0E2E5]'}`}
               />
-              {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
+              {emailError && <p className="text-[#FF2E46] text-xs mt-1 font-semibold">{emailError}</p>}
             </div>
 
             {/* Contact Person 1 - Name & Number in parallel */}
             <div>
-              <label className="block text-xs sm:text-sm font-medium mb-1">Contact Person-1 Name *</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">Contact Person-1 Name <span className="text-[#FF2E46]">*</span></label>
               <input
                 type="text"
                 value={formData.contactPerson1Name}
                 onChange={(e) => setFormData(prev => ({ ...prev, contactPerson1Name: e.target.value }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs sm:text-sm font-medium mb-1">Contact Person-1 Number *</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">Contact Person-1 Number <span className="text-[#FF2E46]">*</span></label>
               <input
                 type="tel"
                 value={formData.contactPerson1Number}
                 onChange={(e) => setFormData(prev => ({ ...prev, contactPerson1Number: e.target.value }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all font-mono font-medium"
                 maxLength={10}
                 required
               />
@@ -164,89 +179,89 @@ const EditSalesEntryForm = ({ entry, onClose }) => {
 
             {/* Contact Person 2 - Name & Number in parallel */}
             <div>
-              <label className="block text-xs sm:text-sm font-medium mb-1">Contact Person-2 Name</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">Contact Person-2 Name</label>
               <input
                 type="text"
                 value={formData.contactPerson2Name}
                 onChange={(e) => setFormData(prev => ({ ...prev, contactPerson2Name: e.target.value }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-xs sm:text-sm font-medium mb-1">Contact Person-2 Number</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">Contact Person-2 Number</label>
               <input
                 type="tel"
                 value={formData.contactPerson2Number}
                 onChange={(e) => setFormData(prev => ({ ...prev, contactPerson2Number: e.target.value }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all font-mono font-medium"
                 maxLength={10}
               />
             </div>
 
             {/* Account Contact - Name & Number in parallel */}
             <div>
-              <label className="block text-xs sm:text-sm font-medium mb-1">Account Contact Name</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">Account Contact Name</label>
               <input
                 type="text"
                 value={formData.accountContactName}
                 onChange={(e) => setFormData(prev => ({ ...prev, accountContactName: e.target.value }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-xs sm:text-sm font-medium mb-1">Account Contact Number</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">Account Contact Number</label>
               <input
                 type="tel"
                 value={formData.accountContactNumber}
                 onChange={(e) => setFormData(prev => ({ ...prev, accountContactNumber: e.target.value }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all font-mono font-medium"
                 maxLength={10}
               />
             </div>
 
             {/* WhatsApp Number - full row */}
             <div className="md:col-span-2">
-              <label className="block text-xs sm:text-sm font-medium mb-1">💬 WhatsApp Number <span className="text-gray-400 font-normal">(optional — defaults to Contact-1 number)</span></label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">WhatsApp Number <span className="text-gray-400 font-normal lowercase">(optional — defaults to Contact-1 number)</span></label>
               <input
                 type="tel"
                 value={formData.whatsappNumber}
                 onChange={(e) => setFormData(prev => ({ ...prev, whatsappNumber: e.target.value }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-green-500 text-sm"
+                className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-mono"
                 maxLength={10}
                 placeholder="Leave blank to use Contact-1 number"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-xs sm:text-sm font-medium mb-1">Address *</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">Address <span className="text-[#FF2E46]">*</span></label>
               <textarea
                 value={formData.address}
                 onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all"
                 rows="2"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs sm:text-sm font-medium mb-1">Landmark</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">Landmark</label>
               <input
                 type="text"
                 value={formData.landmark}
                 onChange={(e) => setFormData(prev => ({ ...prev, landmark: e.target.value }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-xs sm:text-sm font-medium mb-1">Pincode *</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">Pincode <span className="text-[#FF2E46]">*</span></label>
               <input
                 type="text"
                 value={formData.pincode}
                 onChange={(e) => setFormData(prev => ({ ...prev, pincode: e.target.value }))}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all font-mono font-medium"
                 maxLength={6}
                 required
               />
@@ -254,7 +269,7 @@ const EditSalesEntryForm = ({ entry, onClose }) => {
           </div>
 
           {/* City and Area Selector */}
-          <div className="border-t pt-4">
+          <div className="border-t border-[#E0E2E5] pt-4">
             <CityAreaSelector
               selectedCity={selectedCity}
               selectedArea={selectedArea}
@@ -265,21 +280,21 @@ const EditSalesEntryForm = ({ entry, onClose }) => {
             />
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2 pt-4">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed font-medium text-sm"
-            >
-              {isSubmitting ? 'Updating...' : 'Update Entry'}
-            </button>
+          <div className="flex gap-3 pt-3 border-t border-[#E0E2E5]">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed text-sm"
+              className="flex-1 py-2 px-4 bg-white border border-[#E0E2E5] text-[#2C2C2C] rounded-lg hover:bg-[#F8F9FA] text-xs font-bold uppercase tracking-wider transition-colors"
             >
               Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 py-2 px-4 bg-[#FF2E46] text-white rounded-lg hover:bg-[#E02038] disabled:opacity-50 text-xs font-bold uppercase tracking-wider transition-all shadow-xs"
+            >
+              {isSubmitting ? 'Updating...' : 'Update Entry'}
             </button>
           </div>
         </form>

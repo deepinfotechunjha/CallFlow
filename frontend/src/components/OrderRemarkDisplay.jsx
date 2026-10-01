@@ -18,37 +18,37 @@ const OrderRemarkDisplay = ({ remark }) => {
 
   if (!parsed) {
     // Old plain text — render exactly as before
-    return <span>{remark}</span>;
+    return <span className="text-[#2C2C2C]">{remark}</span>;
   }
 
   // New table format
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-xs border border-gray-200 rounded-lg overflow-hidden">
-        <thead className="bg-gray-100">
+    <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+      <table className="min-w-full text-xs">
+        <thead className="bg-[#2C2C2C] text-white">
           <tr>
-            <th className="px-3 py-2 text-left font-semibold text-gray-600 border-b">Code</th>
-            <th className="px-3 py-2 text-left font-semibold text-gray-600 border-b">Configuration</th>
-            <th className="px-3 py-2 text-right font-semibold text-gray-600 border-b">Price (₹)</th>
-            <th className="px-3 py-2 text-right font-semibold text-gray-600 border-b">Qty</th>
-            <th className="px-3 py-2 text-right font-semibold text-gray-600 border-b">Total (₹)</th>
+            <th className="px-3 py-2 text-left font-bold tracking-wider uppercase text-[10px]">Code</th>
+            <th className="px-3 py-2 text-left font-bold tracking-wider uppercase text-[10px]">Configuration</th>
+            <th className="px-3 py-2 text-right font-bold tracking-wider uppercase text-[10px]">Price (₹)</th>
+            <th className="px-3 py-2 text-right font-bold tracking-wider uppercase text-[10px]">Qty</th>
+            <th className="px-3 py-2 text-right font-bold tracking-wider uppercase text-[10px]">Total (₹)</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-gray-100 bg-white">
           {parsed.items.map((item, i) => (
-            <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-              <td className="px-3 py-2 font-medium text-gray-800 border-b border-gray-100">{item.code}</td>
-              <td className="px-3 py-2 text-gray-700 border-b border-gray-100">{item.configuration}</td>
-              <td className="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{Number(item.price).toLocaleString('en-IN')}</td>
-              <td className="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{item.qty}</td>
-              <td className="px-3 py-2 text-right font-semibold text-gray-800 border-b border-gray-100">{Number(item.total).toLocaleString('en-IN')}</td>
+            <tr key={i} className="hover:bg-[#FFE8EB]/20 transition-colors">
+              <td className="px-3 py-2 font-bold text-[#2C2C2C]">{item.code}</td>
+              <td className="px-3 py-2 text-gray-600">{item.configuration}</td>
+              <td className="px-3 py-2 text-right text-gray-700 font-medium">{Number(item.price).toLocaleString('en-IN')}</td>
+              <td className="px-3 py-2 text-right text-gray-700 font-bold">{item.qty}</td>
+              <td className="px-3 py-2 text-right font-bold text-[#2C2C2C]">{Number(item.total).toLocaleString('en-IN')}</td>
             </tr>
           ))}
         </tbody>
-        <tfoot className="bg-blue-50">
+        <tfoot className="bg-[#FFE8EB]/60 border-t border-[#FF2E46]/20">
           <tr>
-            <td colSpan={4} className="px-3 py-2 text-right font-bold text-gray-700 text-xs">Grand Total</td>
-            <td className="px-3 py-2 text-right font-bold text-blue-700">₹{Number(parsed.grandTotal).toLocaleString('en-IN')}</td>
+            <td colSpan={4} className="px-3 py-2 text-right font-bold text-[#2C2C2C] text-xs uppercase tracking-wider">Grand Total</td>
+            <td className="px-3 py-2 text-right font-black text-[#FF2E46] text-xs">₹{Number(parsed.grandTotal).toLocaleString('en-IN')}</td>
           </tr>
         </tfoot>
       </table>

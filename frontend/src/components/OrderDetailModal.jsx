@@ -3,11 +3,11 @@ import useClickOutside from '../hooks/useClickOutside';
 import OrderRemarkDisplay from './OrderRemarkDisplay';
 
 const STATUS_BADGE = {
-  PENDING:   'bg-gray-100 text-gray-700',
-  ON_HOLD:   'bg-yellow-100 text-yellow-700',
-  BILLED:    'bg-blue-100 text-blue-700',
-  COMPLETED: 'bg-green-100 text-green-700',
-  CANCELLED: 'bg-red-100 text-red-700',
+  PENDING:   'bg-[#FFE8EB] text-[#FF2E46] border border-[#FF2E46]/30',
+  ON_HOLD:   'bg-[#F0F2F5] text-[#2C2C2C] border border-[#E0E2E5]',
+  BILLED:    'bg-[#2C2C2C] text-white',
+  COMPLETED: 'bg-[#2C2C2C] text-white',
+  CANCELLED: 'bg-[#FFE8EB] text-[#FF2E46]',
 };
 
 const STATUS_LABEL = {
@@ -22,9 +22,9 @@ const formatDate = (d) =>
   d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
 const Row = ({ label, value }) => value ? (
-  <div className="flex gap-2 text-sm">
-    <span className="font-medium text-gray-600 min-w-[130px]">{label}:</span>
-    <span className="text-gray-800">{value}</span>
+  <div className="flex gap-2 text-xs">
+    <span className="font-bold text-[#666666] min-w-[120px] uppercase tracking-wider">{label}:</span>
+    <span className="text-[#2C2C2C] font-semibold">{value}</span>
   </div>
 ) : null;
 
@@ -32,54 +32,58 @@ const OrderDetailModal = ({ order, onClose }) => {
   const modalRef = useClickOutside(onClose);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div ref={modalRef} className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl">
-        <div className="flex items-center justify-between p-5 border-b">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
+      <div ref={modalRef} className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl border border-[#E0E2E5]">
+        <div className="flex items-center justify-between p-5 sm:p-6 border-b border-[#E0E2E5]">
           <div>
-            <h3 className="text-lg font-bold text-gray-800">{order.salesEntry?.firmName}</h3>
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${STATUS_BADGE[order.status]}`}>
-              {STATUS_LABEL[order.status] || order.status.replace('_', ' ')}
+            <span className="inline-block text-[#FF2E46] text-xs font-bold uppercase tracking-widest bg-[#FFE8EB] px-2.5 py-0.5 rounded-md mb-1 border border-[#FF2E46]/20">
+              ORDER #{order.id}
+            </span>
+            <h3 className="text-lg font-bold text-[#2C2C2C]">{order.salesEntry?.firmName}</h3>
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold mt-1.5 ${STATUS_BADGE[order.status]}`}>
+              {STATUS_LABEL[order.status] || order.status?.replace('_', ' ')}
             </span>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+          <button onClick={onClose} className="w-7 h-7 rounded-lg bg-[#F0F2F5] hover:bg-[#FFE8EB] hover:text-[#FF2E46] text-[#666666] flex items-center justify-center transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
-        <div className="p-5 space-y-5">
-
+        <div className="p-5 sm:p-6 space-y-3.5">
           {/* Firm Info */}
-          <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Firm Info</p>
+          <div className="bg-[#F8F9FA] rounded-lg p-3.5 space-y-2 border border-[#E0E2E5]">
+            <p className="text-[11px] font-bold text-[#FF2E46] uppercase tracking-wider mb-1.5">Firm Details</p>
             <Row label="Firm" value={order.salesEntry?.firmName} />
             <Row label="Brand" value={order.brandName} />
             <Row label="GST No" value={order.salesEntry?.gstNo} />
-            <Row label="Contact Person" value={order.salesEntry?.contactPerson1Name} />
-            <Row label="Contact Number" value={order.salesEntry?.contactPerson1Number} />
+            <Row label="Contact" value={`${order.salesEntry?.contactPerson1Name} (${order.salesEntry?.contactPerson1Number})`} />
             <Row label="City" value={`${order.salesEntry?.city}${order.salesEntry?.area ? ` · ${order.salesEntry.area}` : ''}`} />
           </div>
 
           {/* Order Info */}
-          <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Order Info</p>
-            <Row label="Order #" value={`#${order.id}`} />
-            <div className="flex gap-2 text-sm">
-              <span className="font-medium text-gray-600 min-w-[130px]">Order Remark:</span>
-              <div className="text-gray-800 flex-1"><OrderRemarkDisplay remark={order.orderRemark} /></div>
+          <div className="bg-[#F8F9FA] rounded-lg p-3.5 space-y-2 border border-[#E0E2E5]">
+            <p className="text-[11px] font-bold text-[#2C2C2C] uppercase tracking-wider mb-1.5">Order Specifications</p>
+            <div className="flex gap-2 text-xs">
+              <span className="font-bold text-[#666666] min-w-[120px] uppercase tracking-wider">Remark:</span>
+              <div className="text-[#2C2C2C] flex-1"><OrderRemarkDisplay remark={order.orderRemark} /></div>
             </div>
-            <Row label="Called By" value={order.calledBy} />
-            <Row label="Dispatch From" value={order.dispatchFrom?.split(',').map(loc => loc.trim()).filter(Boolean).join(', ')} />
+            <Row label="Caller" value={order.calledBy} />
+            <Row label="Dispatch Hub" value={order.dispatchFrom?.split(',').map(loc => loc.trim()).filter(Boolean).join(', ')} />
             <Row label="Created By" value={order.createdBy} />
             <Row label="Created At" value={formatDate(order.createdAt)} />
           </div>
 
           {/* Hold History */}
           {order.holds?.length > 0 && (
-            <div className="bg-yellow-50 rounded-lg p-4">
-              <p className="text-xs font-semibold text-yellow-700 uppercase tracking-wide mb-3">Hold History ({order.holds.length})</p>
+            <div className="bg-[#FFE8EB]/40 rounded-lg p-3.5 border border-[#FF2E46]/20">
+              <p className="text-[11px] font-bold text-[#FF2E46] uppercase tracking-wider mb-1.5">Hold History ({order.holds.length})</p>
               <div className="space-y-2">
                 {order.holds.map(h => (
-                  <div key={h.id} className="text-sm border-l-2 border-yellow-400 pl-3">
-                    <p className="text-gray-800">{h.remark}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{h.heldBy} · {formatDate(h.heldAt)}</p>
+                  <div key={h.id} className="text-xs border-l-2 border-[#FF2E46] pl-2.5">
+                    <p className="text-[#2C2C2C] font-semibold">{h.remark}</p>
+                    <p className="text-[11px] text-[#666666] mt-0.5">{h.heldBy} · {formatDate(h.heldAt)}</p>
                   </div>
                 ))}
               </div>
@@ -88,8 +92,8 @@ const OrderDetailModal = ({ order, onClose }) => {
 
           {/* Billing Info */}
           {order.billingRemark && (
-            <div className="bg-blue-50 rounded-lg p-4 space-y-2">
-              <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-2">Billing</p>
+            <div className="bg-[#F8F9FA] rounded-lg p-3.5 space-y-2 border border-[#E0E2E5]">
+              <p className="text-[11px] font-bold text-[#2C2C2C] uppercase tracking-wider mb-1.5">Billing Information</p>
               <Row label="Billing Remark" value={order.billingRemark} />
               <Row label="Billed By" value={order.billedBy} />
               <Row label="Billed At" value={formatDate(order.billedAt)} />
@@ -98,27 +102,17 @@ const OrderDetailModal = ({ order, onClose }) => {
 
           {/* Transport Info */}
           {order.completionRemark && (
-            <div className="bg-green-50 rounded-lg p-4 space-y-2">
-              <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-2">Transport</p>
+            <div className="bg-[#F8F9FA] rounded-lg p-3.5 space-y-2 border border-[#E0E2E5]">
+              <p className="text-[11px] font-bold text-[#2C2C2C] uppercase tracking-wider mb-1.5">Transport Details</p>
               <Row label="Transport Remark" value={order.completionRemark} />
               <Row label="Transported By" value={order.completedBy} />
               <Row label="Transported At" value={formatDate(order.completedAt)} />
             </div>
           )}
-
-          {/* Cancellation Info */}
-          {order.cancelledBy && (
-            <div className="bg-red-50 rounded-lg p-4 space-y-2">
-              <p className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-2">Cancellation</p>
-              <Row label="Cancelled By" value={order.cancelledBy} />
-              <Row label="Cancelled At" value={formatDate(order.cancelledAt)} />
-            </div>
-          )}
-
         </div>
 
-        <div className="p-5 border-t">
-          <button onClick={onClose} className="w-full py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">
+        <div className="p-4 border-t border-[#E0E2E5] bg-[#F8F9FA]">
+          <button onClick={onClose} className="w-full py-2 bg-[#2C2C2C] hover:bg-[#1A1A1A] text-white rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors">
             Close
           </button>
         </div>

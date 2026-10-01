@@ -100,10 +100,10 @@ const PublicCallForm = () => {
 
   if (isValidating) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Validating link...</p>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#FF2E46] mx-auto mb-3"></div>
+          <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Validating access link...</p>
         </div>
       </div>
     );
@@ -111,18 +111,20 @@ const PublicCallForm = () => {
 
   if (!isValidLink) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl">❌</span>
+      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-xl border border-[#E0E2E5] p-8 max-w-md w-full text-center">
+          <div className="w-14 h-14 bg-[#FFE8EB] text-[#FF2E46] rounded-xl flex items-center justify-center mx-auto mb-4 border border-[#FF2E46]/20">
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
           </div>
-          <h1 className="text-xl font-bold text-gray-800 mb-2">Invalid Link</h1>
-          <p className="text-gray-600 mb-4">
-            This share link is either invalid, expired, or has already been used.
+          <h1 className="text-xl font-bold text-[#2C2C2C] mb-2">Invalid or Expired Link</h1>
+          <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+            This share link is either invalid, has expired after its duration, or has already been used.
           </p>
-          <p className="text-sm text-gray-500">
-            Share links expire after 24 hours and can only be used once.
-          </p>
+          <div className="bg-[#F8F9FA] rounded-lg p-3 text-xs text-gray-500 border border-[#E0E2E5]">
+            Please contact the team at Deep Infotech to request a new link.
+          </div>
         </div>
       </div>
     );
@@ -130,17 +132,20 @@ const PublicCallForm = () => {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl">✅</span>
+      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-xl border border-[#E0E2E5] p-8 max-w-md w-full text-center animate-in fade-in duration-150">
+          <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-4 border border-emerald-200">
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+            </svg>
           </div>
-          <h1 className="text-xl font-bold text-gray-800 mb-2">Call Submitted Successfully!</h1>
-          <p className="text-gray-600 mb-4">
-            Your call has been submitted and will be processed by our team.
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF2E46] block mb-1">DEEP INFOTECH CALLFLOW</span>
+          <h1 className="text-xl font-bold text-[#2C2C2C] mb-2">Request Submitted Successfully!</h1>
+          <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+            Your service call request has been recorded in our dispatch system. An engineer will attend to your request promptly.
           </p>
-          <p className="text-sm text-gray-500">
-            This link has been deactivated and cannot be used again.
+          <p className="text-xs text-gray-400">
+            This secure one-time link has now been deactivated.
           </p>
         </div>
       </div>
@@ -148,21 +153,34 @@ const PublicCallForm = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-[#F8F9FA] py-10 px-4">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
-            <h1 className="text-2xl font-bold mb-2">Submit a Call Request</h1>
-            <p className="text-blue-100">
-              Please fill out the form below to submit your call request.
+        {/* Brand Header */}
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-white border border-[#E0E2E5] text-[#FF2E46] text-xs font-bold uppercase tracking-wider mb-3 shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-[#FF2E46]"></span>
+            Since 2003 • 20+ Years of Trust
+          </div>
+          <h2 className="text-2xl font-black text-[#2C2C2C] tracking-tight">
+            DEEP <span className="text-[#FF2E46]">INFOTECH</span>
+          </h2>
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mt-0.5">Call Request Portal</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-xl border border-[#E0E2E5] overflow-hidden">
+          <div className="bg-[#2C2C2C] p-6 text-white border-b-4 border-[#FF2E46]">
+            <span className="text-[10px] font-bold text-[#FF2E46] uppercase tracking-widest block mb-1">Public Request Form</span>
+            <h1 className="text-xl font-bold">Submit a Service Call Request</h1>
+            <p className="text-xs text-gray-300 mt-1">
+              Please provide your details below to schedule an on-site service appointment.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Customer Name <span className="text-red-500">*</span>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                  Customer / Firm Name <span className="text-[#FF2E46]">*</span>
                 </label>
                 <input
                   type="text"
@@ -170,14 +188,14 @@ const PublicCallForm = () => {
                   value={formData.customerName}
                   onChange={handleChange}
                   required
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter customer name"
+                  className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all placeholder:text-gray-400"
+                  placeholder="Enter full name"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number <span className="text-red-500">*</span>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                  Phone Number <span className="text-[#FF2E46]">*</span>
                 </label>
                 <input
                   type="tel"
@@ -185,53 +203,38 @@ const PublicCallForm = () => {
                   value={formData.phone}
                   onChange={handleChange}
                   required
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter phone number"
+                  className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all font-mono placeholder:text-gray-400"
+                  placeholder="Enter 10-digit number"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                Email Address <span className="text-gray-400 font-normal text-xs lowercase">(optional)</span>
               </label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter email address (optional)"
+                className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all placeholder:text-gray-400"
+                placeholder="example@mail.com"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Address <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                required
-                rows={3}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter complete address"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Category <span className="text-red-500">*</span>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                Service Category <span className="text-[#FF2E46]">*</span>
               </label>
               <select
                 name="category"
                 value={formData.category}
                 onChange={handleChange}
                 required
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all font-medium"
               >
-                <option value="">Select a category</option>
+                <option value="">Select equipment / service category</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.name}>
                     {cat.name}
@@ -241,8 +244,23 @@ const PublicCallForm = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Problem Description <span className="text-red-500">*</span>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                Complete Address <span className="text-[#FF2E46]">*</span>
+              </label>
+              <textarea
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                required
+                rows={3}
+                className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all placeholder:text-gray-400"
+                placeholder="Street address, building name, landmark, city"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                Problem Description <span className="text-[#FF2E46]">*</span>
               </label>
               <textarea
                 name="problem"
@@ -250,18 +268,20 @@ const PublicCallForm = () => {
                 onChange={handleChange}
                 required
                 rows={4}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Describe the problem in detail"
+                className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:bg-white focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all placeholder:text-gray-400"
+                placeholder="Please describe the issue or service needed with as much detail as possible..."
               />
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <span className="text-blue-600 text-lg">ℹ️</span>
+            <div className="bg-[#FFE8EB]/40 border border-[#FF2E46]/20 rounded-lg p-3.5">
+              <div className="flex items-start gap-2.5">
+                <svg className="w-4 h-4 text-[#FF2E46] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 <div>
-                  <h4 className="font-medium text-blue-800 mb-1">Important:</h4>
-                  <p className="text-sm text-blue-700">
-                    This form can only be submitted once. Please ensure all information is correct before submitting.
+                  <h4 className="font-bold text-[#2C2C2C] text-xs uppercase tracking-wider mb-0.5">Important:</h4>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    This link is valid for a single submission. Verify your contact details before submitting to ensure our engineers can reach you.
                   </p>
                 </div>
               </div>
@@ -270,19 +290,15 @@ const PublicCallForm = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
-                isSubmitting
-                  ? 'bg-gray-400 cursor-not-allowed text-white'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
-              }`}
+              className="w-full py-2.5 px-6 bg-[#FF2E46] text-white rounded-lg hover:bg-[#E02038] disabled:opacity-50 text-xs font-bold uppercase tracking-wider transition-all shadow-xs"
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Submitting...
+                  Submitting Request...
                 </span>
               ) : (
-                'Submit Call Request'
+                'Submit Service Call Request'
               )}
             </button>
           </form>
