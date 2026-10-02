@@ -120,22 +120,22 @@ const SalesEntryTable = ({ entries, onVisitClick, onCallClick, onDetailsClick, o
                   <div className="flex gap-1.5">
                     <button
                       onClick={() => onVisitClick(entry)}
-                      className="px-2 py-1 bg-[#2C2C2C] text-white rounded-md hover:bg-[#1A1A1A] text-xs font-semibold flex items-center justify-center transition-colors shadow-xs"
+                      className="px-2 py-1 bg-purple-50 border border-purple-200 text-purple-700 rounded-md hover:bg-purple-100 text-xs font-semibold flex items-center justify-center transition-colors shadow-xs"
                       title="Log Visit"
                     >
-                      <img src="/log-visit.png" alt="Log Visit" className="w-3.5 h-3.5 invert" />
+                      <img src="/log-visit.png" alt="Log Visit" className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => onCallClick(entry)}
-                      className="px-2 py-1 bg-[#FF2E46] text-white rounded-md hover:bg-[#E02038] text-xs font-semibold flex items-center justify-center transition-colors shadow-xs"
+                      className="px-2 py-1 bg-[#FFE8EB] border border-[#FF2E46]/30 text-[#FF2E46] rounded-md hover:bg-[#FFD6DC] text-xs font-semibold flex items-center justify-center transition-colors shadow-xs"
                       title="Log Call"
                     >
-                      <img src="/call-log.png" alt="Log Call" className="w-3.5 h-3.5 invert" />
+                      <img src="/call-log.png" alt="Log Call" className="w-3.5 h-3.5" />
                     </button>
                     {canEdit && (
                       <button
                         onClick={() => onEditClick(entry)}
-                        className="px-2 py-1 bg-[#F0F2F5] hover:bg-[#E0E2E5] text-[#2C2C2C] rounded-md text-xs font-semibold transition-colors"
+                        className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-[#2C2C2C] border border-gray-200 rounded-md text-xs font-semibold transition-colors"
                         title="Edit Entry"
                       >
                         <svg className="w-3.5 h-3.5 text-[#2C2C2C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">

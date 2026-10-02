@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import apiClient from '../api/apiClient';
 import useAuthStore from '../store/authStore';
+import { animateBellRing, animateModalSpring } from '../utils/animations';
 
 const NotificationBell = () => {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -9,6 +10,8 @@ const NotificationBell = () => {
   const [selectedNotifications, setSelectedNotifications] = useState(new Set());
   const [selectAll, setSelectAll] = useState(false);
   const { user } = useAuthStore();
+  const bellRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   const fetchUnreadCount = async () => {
     try {
@@ -18,6 +21,12 @@ const NotificationBell = () => {
       console.error('Failed to fetch unread count:', error);
     }
   };
+
+  useEffect(() => {
+    if (unreadCount > 0 && bellRef.current) {
+      animateBellRing(bellRef.current);
+    }
+  }, [unreadCount]);
 
   const fetchNotifications = async () => {
     try {
@@ -105,6 +114,7 @@ const NotificationBell = () => {
         
         if (event.detail && event.detail.userId === user.username) {
           setUnreadCount(prev => prev + 1);
+          if (bellRef.current) animateBellRing(bellRef.current);
           if (showDropdown) {
             setTimeout(fetchNotifications, 100);
           }
@@ -132,6 +142,9 @@ const NotificationBell = () => {
       fetchNotifications();
       setSelectedNotifications(new Set());
       setSelectAll(false);
+      if (dropdownRef.current) {
+        animateModalSpring(dropdownRef.current);
+      }
     }
   }, [showDropdown]);
 
@@ -140,6 +153,7 @@ const NotificationBell = () => {
   return (
     <div className="relative">
       <button
+        ref={bellRef}
         onClick={() => setShowDropdown(!showDropdown)}
         className={`relative w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
           showDropdown ? 'bg-[#FFE8EB] text-[#FF2E46]' : 'text-gray-600 hover:text-[#FF2E46] hover:bg-gray-100'
@@ -157,7 +171,7 @@ const NotificationBell = () => {
       </button>
 
       {showDropdown && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-[#E0E2E5] z-50 max-h-[80vh] overflow-hidden flex flex-col animate-in fade-in duration-150">
+        <div ref={dropdownRef} className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-[#E0E2E5] z-50 max-h-[80vh] overflow-hidden flex flex-col">
           <div className="px-4 py-3 border-b border-[#E0E2E5] bg-[#F8F9FA] flex justify-between items-center">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-md bg-[#FFE8EB] text-[#FF2E46] flex items-center justify-center">

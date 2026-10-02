@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import useClickOutside from '../hooks/useClickOutside';
+import { animateModalSpring } from '../utils/animations';
 
 const ExportModal = ({ isOpen, onClose, onExport, totalCount, filteredCount, title = "Export Data" }) => {
   const [step, setStep] = useState(1);
@@ -8,6 +9,12 @@ const ExportModal = ({ isOpen, onClose, onExport, totalCount, filteredCount, tit
   const [error, setError] = useState('');
 
   const modalRef = useClickOutside(() => onClose());
+
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      animateModalSpring(modalRef.current);
+    }
+  }, [isOpen, step]);
 
   if (!isOpen) return null;
 

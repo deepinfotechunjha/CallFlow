@@ -390,7 +390,7 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                               setIsActionModalOpen(prev => ({ ...prev, [call.id]: true }));
                               openEditModal(call);
                             }}
-                            className="bg-orange-500 text-white px-1 py-1 rounded text-xs hover:bg-orange-600 transition-colors font-semibold"
+                            className="bg-gray-100 hover:bg-gray-200 text-[#2C2C2C] border border-gray-200 px-2 py-1 rounded-md text-xs font-semibold text-center transition-colors"
                           >
                             Edit
                           </button>
@@ -401,7 +401,7 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                               setIsActionModalOpen(prev => ({ ...prev, [call.id]: true }));
                               setShowAssign(prev => ({ ...prev, [call.id]: true }));
                             }}
-                            className="bg-[#2C2C2C] text-white px-2 py-1 rounded-full text-[11px] hover:bg-black transition-colors font-bold uppercase tracking-wider"
+                            className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2 py-1 rounded-md text-xs font-semibold text-center transition-colors"
                           >
                             {call.assignedTo ? 'Reassign' : 'Assign'}
                           </button>
@@ -412,7 +412,7 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                               setIsActionModalOpen(prev => ({ ...prev, [call.id]: true }));
                               setShowComplete(prev => ({ ...prev, [call.id]: true }));
                             }}
-                            className="bg-green-500 text-white px-1 py-1 rounded text-xs hover:bg-green-600 transition-colors font-semibold"
+                            className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-1 rounded-md text-xs font-semibold text-center transition-colors"
                           >
                             Complete
                           </button>
@@ -526,27 +526,23 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                   />
                 </div>
 
-                <div className="flex gap-2 pt-4">
-                  <button
-                    type="submit"
-                    disabled={isUpdating[callId]}
-                    className={`flex-1 py-2 rounded font-medium ${
-                      isUpdating[callId] 
-                        ? 'bg-orange-400 text-white cursor-not-allowed' 
-                        : 'bg-orange-600 text-white hover:bg-orange-700'
-                    }`}
-                  >
-                    {isUpdating[callId] ? 'Saving...' : 'Save'}
-                  </button>
+                <div className="flex gap-2.5 pt-4 border-t border-[#E0E2E5]">
                   <button
                     type="button"
                     onClick={() => {
                       setShowEdit(prev => ({ ...prev, [callId]: false }));
                       setIsActionModalOpen(prev => ({ ...prev, [callId]: false }));
                     }}
-                    className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
+                    className="flex-1 py-2 border border-[#E0E2E5] rounded-lg text-[#2C2C2C] hover:bg-[#F0F2F5] text-xs sm:text-sm font-semibold transition-colors"
                   >
                     Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isUpdating[callId]}
+                    className="flex-1 bg-[#FF2E46] hover:bg-[#FF5A71] text-white py-2 rounded-lg font-semibold text-xs sm:text-sm shadow-xs transition-all disabled:opacity-50"
+                  >
+                    {isUpdating[callId] ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               </form>
@@ -562,19 +558,32 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
         if (!call) return null;
 
         return (
-          <div key={`assign-${callId}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={(e) => handleModalBackdropClick(e, parseInt(callId), 'assign')}>
-            <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
-              <h2 className="text-xl font-bold mb-4">{call.assignedTo ? 'Reassign Call' : 'Assign Call'}</h2>
-              <p className="text-gray-600 mb-4">
+          <div key={`assign-${callId}`} className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4" onClick={(e) => handleModalBackdropClick(e, parseInt(callId), 'assign')}>
+            <div className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-md shadow-lg border border-[#E0E2E5]">
+              <div className="flex justify-between items-center pb-3 mb-4 border-b border-[#E0E2E5]">
+                <h2 className="text-base font-bold text-[#2C2C2C]">{call.assignedTo ? 'Reassign Call' : 'Assign Call'}</h2>
+                <button
+                  onClick={() => {
+                    setShowAssign(prev => ({ ...prev, [callId]: false }));
+                    setSelectedWorker(prev => ({ ...prev, [callId]: '' }));
+                    setEngineerRemark(prev => ({ ...prev, [callId]: '' }));
+                    setIsActionModalOpen(prev => ({ ...prev, [callId]: false }));
+                  }}
+                  className="text-[#666666] hover:text-[#2C2C2C] text-lg font-bold leading-none p-1"
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="text-xs text-[#666666] mb-4">
                 {call.assignedTo ? `Currently assigned to: ${call.assignedTo}` : 'Select a worker to assign this call to:'}
               </p>
               
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Select Worker *</label>
+                <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1">Select Worker *</label>
                 <select
                   value={selectedWorker[callId] || ''}
                   onChange={(e) => setSelectedWorker(prev => ({ ...prev, [callId]: e.target.value }))}
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3.5 py-2 bg-white border border-[#E0E2E5] rounded-lg text-xs sm:text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46]"
                 >
                   <option value="">Select Worker</option>
                   {users.filter(u => u.role === 'ENGINEER' || u.role === 'ADMIN').map(u => (
@@ -585,39 +594,36 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
               
               {['HOST', 'ADMIN'].includes(user?.role) && (
                 <div className="mb-4">
-                  <label className="block text-sm font-medium mb-1">Engineer Instructions (optional)</label>
+                  <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1">Engineer Instructions (optional)</label>
                   <textarea
                     value={engineerRemark[callId] || ''}
                     onChange={(e) => setEngineerRemark(prev => ({ ...prev, [callId]: e.target.value }))}
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2 bg-white border border-[#E0E2E5] rounded-lg text-xs sm:text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46]"
                     rows="3"
                     placeholder="Add any special instructions for the engineer..."
                   />
                 </div>
               )}
               
-              <div className="flex gap-2">
+              <div className="flex gap-2.5 pt-3 border-t border-[#E0E2E5]">
                 <button
-                  onClick={() => handleAssign(parseInt(callId))}
-                  disabled={isAssigning[callId]}
-                  className={`flex-1 py-2.5 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all shadow-md hover:shadow-lg disabled:shadow-none ${
-                    isAssigning[callId] 
-                      ? 'bg-gray-400 text-white cursor-not-allowed' 
-                      : 'bg-[#FF2E46] text-white hover:bg-[#FF5A71]'
-                  }`}
-                >
-                  {isAssigning[callId] ? 'Processing...' : (call.assignedTo ? 'Reassign' : 'Assign')}
-                </button>
-                <button
+                  type="button"
                   onClick={() => {
                     setShowAssign(prev => ({ ...prev, [callId]: false }));
                     setSelectedWorker(prev => ({ ...prev, [callId]: '' }));
                     setEngineerRemark(prev => ({ ...prev, [callId]: '' }));
                     setIsActionModalOpen(prev => ({ ...prev, [callId]: false }));
                   }}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
+                  className="flex-1 py-2 border border-[#E0E2E5] rounded-lg text-[#2C2C2C] hover:bg-[#F0F2F5] text-xs sm:text-sm font-semibold transition-colors"
                 >
                   Cancel
+                </button>
+                <button
+                  onClick={() => handleAssign(parseInt(callId))}
+                  disabled={isAssigning[callId] || !selectedWorker[callId]}
+                  className="flex-1 bg-[#FF2E46] hover:bg-[#FF5A71] text-white py-2 rounded-lg font-semibold text-xs sm:text-sm shadow-xs transition-all disabled:opacity-50"
+                >
+                  {isAssigning[callId] ? 'Processing...' : (call.assignedTo ? 'Reassign' : 'Assign')}
                 </button>
               </div>
             </div>
@@ -630,31 +636,45 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
         if (!showComplete[callId] || showDCSelection[callId]) return null;
 
         return (
-          <div key={`complete-${callId}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={(e) => handleModalBackdropClick(e, parseInt(callId), 'complete')}>
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h2 className="text-xl font-bold mb-4">Complete Call</h2>
+          <div key={`complete-${callId}`} className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4" onClick={(e) => handleModalBackdropClick(e, parseInt(callId), 'complete')}>
+            <div className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-md shadow-lg border border-[#E0E2E5]">
+              <div className="flex justify-between items-center pb-3 mb-4 border-b border-[#E0E2E5]">
+                <h2 className="text-base font-bold text-[#2C2C2C]">Complete Call</h2>
+                <button
+                  onClick={() => {
+                    setShowComplete(prev => ({ ...prev, [callId]: false }));
+                    setRemark(prev => ({ ...prev, [callId]: '' }));
+                    setVisitedRemark(prev => ({ ...prev, [callId]: '' }));
+                    setCompleteAction(prev => ({ ...prev, [callId]: 'complete' }));
+                    setIsActionModalOpen(prev => ({ ...prev, [callId]: false }));
+                  }}
+                  className="text-[#666666] hover:text-[#2C2C2C] text-lg font-bold leading-none p-1"
+                >
+                  ✕
+                </button>
+              </div>
               
               <div className="mb-4">
                 <div className="flex gap-4 mb-4">
-                  <label className="flex items-center cursor-pointer">
+                  <label className="flex items-center cursor-pointer text-xs sm:text-sm font-semibold text-[#2C2C2C]">
                     <input
                       type="radio"
                       name={`completeAction-${callId}`}
                       value="complete"
                       checked={(completeAction[callId] || 'complete') === 'complete'}
                       onChange={(e) => setCompleteAction(prev => ({ ...prev, [callId]: e.target.value }))}
-                      className="mr-2"
+                      className="mr-2 accent-[#FF2E46]"
                     />
                     Complete
                   </label>
-                  <label className="flex items-center cursor-pointer">
+                  <label className="flex items-center cursor-pointer text-xs sm:text-sm font-semibold text-[#2C2C2C]">
                     <input
                       type="radio"
                       name={`completeAction-${callId}`}
                       value="visited"
                       checked={(completeAction[callId] || 'complete') === 'visited'}
                       onChange={(e) => setCompleteAction(prev => ({ ...prev, [callId]: e.target.value }))}
-                      className="mr-2"
+                      className="mr-2 accent-[#FF2E46]"
                     />
                     Visited
                   </label>
@@ -662,8 +682,8 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
               </div>
               
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">
-                  {(completeAction[callId] || 'complete') === 'complete' ? 'Completion Remark (optional)' : 'Visit Remark'}
+                <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1">
+                  {(completeAction[callId] || 'complete') === 'complete' ? 'Completion Remark (optional)' : 'Visit Remark *'}
                 </label>
                 <textarea
                   value={(completeAction[callId] || 'complete') === 'complete' ? (remark[callId] || '') : (visitedRemark[callId] || '')}
@@ -674,28 +694,16 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                       setVisitedRemark(prev => ({ ...prev, [callId]: e.target.value }));
                     }
                   }}
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3.5 py-2 bg-white border border-[#E0E2E5] rounded-lg text-xs sm:text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46]"
                   rows="3"
                   placeholder={(completeAction[callId] || 'complete') === 'complete' ? 'Add any notes about the completion...' : 'Describe what happened during this visit...'}
                   required={(completeAction[callId] || 'complete') === 'visited'}
                 />
               </div>
               
-              <div className="flex gap-2">
+              <div className="flex gap-2.5 pt-3 border-t border-[#E0E2E5]">
                 <button
-                  onClick={() => handleComplete(parseInt(callId))}
-                  disabled={isCompleting[callId] || ((completeAction[callId] || 'complete') === 'visited' && !(visitedRemark[callId] || '').trim())}
-                  className={`flex-1 py-2 rounded font-medium ${
-                    isCompleting[callId] || ((completeAction[callId] || 'complete') === 'visited' && !(visitedRemark[callId] || '').trim())
-                      ? 'bg-gray-400 text-white cursor-not-allowed' 
-                      : (completeAction[callId] || 'complete') === 'complete'
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'bg-purple-600 text-white hover:bg-purple-700'
-                  }`}
-                >
-                  {isCompleting[callId] ? 'Processing...' : ((completeAction[callId] || 'complete') === 'complete' ? 'Next' : 'Mark as Visited')}
-                </button>
-                <button
+                  type="button"
                   onClick={() => {
                     setShowComplete(prev => ({ ...prev, [callId]: false }));
                     setRemark(prev => ({ ...prev, [callId]: '' }));
@@ -703,9 +711,16 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
                     setCompleteAction(prev => ({ ...prev, [callId]: 'complete' }));
                     setIsActionModalOpen(prev => ({ ...prev, [callId]: false }));
                   }}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
+                  className="flex-1 py-2 border border-[#E0E2E5] rounded-lg text-[#2C2C2C] hover:bg-[#F0F2F5] text-xs sm:text-sm font-semibold transition-colors"
                 >
                   Cancel
+                </button>
+                <button
+                  onClick={() => handleComplete(parseInt(callId))}
+                  disabled={isCompleting[callId] || ((completeAction[callId] || 'complete') === 'visited' && !(visitedRemark[callId] || '').trim())}
+                  className="flex-1 bg-[#FF2E46] hover:bg-[#FF5A71] text-white py-2 rounded-lg font-semibold text-xs sm:text-sm shadow-xs transition-all disabled:opacity-50"
+                >
+                  {isCompleting[callId] ? 'Processing...' : ((completeAction[callId] || 'complete') === 'complete' ? 'Next' : 'Mark as Visited')}
                 </button>
               </div>
             </div>
@@ -718,32 +733,32 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
         if (!showDCSelection[callId]) return null;
 
         return (
-          <div key={`dc-${callId}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h2 className="text-xl font-bold mb-4">DC Selection</h2>
-              <p className="text-gray-600 mb-4">Do you need Delivery Charges for this call?</p>
+          <div key={`dc-${callId}`} className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-md shadow-lg border border-[#E0E2E5]">
+              <h2 className="text-base font-bold text-[#2C2C2C] mb-2">DC Selection</h2>
+              <p className="text-xs text-[#666666] mb-4">Do you need Delivery Charges for this call?</p>
               
               <div className="mb-4">
                 <div className="flex gap-4 mb-4">
-                  <label className="flex items-center cursor-pointer">
+                  <label className="flex items-center cursor-pointer text-xs sm:text-sm font-semibold text-[#2C2C2C]">
                     <input
                       type="radio"
                       name={`dcSelection-${callId}`}
                       value="dc"
                       checked={dcRequired[callId] === true || dcRequired[callId] === undefined}
                       onChange={() => setDcRequired(prev => ({ ...prev, [callId]: true }))}
-                      className="mr-2"
+                      className="mr-2 accent-[#FF2E46]"
                     />
                     DC (Delivery Charges)
                   </label>
-                  <label className="flex items-center cursor-pointer">
+                  <label className="flex items-center cursor-pointer text-xs sm:text-sm font-semibold text-[#2C2C2C]">
                     <input
                       type="radio"
                       name={`dcSelection-${callId}`}
                       value="nodc"
                       checked={dcRequired[callId] === false}
                       onChange={() => setDcRequired(prev => ({ ...prev, [callId]: false }))}
-                      className="mr-2"
+                      className="mr-2 accent-[#FF2E46]"
                     />
                     NO DC
                   </label>
@@ -752,39 +767,36 @@ const CallTable = ({ calls, selectedCalls = [], onSelectCall, showCheckboxes = f
               
               {dcRequired[callId] && (
                 <div className="mb-4">
-                  <label className="block text-sm font-medium mb-1">DC Remark (optional)</label>
+                  <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1">DC Remark (optional)</label>
                   <textarea
                     value={dcRemark[callId] || ''}
                     onChange={(e) => setDcRemark(prev => ({ ...prev, [callId]: e.target.value }))}
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2 bg-white border border-[#E0E2E5] rounded-lg text-xs sm:text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46]"
                     rows="3"
                     placeholder="Add items or notes for delivery charges..."
                   />
                 </div>
               )}
               
-              <div className="flex gap-2">
+              <div className="flex gap-2.5 pt-3 border-t border-[#E0E2E5]">
                 <button
-                  onClick={() => handleComplete(parseInt(callId))}
-                  disabled={isCompleting[callId]}
-                  className={`flex-1 py-2 rounded font-medium ${
-                    isCompleting[callId]
-                      ? 'bg-green-400 text-white cursor-not-allowed'
-                      : 'bg-green-600 text-white hover:bg-green-700'
-                  }`}
-                >
-                  {isCompleting[callId] ? 'Processing...' : 'Complete'}
-                </button>
-                <button
+                  type="button"
                   onClick={() => {
                     setShowDCSelection(prev => ({ ...prev, [callId]: false }));
                     setDcRequired(prev => ({ ...prev, [callId]: true }));
                     setDcRemark(prev => ({ ...prev, [callId]: '' }));
                   }}
                   disabled={isCompleting[callId]}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
+                  className="flex-1 py-2 border border-[#E0E2E5] rounded-lg text-[#2C2C2C] hover:bg-[#F0F2F5] text-xs sm:text-sm font-semibold transition-colors"
                 >
                   Back
+                </button>
+                <button
+                  onClick={() => handleComplete(parseInt(callId))}
+                  disabled={isCompleting[callId]}
+                  className="flex-1 bg-[#FF2E46] hover:bg-[#FF5A71] text-white py-2 rounded-lg font-semibold text-xs sm:text-sm shadow-xs transition-all disabled:opacity-50"
+                >
+                  {isCompleting[callId] ? 'Processing...' : 'Complete'}
                 </button>
               </div>
             </div>

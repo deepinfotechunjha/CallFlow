@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import useSalesStore from '../store/salesStore';
 import useAuthStore from '../store/authStore';
 import AddSalesEntryForm from '../components/AddSalesEntryForm';
@@ -10,7 +10,9 @@ import CallLogModal from '../components/CallLogModal';
 import SalesEntryDetailsModal from '../components/SalesEntryDetailsModal';
 import SalesShareModal from '../components/SalesShareModal';
 import ExportModal from '../components/ExportModal';
+import AnimatedCounter from '../components/AnimatedCounter';
 import { exportSalesEntriesToExcel } from '../utils/excelExport';
+import { animatePageHeader, animateStaggerCascade } from '../utils/animations';
 import toast from 'react-hot-toast';
 
 const SalesDashboard = () => {
@@ -37,6 +39,14 @@ const SalesDashboard = () => {
     startDate: '',
     endDate: ''
   });
+
+  const headerRef = useRef(null);
+  const statsRef = useRef(null);
+
+  useEffect(() => {
+    animatePageHeader(headerRef.current);
+    animateStaggerCascade(statsRef.current, '> div');
+  }, []);
 
   const { user, users, fetchUsers } = useAuthStore();
   const { entries, fetchEntries, fetchSalesLogs, salesLogs, loading } = useSalesStore();
@@ -285,7 +295,7 @@ const SalesDashboard = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
       {/* Top Header & Actions */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 pb-6 border-b border-gray-200">
+      <div ref={headerRef} className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 pb-6 border-b border-gray-200">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[11px] font-semibold text-[#FF2E46] uppercase tracking-wider bg-[#FFE8EB] px-2.5 py-0.5 rounded-md border border-[#FF2E46]/15">
@@ -316,9 +326,9 @@ const SalesDashboard = () => {
 
           <button
             onClick={() => setShowShareModal(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-medium text-xs sm:text-sm bg-[#2C2C2C] hover:bg-black text-white shadow-xs transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-medium text-xs sm:text-sm bg-[#2C2C2C]/5 hover:bg-[#2C2C2C]/10 text-[#2C2C2C] border border-[#2C2C2C]/20 shadow-xs transition-colors"
           >
-            <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
             Share Intake
@@ -326,7 +336,7 @@ const SalesDashboard = () => {
 
           <button
             onClick={() => setShowAddForm(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-medium text-xs sm:text-sm text-white bg-[#FF2E46] hover:bg-[#FF5A71] shadow-xs transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-medium text-xs sm:text-sm text-[#FF2E46] bg-[#FF2E46]/10 hover:bg-[#FF2E46]/20 border border-[#FF2E46]/25 shadow-xs transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -337,34 +347,34 @@ const SalesDashboard = () => {
       </div>
 
       {/* Enterprise Metric Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+      <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs">
           <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Total Entries</p>
-          <p className="text-2xl font-bold text-gray-900 mt-2">{stats.totalEntries}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-2"><AnimatedCounter value={stats.totalEntries} /></p>
           <p className="text-[11px] text-gray-400 mt-0.5">Directory records</p>
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs">
           <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Total Visits</p>
-          <p className="text-2xl font-bold text-gray-900 mt-2">{stats.totalVisits}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-2"><AnimatedCounter value={stats.totalVisits} /></p>
           <p className="text-[11px] text-gray-400 mt-0.5">Physical visits logged</p>
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs">
           <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Total Calls</p>
-          <p className="text-2xl font-bold text-gray-900 mt-2">{stats.totalCalls}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-2"><AnimatedCounter value={stats.totalCalls} /></p>
           <p className="text-[11px] text-gray-400 mt-0.5">Calls connected</p>
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs border-l-4 border-l-amber-500">
           <p className="text-xs font-medium uppercase tracking-wider text-amber-700">Filtered Visits</p>
-          <p className="text-2xl font-bold text-amber-600 mt-2">{stats.filteredVisits}</p>
+          <p className="text-2xl font-bold text-amber-600 mt-2"><AnimatedCounter value={stats.filteredVisits} /></p>
           <p className="text-[11px] text-amber-600/70 mt-0.5">In active filter</p>
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs border-l-4 border-l-emerald-500">
           <p className="text-xs font-medium uppercase tracking-wider text-emerald-700">Filtered Calls</p>
-          <p className="text-2xl font-bold text-emerald-600 mt-2">{stats.filteredCalls}</p>
+          <p className="text-2xl font-bold text-emerald-600 mt-2"><AnimatedCounter value={stats.filteredCalls} /></p>
           <p className="text-[11px] text-emerald-600/70 mt-0.5">In active filter</p>
         </div>
       </div>

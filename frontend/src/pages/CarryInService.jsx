@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import useCarryInServiceStore from '../store/carryInServiceStore';
 import useServiceCategoryStore from '../store/serviceCategoryStore';
 import useAuthStore from '../store/authStore';
@@ -7,7 +7,9 @@ import useClickOutside from '../hooks/useClickOutside';
 import ExportModal from '../components/ExportModal';
 import BulkDeleteModal from '../components/BulkDeleteModal';
 import ShareServiceModal from '../components/ShareServiceModal';
+import AnimatedCounter from '../components/AnimatedCounter';
 import { exportCarryInServicesToExcel, exportDeletedServicesToExcel } from '../utils/excelExport';
+import { animatePageHeader, animateStaggerCascade, animateTableRows } from '../utils/animations';
 import toast from 'react-hot-toast';
 
 const CarryInService = () => {
@@ -58,6 +60,15 @@ const CarryInService = () => {
   const { serviceCategories, fetchServiceCategories } = useServiceCategoryStore();
   const { user, token } = useAuthStore();
   
+  const headerRef = useRef(null);
+  const statsRef = useRef(null);
+  const tbodyRef = useRef(null);
+
+  useEffect(() => {
+    animatePageHeader(headerRef.current);
+    animateStaggerCascade(statsRef.current, '> div');
+  }, []);
+
   // Initialize WebSocket connection
   useSocket();
 
@@ -321,6 +332,12 @@ const CarryInService = () => {
     });
   }
 
+  useEffect(() => {
+    if (tbodyRef.current && filteredServices.length > 0) {
+      animateTableRows(tbodyRef.current);
+    }
+  }, [filteredServices.length, filter, statusFilter, categoryFilter]);
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'PENDING': return 'bg-yellow-100 text-yellow-800';
@@ -445,7 +462,7 @@ const CarryInService = () => {
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 space-y-6">
       {/* Top Header & Action Controls */}
-      <div className="bg-white p-5 sm:p-6 rounded-xl border border-[#E0E2E5] shadow-xs flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+      <div ref={headerRef} className="bg-white p-5 sm:p-6 rounded-xl border border-[#E0E2E5] shadow-xs flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#FF2E46] bg-[#FFE8EB] px-2.5 py-0.5 rounded-md mb-2 border border-[#FF2E46]/20">
             Workshop &bull; Hardware Service Desk
@@ -462,7 +479,7 @@ const CarryInService = () => {
           {user?.role === 'HOST' && selectedServices.length > 0 && (
             <button
               onClick={() => setShowBulkDeleteModal(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-semibold text-xs sm:text-sm text-white bg-red-600 hover:bg-red-700 shadow-xs transition-all"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-semibold text-xs sm:text-sm text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 shadow-xs transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -486,9 +503,9 @@ const CarryInService = () => {
 
           <button
             onClick={() => setShowShareServiceModal(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-semibold text-xs sm:text-sm bg-[#2C2C2C] hover:bg-black text-white shadow-xs transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-semibold text-xs sm:text-sm bg-[#2C2C2C]/5 hover:bg-[#2C2C2C]/10 text-[#2C2C2C] border border-[#2C2C2C]/20 shadow-xs transition-colors"
           >
-            <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
             Share Intake
@@ -496,7 +513,7 @@ const CarryInService = () => {
 
           <button
             onClick={() => setShowAddForm(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm text-white bg-[#FF2E46] hover:bg-[#E02038] shadow-xs transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm text-[#FF2E46] bg-[#FF2E46]/10 hover:bg-[#FF2E46]/20 border border-[#FF2E46]/25 shadow-xs transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -507,7 +524,7 @@ const CarryInService = () => {
       </div>
 
       {/* Enterprise Stats Cards Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div ref={statsRef} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-4 sm:p-5 rounded-xl border border-[#E0E2E5] shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">All Services</span>
@@ -517,7 +534,7 @@ const CarryInService = () => {
               </svg>
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-[#2C2C2C] mt-2">{counts.ALL}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-[#2C2C2C] mt-2"><AnimatedCounter value={counts.ALL} /></p>
           <p className="text-[11px] text-gray-500 mt-0.5">Total registered tickets</p>
         </div>
 
@@ -530,7 +547,7 @@ const CarryInService = () => {
               </svg>
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-amber-600 mt-2">{counts.PENDING}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-amber-600 mt-2"><AnimatedCounter value={counts.PENDING} /></p>
           <p className="text-[11px] text-amber-700/70 mt-0.5">Active under bench service</p>
         </div>
 
@@ -543,7 +560,7 @@ const CarryInService = () => {
               </svg>
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-blue-600 mt-2">{counts.COMPLETED_NOT_COLLECTED}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-blue-600 mt-2"><AnimatedCounter value={counts.COMPLETED_NOT_COLLECTED} /></p>
           <p className="text-[11px] text-blue-700/70 mt-0.5">Completed, awaiting collection</p>
         </div>
 
@@ -556,7 +573,7 @@ const CarryInService = () => {
               </svg>
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-emerald-600 mt-2">{counts.COMPLETED_AND_COLLECTED}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-emerald-600 mt-2"><AnimatedCounter value={counts.COMPLETED_AND_COLLECTED} /></p>
           <p className="text-[11px] text-emerald-700/70 mt-0.5">Collected by customer</p>
         </div>
       </div>
@@ -607,7 +624,7 @@ const CarryInService = () => {
             <button
               onClick={applyDateFilter}
               disabled={!dateFilter.type || !dateFilter.start || !dateFilter.end}
-              className="px-3.5 py-1.5 bg-[#FF2E46] hover:bg-[#E02038] text-white rounded-lg text-xs sm:text-sm font-semibold disabled:opacity-40 transition-colors shadow-xs"
+              className="px-4 py-1.5 bg-[#FF2E46] hover:bg-[#FF5A71] text-white rounded-lg text-xs sm:text-sm font-semibold transition-all shadow-xs disabled:cursor-not-allowed"
             >
               Apply
             </button>
@@ -840,7 +857,7 @@ const CarryInService = () => {
                       {(['HOST', 'ADMIN'].includes(user?.role)) && service.status === 'PENDING' && (
                         <button
                           onClick={() => openEditModal(service)}
-                          className="bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-orange-700 transition-colors flex-1 sm:flex-none shadow-xs"
+                          className="bg-gray-100 hover:bg-gray-200 text-[#2C2C2C] border border-gray-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex-1 sm:flex-none"
                         >
                           Edit
                         </button>
@@ -854,7 +871,7 @@ const CarryInService = () => {
                           )}
                           <button
                             onClick={() => { setCompleteAction('complete'); setShowCompleteConfirm(service.id); }}
-                            className="bg-[#2C2C2C] text-white px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-black transition-colors flex-1 sm:flex-none shadow-xs"
+                            className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex-1 sm:flex-none"
                           >
                             Complete
                           </button>
@@ -863,7 +880,7 @@ const CarryInService = () => {
                       {service.status === 'COMPLETED_NOT_COLLECTED' && (
                         <button
                           onClick={() => setShowDeliverConfirm(service.id)}
-                          className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-green-700 transition-colors flex-1 sm:flex-none shadow-xs"
+                          className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex-1 sm:flex-none"
                         >
                           Deliver
                         </button>
@@ -931,7 +948,7 @@ const CarryInService = () => {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody ref={tbodyRef} className="bg-white divide-y divide-gray-200">
                   {filteredServices.map((service, index) => (
                     <tr key={service.id} onClick={() => setSelectedService(service)} className={`cursor-pointer transition-colors ${getRowColor(service) || 'hover:bg-gray-50'}`}>
                       <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-500 w-16">
@@ -1000,7 +1017,7 @@ const CarryInService = () => {
                           {(['HOST', 'ADMIN'].includes(user?.role)) && service.status === 'PENDING' && (
                             <button
                               onClick={() => openEditModal(service)}
-                              className="bg-orange-600 text-white px-2 py-1 rounded-md text-xs hover:bg-orange-700 transition-colors shadow-xs"
+                              className="bg-gray-100 hover:bg-gray-200 text-[#2C2C2C] border border-gray-200 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors"
                             >
                               Edit
                             </button>
@@ -1014,7 +1031,7 @@ const CarryInService = () => {
                               )}
                               <button
                                 onClick={() => { setCompleteAction('complete'); setShowCompleteConfirm(service.id); }}
-                                className="bg-[#2C2C2C] text-white px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider hover:bg-black transition-colors shadow-xs"
+                                className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors"
                               >
                                 Complete
                               </button>
@@ -1023,7 +1040,7 @@ const CarryInService = () => {
                           {service.status === 'COMPLETED_NOT_COLLECTED' && (
                             <button
                               onClick={() => setShowDeliverConfirm(service.id)}
-                              className="bg-green-600 text-white px-2 py-1 rounded-md text-xs hover:bg-green-700 transition-colors shadow-xs"
+                              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors"
                             >
                               Deliver
                             </button>
@@ -1235,18 +1252,7 @@ const CarryInService = () => {
                 />
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-2 pt-4">
-                <button
-                  type="submit"
-                  disabled={isUpdating}
-                  className={`flex-1 py-2 rounded font-medium text-sm ${
-                    isUpdating
-                      ? 'bg-orange-400 text-white cursor-not-allowed'
-                      : 'bg-orange-600 text-white hover:bg-orange-700'
-                  }`}
-                >
-                  {isUpdating ? 'Saving...' : 'Save Changes'}
-                </button>
+              <div className="flex flex-col sm:flex-row gap-2.5 pt-4 border-t border-[#E0E2E5]">
                 <button
                   type="button"
                   onClick={() => {
@@ -1254,9 +1260,16 @@ const CarryInService = () => {
                     setEditFormData({});
                   }}
                   disabled={isUpdating}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 text-sm disabled:opacity-50"
+                  className="flex-1 py-2 border border-[#E0E2E5] rounded-lg text-[#2C2C2C] hover:bg-[#F0F2F5] text-xs sm:text-sm font-semibold transition-colors disabled:opacity-50"
                 >
                   Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdating}
+                  className="flex-1 bg-[#FF2E46] hover:bg-[#FF5A71] text-white py-2 rounded-lg font-semibold text-xs sm:text-sm shadow-xs transition-all disabled:opacity-50"
+                >
+                  {isUpdating ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>
@@ -1333,7 +1346,21 @@ const CarryInService = () => {
               />
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-3 border-t border-[#E0E2E5]">
+              <button
+                onClick={() => {
+                  setShowCompleteConfirm(null);
+                  setCompleteRemark('');
+                  setCheckRemark('');
+                  setWarrantyRemark('');
+                  setRepairingRemark('');
+                  setCompleteAction('complete');
+                }}
+                disabled={isCompleting || isChecking || isWarranty || isRepairing}
+                className="flex-1 py-2 border border-[#E0E2E5] rounded-lg text-[#2C2C2C] hover:bg-[#F0F2F5] text-xs sm:text-sm font-semibold transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
               <button
                 onClick={() => {
                   if (completeAction === 'complete') handleCompleteService(showCompleteConfirm);
@@ -1347,34 +1374,12 @@ const CarryInService = () => {
                   : completeAction === 'warranty' ? (isWarranty || !warrantyRemark.trim())
                   : (isRepairing || !repairingRemark.trim())
                 }
-                className={`flex-1 py-2 rounded font-medium text-sm ${
-                  completeAction === 'warranty'
-                    ? (isWarranty || !warrantyRemark.trim() ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-amber-500 text-white hover:bg-amber-600')
-                  : completeAction === 'repairing'
-                    ? (isRepairing || !repairingRemark.trim() ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-rose-600 text-white hover:bg-rose-700')
-                  : completeAction === 'check'
-                    ? (isChecking || !checkRemark.trim() ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-purple-600 text-white hover:bg-purple-700')
-                  : (isCompleting ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-[#FF2E46] text-white hover:bg-[#FF5A71]')
-                }`}
+                className="flex-1 bg-[#FF2E46] hover:bg-[#FF5A71] text-white py-2 rounded-lg font-semibold text-xs sm:text-sm shadow-xs transition-all disabled:opacity-50"
               >
                 {completeAction === 'complete' ? (isCompleting ? 'Processing...' : 'Yes, Complete')
                   : completeAction === 'check' ? (isChecking ? 'Processing...' : 'Mark as Checked')
                   : completeAction === 'warranty' ? (isWarranty ? 'Processing...' : 'Mark as Warranty')
                   : (isRepairing ? 'Processing...' : 'Mark as Repairing')}
-              </button>
-              <button
-                onClick={() => {
-                  setShowCompleteConfirm(null);
-                  setCompleteRemark('');
-                  setCheckRemark('');
-                  setWarrantyRemark('');
-                  setRepairingRemark('');
-                  setCompleteAction('complete');
-                }}
-                disabled={isCompleting || isChecking || isWarranty || isRepairing}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 text-sm disabled:opacity-50"
-              >
-                Cancel
               </button>
             </div>
           </div>
@@ -1399,23 +1404,19 @@ const CarryInService = () => {
                 placeholder="Add any notes about the delivery..."
               />
             </div>
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-3 border-t border-[#E0E2E5]">
+              <button
+                onClick={() => setShowDeliverConfirm(null)}
+                className="flex-1 py-2 border border-[#E0E2E5] rounded-lg text-[#2C2C2C] hover:bg-[#F0F2F5] text-xs sm:text-sm font-semibold transition-colors"
+              >
+                Cancel
+              </button>
               <button
                 onClick={() => handleDeliverService(showDeliverConfirm)}
                 disabled={isDelivering}
-                className={`flex-1 py-2 rounded font-medium text-sm ${
-                  isDelivering
-                    ? 'bg-green-400 text-white cursor-not-allowed'
-                    : 'bg-green-600 text-white hover:bg-green-700'
-                }`}
+                className="flex-1 bg-[#FF2E46] hover:bg-[#FF5A71] text-white py-2 rounded-lg font-semibold text-xs sm:text-sm shadow-xs transition-all disabled:opacity-50"
               >
                 {isDelivering ? 'Processing...' : 'Yes, Deliver'}
-              </button>
-              <button
-                onClick={() => setShowDeliverConfirm(null)}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 text-sm"
-              >
-                Cancel
               </button>
             </div>
           </div>

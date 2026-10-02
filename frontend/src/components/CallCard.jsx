@@ -246,7 +246,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
               setIsActionModalOpen(true);
               handleEditOpen();
             }}
-            className="flex-1 px-3 py-2 bg-[#F0F2F5] hover:bg-[#E0E2E5] text-[#2C2C2C] text-xs font-bold rounded-full transition-colors"
+            className="flex-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-[#2C2C2C] border border-gray-200 text-xs font-semibold rounded-md transition-colors text-center"
           >
             Edit
           </button>
@@ -259,7 +259,7 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
               setIsActionModalOpen(true);
               setShowAssign(true);
             }}
-            className="flex-1 px-3 py-2 bg-[#2C2C2C] hover:bg-[#1A1A1A] text-white text-xs font-bold rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.15)] transition-colors"
+            className="flex-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-semibold rounded-md transition-colors text-center"
           >
             {call.assignedTo ? 'Reassign' : 'Assign'}
           </button>
@@ -272,9 +272,9 @@ const CallCard = ({ call, selectedCalls = [], onSelectCall, showCheckboxes = fal
               setIsActionModalOpen(true);
               handleCompleteClick();
             }}
-            className="flex-1 px-3 py-2 bg-[#FF2E46] hover:bg-[#E02038] text-white text-xs font-bold rounded-full shadow-[0_4px_14px_rgba(255,46,70,0.25)] transition-all"
+            className="flex-1 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-semibold rounded-md transition-colors text-center"
           >
-            Mark Done
+            Complete
           </button>
         )}
       </div>

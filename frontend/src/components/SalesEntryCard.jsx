@@ -67,27 +67,27 @@ const SalesEntryCard = ({ entry, onVisitClick, onCallClick, onDetailsClick, onEd
       <div className="flex gap-1.5">
         <button
           onClick={() => onVisitClick(entry)}
-          className="flex-1 py-1.5 bg-[#2C2C2C] hover:bg-[#1A1A1A] text-white rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+          className="flex-1 py-1.5 bg-purple-50 border border-purple-200 text-purple-700 hover:bg-purple-100 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-xs"
           title="Log Visit"
         >
-          <img src="/log-visit.png" alt="Log Visit" className="w-3.5 h-3.5 invert" />
+          <img src="/log-visit.png" alt="Log Visit" className="w-3.5 h-3.5" />
           Visit
         </button>
         <button
           onClick={() => onCallClick(entry)}
-          className="flex-1 py-1.5 bg-[#FF2E46] hover:bg-[#E02038] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors flex items-center justify-center gap-1.5"
+          className="flex-1 py-1.5 bg-[#FFE8EB] border border-[#FF2E46]/30 text-[#FF2E46] hover:bg-[#FFD6DC] rounded-lg text-xs font-semibold shadow-xs transition-colors flex items-center justify-center gap-1.5"
           title="Log Call"
         >
-          <img src="/call-log.png" alt="Log Call" className="w-3.5 h-3.5 invert" />
+          <img src="/call-log.png" alt="Log Call" className="w-3.5 h-3.5" />
           Call
         </button>
         {canEdit && (
           <button
             onClick={() => onEditClick(entry)}
-            className="px-2.5 py-1.5 bg-[#F0F2F5] hover:bg-[#E0E2E5] text-[#2C2C2C] rounded-lg text-xs font-semibold transition-colors"
+            className="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-[#2C2C2C] border border-gray-200 rounded-lg text-xs font-semibold transition-colors"
             title="Edit Entry"
           >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5 text-[#2C2C2C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
           </button>

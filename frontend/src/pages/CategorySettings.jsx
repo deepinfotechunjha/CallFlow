@@ -176,13 +176,13 @@ const CategorySettings = () => {
                   <div className="flex gap-2">
                     <button
                       onClick={() => openEditModal(category, 'call')}
-                      className="flex-1 bg-[#2C2C2C] text-white py-1.5 rounded-lg text-xs font-semibold hover:bg-[#1A1A1A] transition-colors"
+                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-[#2C2C2C] border border-gray-200 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDeleteCategory(category.id, 'call')}
-                      className="flex-1 bg-[#FFE8EB] text-[#FF2E46] border border-[#FF2E46]/30 py-1.5 rounded-lg text-xs font-semibold hover:bg-[#FF2E46] hover:text-white transition-colors"
+                      className="flex-1 bg-red-50 text-red-700 border border-red-200 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors"
                     >
                       Delete
                     </button>
@@ -227,13 +227,13 @@ const CategorySettings = () => {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => openEditModal(category, 'call')}
-                            className="bg-[#2C2C2C] text-white px-3 py-1 rounded-md text-xs font-semibold hover:bg-[#1A1A1A] transition-colors"
+                            className="bg-gray-100 hover:bg-gray-200 text-[#2C2C2C] border border-gray-200 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => handleDeleteCategory(category.id, 'call')}
-                            className="bg-[#FFE8EB] text-[#FF2E46] border border-[#FF2E46]/30 px-3 py-1 rounded-md text-xs font-semibold hover:bg-[#FF2E46] hover:text-white transition-colors"
+                            className="bg-red-50 text-red-700 border border-red-200 px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-red-100 transition-colors"
                           >
                             Delete
                           </button>
@@ -295,13 +295,13 @@ const CategorySettings = () => {
                   <div className="flex gap-2">
                     <button
                       onClick={() => openEditModal(category, 'service')}
-                      className="flex-1 bg-[#2C2C2C] text-white py-1.5 rounded-lg text-xs font-semibold hover:bg-[#1A1A1A] transition-colors"
+                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-[#2C2C2C] border border-gray-200 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDeleteCategory(category.id, 'service')}
-                      className="flex-1 bg-[#FFE8EB] text-[#FF2E46] border border-[#FF2E46]/30 py-1.5 rounded-lg text-xs font-semibold hover:bg-[#FF2E46] hover:text-white transition-colors"
+                      className="flex-1 bg-red-50 text-red-700 border border-red-200 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors"
                     >
                       Delete
                     </button>
@@ -346,13 +346,13 @@ const CategorySettings = () => {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => openEditModal(category, 'service')}
-                            className="bg-[#2C2C2C] text-white px-3 py-1 rounded-md text-xs font-semibold hover:bg-[#1A1A1A] transition-colors"
+                            className="bg-gray-100 hover:bg-gray-200 text-[#2C2C2C] border border-gray-200 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => handleDeleteCategory(category.id, 'service')}
-                            className="bg-[#FFE8EB] text-[#FF2E46] border border-[#FF2E46]/30 px-3 py-1 rounded-md text-xs font-semibold hover:bg-[#FF2E46] hover:text-white transition-colors"
+                            className="bg-red-50 text-red-700 border border-red-200 px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-red-100 transition-colors"
                           >
                             Delete
                           </button>

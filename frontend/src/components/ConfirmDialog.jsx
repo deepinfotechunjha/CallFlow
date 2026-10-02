@@ -1,8 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import useClickOutside from '../hooks/useClickOutside';
+import { animateModalSpring } from '../utils/animations';
 
 const ConfirmDialog = ({ isOpen, title, message, onConfirm, onCancel }) => {
   const modalRef = useClickOutside(() => onCancel());
+  
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      animateModalSpring(modalRef.current);
+    }
+  }, [isOpen]);
   
   if (!isOpen) return null;
 

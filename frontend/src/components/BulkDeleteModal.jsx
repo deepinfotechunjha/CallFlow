@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import useClickOutside from '../hooks/useClickOutside';
+import { animateModalSpring } from '../utils/animations';
 
 const BulkDeleteModal = ({ isOpen, onClose, onConfirm, selectedCount }) => {
   const [step, setStep] = useState(1);
@@ -11,6 +12,12 @@ const BulkDeleteModal = ({ isOpen, onClose, onConfirm, selectedCount }) => {
       handleClose();
     }
   });
+
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      animateModalSpring(modalRef.current);
+    }
+  }, [isOpen, step]);
 
   const handleClose = () => {
     setStep(1);

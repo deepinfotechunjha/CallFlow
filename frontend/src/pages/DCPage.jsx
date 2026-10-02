@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import useDCStore from '../store/dcStore';
 import useAuthStore from '../store/authStore';
 import useSocket from '../hooks/useSocket';
+import AnimatedCounter from '../components/AnimatedCounter';
+import { animatePageHeader, animateStaggerCascade, animateTableRows } from '../utils/animations';
 import toast from 'react-hot-toast';
 
 const DCPage = () => {
@@ -11,6 +13,10 @@ const DCPage = () => {
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(null);
   const [isCompleting, setIsCompleting] = useState(false);
   
+  const headerRef = useRef(null);
+  const statsRef = useRef(null);
+  const tbodyRef = useRef(null);
+
   const { dcCalls, fetchDCCalls, completeDC } = useDCStore();
   const { user } = useAuthStore();
   
@@ -19,6 +25,11 @@ const DCPage = () => {
   useEffect(() => {
     fetchDCCalls();
   }, [fetchDCCalls]);
+
+  useEffect(() => {
+    animatePageHeader(headerRef.current);
+    animateStaggerCascade(statsRef.current, '> div');
+  }, []);
 
   const filteredCalls = dcCalls.filter(call => {
     if (filter === 'PENDING' && call.dcStatus !== 'PENDING') return false;
@@ -35,6 +46,12 @@ const DCPage = () => {
     
     return true;
   });
+
+  useEffect(() => {
+    if (tbodyRef.current && filteredCalls.length > 0) {
+      animateTableRows(tbodyRef.current);
+    }
+  }, [filteredCalls.length, filter]);
 
   const counts = {
     ALL: dcCalls.length,
@@ -67,7 +84,7 @@ const DCPage = () => {
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+      <div ref={headerRef} className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <span className="inline-block text-[#FF2E46] text-xs font-bold uppercase tracking-widest bg-[#FFE8EB] px-2.5 py-0.5 rounded-md mb-2 border border-[#FF2E46]/20">
             DOCUMENTATION & DISPATCH
@@ -78,11 +95,11 @@ const DCPage = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div ref={statsRef} className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div className="bg-white p-5 rounded-xl shadow-xs border border-[#E0E2E5] flex items-center justify-between">
           <div>
             <h3 className="text-xs font-bold text-[#666666] uppercase tracking-wider mb-1">Total Challans</h3>
-            <p className="text-2xl sm:text-3xl font-extrabold text-[#2C2C2C]">{counts.ALL}</p>
+            <p className="text-2xl sm:text-3xl font-extrabold text-[#2C2C2C]"><AnimatedCounter value={counts.ALL} /></p>
           </div>
           <div className="w-11 h-11 rounded-lg bg-[#F0F2F5] text-[#2C2C2C] flex items-center justify-center">
             <svg className="w-5 h-5 text-[#2C2C2C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,7 +110,7 @@ const DCPage = () => {
         <div className="bg-white p-5 rounded-xl shadow-xs border border-[#E0E2E5] flex items-center justify-between">
           <div>
             <h3 className="text-xs font-bold text-[#FF2E46] uppercase tracking-wider mb-1">Pending DC</h3>
-            <p className="text-2xl sm:text-3xl font-extrabold text-[#FF2E46]">{counts.PENDING}</p>
+            <p className="text-2xl sm:text-3xl font-extrabold text-[#FF2E46]"><AnimatedCounter value={counts.PENDING} /></p>
           </div>
           <div className="w-11 h-11 rounded-lg bg-[#FFE8EB] text-[#FF2E46] flex items-center justify-center">
             <svg className="w-5 h-5 text-[#FF2E46]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,7 +121,7 @@ const DCPage = () => {
         <div className="bg-white p-5 rounded-xl shadow-xs border border-[#E0E2E5] flex items-center justify-between">
           <div>
             <h3 className="text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1">Completed DC</h3>
-            <p className="text-2xl sm:text-3xl font-extrabold text-[#2C2C2C]">{counts.COMPLETED}</p>
+            <p className="text-2xl sm:text-3xl font-extrabold text-[#2C2C2C]"><AnimatedCounter value={counts.COMPLETED} /></p>
           </div>
           <div className="w-11 h-11 rounded-lg bg-[#F0F2F5] text-[#2C2C2C] flex items-center justify-center">
             <svg className="w-5 h-5 text-[#2C2C2C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -185,7 +202,7 @@ const DCPage = () => {
                   <th className="px-4 py-3 text-right text-xs font-bold text-white uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-[#E0E2E5]">
+              <tbody ref={tbodyRef} className="bg-white divide-y divide-[#E0E2E5]">
                 {filteredCalls.map((call, index) => (
                   <tr 
                     key={call.id} 
@@ -207,7 +224,7 @@ const DCPage = () => {
                       {call.dcStatus === 'PENDING' && (
                         <button
                           onClick={() => setShowCompleteConfirm(call.id)}
-                          className="bg-[#FF2E46] hover:bg-[#E02038] text-white px-3 py-1 rounded-md text-xs font-semibold shadow-xs transition-colors"
+                          className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-md text-xs font-semibold transition-colors"
                         >
                           Complete DC
                         </button>
@@ -259,7 +276,7 @@ const DCPage = () => {
                 {call.dcStatus === 'PENDING' && (
                   <button
                     onClick={() => setShowCompleteConfirm(call.id)}
-                    className="w-full bg-[#FF2E46] hover:bg-[#E02038] text-white py-2 rounded-lg text-xs font-semibold shadow-xs transition-colors"
+                    className="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 py-2 rounded-lg text-xs font-semibold transition-colors"
                   >
                     Complete DC
                   </button>

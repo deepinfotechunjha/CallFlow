@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import apiClient from '../api/apiClient';
 import useAuthStore from '../store/authStore';
 import CustomerDetailsModal from '../components/CustomerDetailsModal';
 import EditCustomerModal from '../components/EditCustomerModal';
 import ExportModal from '../components/ExportModal';
+import AnimatedCounter from '../components/AnimatedCounter';
+import { animatePageHeader, animateStaggerCascade, animateTableRows } from '../utils/animations';
 
 const CustomerDirectory = () => {
   const [customers, setCustomers] = useState([]);
@@ -21,8 +23,14 @@ const CustomerDirectory = () => {
   const filterDateType = 'lastActivityDate';
   const { user } = useAuthStore();
 
+  const headerRef = useRef(null);
+  const statsRef = useRef(null);
+  const tbodyRef = useRef(null);
+
   useEffect(() => {
     fetchCustomers();
+    animatePageHeader(headerRef.current);
+    animateStaggerCascade(statsRef.current, '> div');
   }, []);
 
   const fetchCustomers = async () => {
@@ -210,7 +218,7 @@ const CustomerDirectory = () => {
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 bg-white p-5 sm:p-6 rounded-xl border border-[#E0E2E5] shadow-xs">
+      <div ref={headerRef} className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 bg-white p-5 sm:p-6 rounded-xl border border-[#E0E2E5] shadow-xs">
         <div>
           <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#FF2E46] bg-[#FFE8EB] px-2.5 py-1 rounded-md mb-2">
             Central Directory &bull; Customer Accounts
@@ -234,12 +242,12 @@ const CustomerDirectory = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-6">
+      <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-6">
         <div className="bg-white p-4 sm:p-5 rounded-xl border border-[#E0E2E5] shadow-xs hover:border-[#FF2E46]/40 transition-all group">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-[#666666] mb-1">Total Customers</p>
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-[#2C2C2C] group-hover:text-[#FF2E46] transition-colors">{customers.length}</h3>
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-[#2C2C2C] group-hover:text-[#FF2E46] transition-colors"><AnimatedCounter value={customers.length} /></h3>
             </div>
             <div className="w-10 h-10 rounded-lg bg-[#FFE8EB] text-[#FF2E46] flex items-center justify-center">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -253,7 +261,7 @@ const CustomerDirectory = () => {
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-[#666666] mb-1">Outside Calls</p>
               <h3 className="text-2xl sm:text-3xl font-extrabold text-[#2C2C2C] group-hover:text-[#FF2E46] transition-colors">
-                {customers.reduce((sum, c) => sum + (c.outsideCalls || 0), 0)}
+                <AnimatedCounter value={customers.reduce((sum, c) => sum + (c.outsideCalls || 0), 0)} />
               </h3>
             </div>
             <div className="w-10 h-10 rounded-lg bg-[#F0F2F5] text-[#2C2C2C] flex items-center justify-center">
@@ -268,7 +276,7 @@ const CustomerDirectory = () => {
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-[#666666] mb-1">Carry-In Services</p>
               <h3 className="text-2xl sm:text-3xl font-extrabold text-[#2C2C2C] group-hover:text-[#FF2E46] transition-colors">
-                {customers.reduce((sum, c) => sum + (c.carryInServices || 0), 0)}
+                <AnimatedCounter value={customers.reduce((sum, c) => sum + (c.carryInServices || 0), 0)} />
               </h3>
             </div>
             <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
@@ -283,7 +291,7 @@ const CustomerDirectory = () => {
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-[#666666] mb-1">Total Touchpoints</p>
               <h3 className="text-2xl sm:text-3xl font-extrabold text-emerald-600">
-                {customers.reduce((sum, c) => sum + (c.totalInteractions || 0), 0)}
+                <AnimatedCounter value={customers.reduce((sum, c) => sum + (c.totalInteractions || 0), 0)} />
               </h3>
             </div>
             <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
@@ -342,7 +350,7 @@ const CustomerDirectory = () => {
                 setAppliedDateRange(filterWithType);
               }}
               disabled={!dateRangeFilter.start || !dateRangeFilter.end}
-              className="px-4 py-2 bg-[#FF2E46] hover:bg-[#FF5A71] text-white rounded-lg text-xs sm:text-sm font-semibold disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed transition-all shadow-xs"
+              className="px-4 py-2 bg-[#FF2E46] hover:bg-[#FF5A71] text-white rounded-lg text-xs sm:text-sm font-semibold transition-all shadow-xs disabled:cursor-not-allowed"
             >
               Apply Filter
             </button>
@@ -467,7 +475,7 @@ const CustomerDirectory = () => {
                 )}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-[#F0F2F5]">
+            <tbody ref={tbodyRef} className="bg-white divide-y divide-[#F0F2F5]">
               {filteredCustomers.length === 0 ? (
                 <tr>
                   <td colSpan={user?.role === 'HOST' || user?.role === 'ADMIN' ? "10" : "9"} className="px-6 py-12 text-center">
@@ -553,7 +561,7 @@ const CustomerDirectory = () => {
                             e.stopPropagation();
                             handleEditCustomer(customer);
                           }}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#2C2C2C] hover:bg-[#1A1A1A] text-white text-xs font-semibold rounded-md shadow-xs transition-colors"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-[#2C2C2C] border border-gray-200 text-xs font-semibold rounded-md transition-colors"
                         >
                           <svg className="w-3.5 h-3.5 text-[#FF2E46]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

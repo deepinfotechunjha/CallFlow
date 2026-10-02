@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import useCallStore from '../store/callStore';
 import useAuthStore from '../store/authStore';
 import useCategoryStore from '../store/categoryStore';
@@ -9,7 +9,9 @@ import CallTable from '../components/CallTable';
 import ExportModal from '../components/ExportModal';
 import BulkDeleteModal from '../components/BulkDeleteModal';
 import ShareModal from '../components/ShareModal';
+import AnimatedCounter from '../components/AnimatedCounter';
 import { exportCallsToExcel } from '../utils/excelExport';
+import { animatePageHeader, animateStaggerCascade } from '../utils/animations';
 import toast from 'react-hot-toast';
 
 const Dashboard = () => {
@@ -28,6 +30,14 @@ const Dashboard = () => {
   const [categoryFilter, setCategoryFilter] = useState('ALL_CATEGORIES');
   const [userFilterType, setUserFilterType] = useState('ALL_USERS');
   const [selectedUser, setSelectedUser] = useState('ALL');
+
+  const headerRef = useRef(null);
+  const statsRef = useRef(null);
+
+  useEffect(() => {
+    animatePageHeader(headerRef.current);
+    animateStaggerCascade(statsRef.current, '> div');
+  }, []);
   
   const { calls, fetchCalls, bulkDeleteCalls } = useCallStore();
   const { users, fetchUsers } = useAuthStore();
@@ -242,7 +252,7 @@ const Dashboard = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
       {/* Top Header & Action Controls */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 pb-6 border-b border-gray-200">
+      <div ref={headerRef} className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 pb-6 border-b border-gray-200">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[11px] font-semibold text-[#FF2E46] uppercase tracking-wider bg-[#FFE8EB] px-2.5 py-0.5 rounded-md border border-[#FF2E46]/15">
@@ -306,13 +316,13 @@ const Dashboard = () => {
       </div>
 
       {/* Enterprise Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div ref={statsRef} className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Total Calls</p>
             <span className="w-2 h-2 rounded-full bg-gray-400"></span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 mt-2">{getTotalCalls()}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-2"><AnimatedCounter value={getTotalCalls()} /></p>
           <p className="text-[11px] text-gray-400 mt-1">Overall registered</p>
         </div>
 
@@ -321,7 +331,7 @@ const Dashboard = () => {
             <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Today's Inflow</p>
             <span className="w-2 h-2 rounded-full bg-[#FF2E46]"></span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 mt-2">{getTodaysCalls()}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-2"><AnimatedCounter value={getTodaysCalls()} /></p>
           <p className="text-[11px] text-gray-400 mt-1">Logged today</p>
         </div>
 
@@ -330,7 +340,7 @@ const Dashboard = () => {
             <p className="text-xs font-medium uppercase tracking-wider text-amber-700">Pending / Open</p>
             <span className="w-2 h-2 rounded-full bg-amber-500"></span>
           </div>
-          <p className="text-2xl font-bold text-amber-600 mt-2">{getPendingCalls()}</p>
+          <p className="text-2xl font-bold text-amber-600 mt-2"><AnimatedCounter value={getPendingCalls()} /></p>
           <p className="text-[11px] text-amber-600/70 mt-1">In-progress / queued</p>
         </div>
 
@@ -339,7 +349,7 @@ const Dashboard = () => {
             <p className="text-xs font-medium uppercase tracking-wider text-emerald-700">Completed</p>
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
           </div>
-          <p className="text-2xl font-bold text-emerald-600 mt-2">{getCompletedCalls()}</p>
+          <p className="text-2xl font-bold text-emerald-600 mt-2"><AnimatedCounter value={getCompletedCalls()} /></p>
           <p className="text-[11px] text-emerald-600/70 mt-1">Resolved calls</p>
         </div>
       </div>
@@ -402,7 +412,7 @@ const Dashboard = () => {
             <button
               onClick={() => setAppliedDateFilter(dateFilter)}
               disabled={!dateFilter.type || !dateFilter.start || !dateFilter.end}
-              className="px-4 py-1.5 bg-[#FF2E46] text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-[#FF5A71] disabled:opacity-40 transition-colors"
+              className="px-4 py-1.5 bg-[#FF2E46] hover:bg-[#FF5A71] text-white rounded-lg text-xs sm:text-sm font-semibold shadow-xs transition-all disabled:cursor-not-allowed"
             >
               Apply
             </button>

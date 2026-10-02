@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import useOrderStore from '../store/orderStore';
 import useAuthStore from '../store/authStore';
 import AddOrderModal from '../components/AddOrderModal';
@@ -10,7 +10,9 @@ import OrderEditModal from '../components/OrderEditModal';
 import OrderDetailModal from '../components/OrderDetailModal';
 import SalesShareModal from '../components/SalesShareModal';
 import ExportModal from '../components/ExportModal';
+import AnimatedCounter from '../components/AnimatedCounter';
 import { exportOrdersToExcel } from '../utils/excelExport';
+import { animatePageHeader, animateStaggerCascade, animateTableRows } from '../utils/animations';
 import toast from 'react-hot-toast';
 
 const ORDER_ACTION_ROLES = ['HOST', 'ACCOUNTANT', 'SALES_ADMIN'];
@@ -68,6 +70,15 @@ const OrdersPage = () => {
 
   const { orders, loading, fetchOrders, cancelOrder } = useOrderStore();
   const { user, users, fetchUsers } = useAuthStore();
+
+  const headerRef = useRef(null);
+  const statsRef = useRef(null);
+  const tbodyRef = useRef(null);
+
+  useEffect(() => {
+    animatePageHeader(headerRef.current);
+    animateStaggerCascade(statsRef.current, '> div');
+  }, []);
 
   const canAction = ORDER_ACTION_ROLES.includes(user?.role);
   const canSeeAll = ALL_ORDER_ROLES.includes(user?.role);
@@ -235,10 +246,16 @@ const OrdersPage = () => {
     });
   }
 
+  useEffect(() => {
+    if (!loading && sortedOrders.length > 0 && tbodyRef.current) {
+      animateTableRows(tbodyRef.current);
+    }
+  }, [loading, sortedOrders.length, statusFilter]);
+
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 bg-white p-5 sm:p-6 rounded-xl border border-[#E0E2E5] shadow-xs">
+      <div ref={headerRef} className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 bg-white p-5 sm:p-6 rounded-xl border border-[#E0E2E5] shadow-xs">
         <div>
           <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#FF2E46] bg-[#FFE8EB] px-2.5 py-1 rounded-md mb-2">
             Operations &bull; Order Fulfillment
@@ -293,29 +310,29 @@ const OrdersPage = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+      <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
         <div className="bg-white border border-[#E0E2E5] rounded-xl p-3.5 text-center shadow-xs">
-          <p className="text-2xl font-extrabold text-[#2C2C2C]">{stats.total}</p>
+          <p className="text-2xl font-extrabold text-[#2C2C2C]"><AnimatedCounter value={stats.total} /></p>
           <p className="text-xs font-bold uppercase tracking-wider text-[#666666] mt-1">Total</p>
         </div>
         <div className="bg-white border border-[#E0E2E5] rounded-xl p-3.5 text-center shadow-xs">
-          <p className="text-2xl font-extrabold text-[#FF2E46]">{stats.pending}</p>
+          <p className="text-2xl font-extrabold text-[#FF2E46]"><AnimatedCounter value={stats.pending} /></p>
           <p className="text-xs font-bold uppercase tracking-wider text-[#666666] mt-1">Pending</p>
         </div>
         <div className="bg-white border border-[#E0E2E5] rounded-xl p-3.5 text-center shadow-xs">
-          <p className="text-2xl font-extrabold text-amber-600">{stats.onHold}</p>
+          <p className="text-2xl font-extrabold text-amber-600"><AnimatedCounter value={stats.onHold} /></p>
           <p className="text-xs font-bold uppercase tracking-wider text-[#666666] mt-1">On Hold</p>
         </div>
         <div className="bg-white border border-[#E0E2E5] rounded-xl p-3.5 text-center shadow-xs">
-          <p className="text-2xl font-extrabold text-[#2C2C2C]">{stats.billed}</p>
+          <p className="text-2xl font-extrabold text-[#2C2C2C]"><AnimatedCounter value={stats.billed} /></p>
           <p className="text-xs font-bold uppercase tracking-wider text-[#666666] mt-1">Billed</p>
         </div>
         <div className="bg-white border border-[#E0E2E5] rounded-xl p-3.5 text-center shadow-xs">
-          <p className="text-2xl font-extrabold text-emerald-600">{stats.completed}</p>
+          <p className="text-2xl font-extrabold text-emerald-600"><AnimatedCounter value={stats.completed} /></p>
           <p className="text-xs font-bold uppercase tracking-wider text-[#666666] mt-1">Transported</p>
         </div>
         <div className="bg-white border border-[#E0E2E5] rounded-xl p-3.5 text-center shadow-xs">
-          <p className="text-2xl font-extrabold text-red-600">{stats.cancelled}</p>
+          <p className="text-2xl font-extrabold text-red-600"><AnimatedCounter value={stats.cancelled} /></p>
           <p className="text-xs font-bold uppercase tracking-wider text-[#666666] mt-1">Cancelled</p>
         </div>
       </div>
@@ -434,7 +451,7 @@ const OrdersPage = () => {
                     <th className="px-3.5 py-3 text-left text-xs font-bold text-white uppercase tracking-wider whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-[#F0F2F5]">
+                <tbody ref={tbodyRef} className="bg-white divide-y divide-[#F0F2F5]">
                   {sortedOrders.map((order, index) => {
                     return (
                     <React.Fragment key={order.id}>
