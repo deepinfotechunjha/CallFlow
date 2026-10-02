@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import useOrderStore from '../store/orderStore';
 import useAuthStore from '../store/authStore';
 import AddOrderModal from '../components/AddOrderModal';
+import { RemarkSummary, parseOrderRemark } from '../components/OrderRemarkDisplay';
 import OrderHoldModal from '../components/OrderHoldModal';
 import OrderBillModal from '../components/OrderBillModal';
 import OrderCompleteModal from '../components/OrderCompleteModal';
@@ -178,7 +179,11 @@ const OrdersPage = () => {
         o.salesEntry?.gstNo?.toLowerCase().includes(q) ||
         o.salesEntry?.contactPerson1Name?.toLowerCase().includes(q) ||
         o.salesEntry?.contactPerson1Number?.includes(q) ||
-        o.orderRemark?.toLowerCase().includes(q) ||
+        (() => {
+          const parsed = parseOrderRemark(o.orderRemark);
+          if (parsed) return parsed.items.some(i => i.code.toLowerCase().includes(q) || i.configuration.toLowerCase().includes(q));
+          return o.orderRemark?.toLowerCase().includes(q);
+        })() ||
         o.calledBy?.toLowerCase().includes(q) ||
         o.createdBy?.toLowerCase().includes(q) ||
         o.status?.toLowerCase().includes(q) ||
@@ -470,7 +475,7 @@ const OrdersPage = () => {
                           </td>
                         )}
                         <td className="px-3.5 py-3.5 text-xs sm:text-sm text-[#2C2C2C] max-w-[200px]">
-                          <p className="break-words whitespace-pre-wrap" title={order.orderRemark}>{order.orderRemark || '—'}</p>
+                          <RemarkSummary remark={order.orderRemark} />
                         </td>
                         <td className="px-3.5 py-3.5 text-xs sm:text-sm text-[#666666] whitespace-nowrap">{order.calledBy || '—'}</td>
                         <td className="px-3.5 py-3.5">
@@ -559,7 +564,7 @@ const OrdersPage = () => {
                 </span>
               </div>
 
-              <p className="text-xs sm:text-sm text-[#2C2C2C] mb-1.5"><span className="font-semibold text-[#666666]">Remark:</span> {order.orderRemark || '—'}</p>
+              <div className="mb-1.5"><span className="font-semibold text-[#666666] text-xs">Remark: </span><RemarkSummary remark={order.orderRemark} /></div>
               {order.brandName && user?.role === 'HOST' && <p className="text-xs text-[#FF2E46] font-semibold mb-1">Brand: {order.brandName}</p>}
               {order.calledBy && <p className="text-xs text-[#666666] mb-1">Called by: {order.calledBy}</p>}
               {order.dispatchFrom && (

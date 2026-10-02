@@ -171,8 +171,8 @@ const AddOrderModal = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-[#2C2C2C]/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
-      <div ref={modalRef} className="bg-white rounded-xl w-full max-w-2xl shadow-2xl border border-[#E0E2E5] flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div ref={modalRef} className="bg-white rounded-xl w-full max-w-2xl shadow-xl flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E0E2E5] bg-[#F8F9FA]">
           <div>
@@ -185,25 +185,22 @@ const AddOrderModal = ({ onClose }) => {
               </>
             ) : (
               <>
-                <span className="inline-block text-[#FF2E46] text-[10px] font-bold uppercase tracking-wider bg-[#FFE8EB] px-2.5 py-0.5 rounded-md mb-1 border border-[#FF2E46]/20">
-                  STEP 2 OF 2 • ORDER SPECIFICATIONS
-                </span>
-                <h3 className="text-lg font-bold text-[#2C2C2C]">{selectedFirm?.firmName}</h3>
-                <p className="text-xs text-[#666666] mt-0.5 truncate max-w-lg">
+                <h3 className="text-xl font-bold text-gray-800">{selectedFirm?.firmName}</h3>
+                <p className="text-sm text-gray-500 mt-0.5 truncate max-w-lg">
                   {[selectedFirm?.gstNo, selectedFirm?.city && selectedFirm?.area ? `${selectedFirm.city} · ${selectedFirm.area}` : selectedFirm?.city].filter(Boolean).join(' · ')}
                 </p>
               </>
             )}
           </div>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="w-8 h-8 rounded-lg bg-white text-gray-500 hover:text-[#2C2C2C] hover:bg-gray-100 flex items-center justify-center text-sm transition-colors border border-gray-200"
           >
             ✕
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1 space-y-4">
+        <div className="p-5 overflow-y-auto flex-1">
           {step === 1 && (
             <div className="space-y-4">
               <div>
@@ -249,17 +246,14 @@ const AddOrderModal = ({ onClose }) => {
               </div>
 
               {selectedFirm && (
-                <div className="bg-[#F8F9FA] border border-[#FF2E46]/30 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF2E46] bg-[#FFE8EB] px-2 py-0.5 rounded-md">
-                      Selected Target Firm
-                    </span>
-                  </div>
-                  <p className="font-bold text-[#2C2C2C] text-base mb-2">{selectedFirm.firmName}</p>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-[#666666]">
-                    {selectedFirm.gstNo && <span><strong className="text-[#2C2C2C]">GST:</strong> {selectedFirm.gstNo}</span>}
-                    {selectedFirm.panNo && <span><strong className="text-[#2C2C2C]">PAN:</strong> {selectedFirm.panNo}</span>}
-                    {(selectedFirm.city || selectedFirm.area) && <span><strong className="text-[#2C2C2C]">Location:</strong> {selectedFirm.city}{selectedFirm.area ? ` · ${selectedFirm.area}` : ''}</span>}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-2">Selected Firm</p>
+                  <p className="font-bold text-gray-800 text-base mb-2">{selectedFirm.firmName}</p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600">
+                    {selectedFirm.gstNo && <span><span className="font-medium text-gray-500">GST:</span> {selectedFirm.gstNo}</span>}
+                    {selectedFirm.panNo && <span><span className="font-medium text-gray-500">PAN:</span> {selectedFirm.panNo}</span>}
+                    {(selectedFirm.city || selectedFirm.area) && <span><span className="font-medium text-gray-500">Location:</span> {selectedFirm.city}{selectedFirm.area ? ` · ${selectedFirm.area}` : ''}</span>}
+                    {selectedFirm.address && <span><span className="font-medium text-gray-500">Address:</span> {selectedFirm.address}</span>}
                     {selectedFirm.contactPerson1Name && (
                       <span><strong className="text-[#2C2C2C]">Contact:</strong> {selectedFirm.contactPerson1Name} ({selectedFirm.contactPerson1Number})</span>
                     )}
@@ -330,10 +324,11 @@ const AddOrderModal = ({ onClose }) => {
                       className="w-full px-3.5 py-2 bg-white border border-[#E0E2E5] rounded-lg text-xs text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-1 focus:ring-[#FF2E46] transition-all"
                     />
 
-                    <div className="border border-[#E0E2E5] rounded-lg overflow-hidden shadow-xs">
+                    {/* Single unified table */}
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
                       <div className="max-h-64 overflow-y-auto">
-                        <table className="min-w-full text-xs divide-y divide-[#E0E2E5]">
-                          <thead className="bg-[#2C2C2C] sticky top-0 z-10">
+                        <table className="min-w-full text-xs">
+                          <thead className="bg-gray-50 sticky top-0 z-10">
                             <tr>
                               <th className="px-3 py-2 text-left font-bold text-white uppercase text-[11px]">Code</th>
                               <th className="px-3 py-2 text-left font-bold text-white uppercase text-[11px]">Configuration</th>
@@ -366,7 +361,7 @@ const AddOrderModal = ({ onClose }) => {
                                         placeholder="0"
                                         className="w-20 px-2 py-1 bg-white border border-[#E0E2E5] rounded-md text-xs text-right focus:ring-1 focus:ring-[#FF2E46]"
                                       />
-                                    ) : <span className="text-[#999999]">—</span>}
+                                    ) : <span className="text-gray-300">—</span>}
                                   </td>
                                   <td className="px-3 py-2 text-right">
                                     {added ? (
@@ -377,7 +372,7 @@ const AddOrderModal = ({ onClose }) => {
                                         onChange={e => updateItem(p.code, 'qty', e.target.value)}
                                         className="w-14 px-2 py-1 bg-white border border-[#E0E2E5] rounded-md text-xs text-right focus:ring-1 focus:ring-[#FF2E46]"
                                       />
-                                    ) : <span className="text-[#999999]">—</span>}
+                                    ) : <span className="text-gray-300">—</span>}
                                   </td>
                                   <td className="px-3 py-2 text-right font-bold text-[#2C2C2C] whitespace-nowrap">
                                     {added && total > 0 ? `₹${total.toLocaleString('en-IN')}` : <span className="text-[#999999]">—</span>}
@@ -395,11 +390,12 @@ const AddOrderModal = ({ onClose }) => {
                           </tbody>
                         </table>
                       </div>
-                      <div className="bg-[#F8F9FA] border-t border-[#E0E2E5] px-4 py-2.5 flex items-center justify-between">
-                        <span className="text-xs font-semibold text-[#666666]">
+                      {/* Grand total footer */}
+                      <div className="bg-blue-50 border-t border-gray-200 px-3 py-2 flex items-center justify-between">
+                        <span className="text-xs font-semibold text-gray-600">
                           {orderItems.length} item{orderItems.length !== 1 ? 's' : ''} selected
                         </span>
-                        <span className="text-sm font-bold text-[#FF2E46]">Grand Total: ₹{grandTotal.toLocaleString('en-IN')}</span>
+                        <span className="text-sm font-bold text-blue-700">Grand Total: ₹{grandTotal.toLocaleString('en-IN')}</span>
                       </div>
                     </div>
                   </div>

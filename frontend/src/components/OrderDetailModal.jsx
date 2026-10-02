@@ -1,6 +1,6 @@
 import React from 'react';
 import useClickOutside from '../hooks/useClickOutside';
-import OrderRemarkDisplay from './OrderRemarkDisplay';
+import OrderRemarkDisplay, { RemarkSummary, parseOrderRemark } from './OrderRemarkDisplay';
 
 const STATUS_BADGE = {
   PENDING:   'bg-[#FFE8EB] text-[#FF2E46] border border-[#FF2E46]/30',
@@ -65,15 +65,25 @@ const OrderDetailModal = ({ order, onClose }) => {
           {/* Order Info */}
           <div className="bg-[#F8F9FA] rounded-lg p-3.5 space-y-2 border border-[#E0E2E5]">
             <p className="text-[11px] font-bold text-[#2C2C2C] uppercase tracking-wider mb-1.5">Order Specifications</p>
-            <div className="flex gap-2 text-xs">
-              <span className="font-bold text-[#666666] min-w-[120px] uppercase tracking-wider">Remark:</span>
-              <div className="text-[#2C2C2C] flex-1"><OrderRemarkDisplay remark={order.orderRemark} /></div>
-            </div>
+            {!parseOrderRemark(order.orderRemark) && (
+              <div className="flex gap-2 text-xs">
+                <span className="font-bold text-[#666666] min-w-[120px] uppercase tracking-wider">Remark:</span>
+                <span className="text-[#2C2C2C] font-semibold">{order.orderRemark}</span>
+              </div>
+            )}
             <Row label="Caller" value={order.calledBy} />
             <Row label="Dispatch Hub" value={order.dispatchFrom?.split(',').map(loc => loc.trim()).filter(Boolean).join(', ')} />
             <Row label="Created By" value={order.createdBy} />
             <Row label="Created At" value={formatDate(order.createdAt)} />
           </div>
+
+          {/* Order Items (table format remark) */}
+          {parseOrderRemark(order.orderRemark) && (
+            <div className="bg-[#F8F9FA] rounded-lg p-3.5 border border-[#E0E2E5]">
+              <p className="text-[11px] font-bold text-[#2C2C2C] uppercase tracking-wider mb-2.5">Order Items</p>
+              <OrderRemarkDisplay remark={order.orderRemark} />
+            </div>
+          )}
 
           {/* Hold History */}
           {order.holds?.length > 0 && (
