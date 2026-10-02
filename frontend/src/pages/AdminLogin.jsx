@@ -83,7 +83,7 @@ const AdminLogin = () => {
         setForgotStep('email');
       }
     } catch (error) {
-      toast.error('Invalid secret');
+      toast.error(error?.response?.data?.error || 'Invalid secret');
     }
   };
 

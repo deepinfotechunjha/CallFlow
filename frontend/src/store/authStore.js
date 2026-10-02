@@ -52,10 +52,19 @@ const useAuthStore = create(
           const { token, user } = response.data;
           set({ user, token, isInitialized: true });
           toast.success(`Welcome back, ${user.username}!`);
-          return true;
+          return { success: true };
         } catch (err) {
-          toast.error('Invalid credentials');
-          return false;
+          const data = err.response?.data || {};
+          const errMsg = data.error || data.message || 'Invalid credentials';
+          toast.error(errMsg);
+          return {
+            success: false,
+            error: errMsg,
+            remainingAttempts: data.remainingAttempts,
+            isLocked: data.isLocked,
+            retryAfterSeconds: data.retryAfterSeconds,
+            lockedUntil: data.lockedUntil
+          };
         }
       },
       

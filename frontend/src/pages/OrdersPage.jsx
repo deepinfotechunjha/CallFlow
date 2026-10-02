@@ -109,7 +109,7 @@ const OrdersPage = () => {
         toast.success(`Successfully exported ${dataToExport.length} orders to Excel`);
         setShowExportModal(false);
       } else {
-        toast.error('Invalid secret password');
+        toast.error(data.error || 'Invalid secret password');
       }
     } catch (error) {
       toast.error('Failed to export data. Please try again.');

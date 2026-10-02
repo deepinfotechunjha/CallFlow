@@ -449,7 +449,7 @@ const CarryInService = () => {
         toast.success(`Successfully exported ${dataToExport.length} services to Excel`);
         setShowExportModal(false);
       } else {
-        toast.error('Invalid secret password');
+        toast.error(data.error || 'Invalid secret password');
       }
     } catch (error) {
       console.error('Export error:', error);

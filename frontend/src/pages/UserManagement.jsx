@@ -212,6 +212,8 @@ const UserManagement = () => {
     setShowConfirm(true);
   };
 
+  const [wrongPasswordErrorMessage, setWrongPasswordErrorMessage] = useState('');
+
   const verifyActionSecret = async () => {
     if (!actionSecretPassword.trim()) {
       setAlertMessage('Please enter the secret password');
@@ -286,22 +288,96 @@ const UserManagement = () => {
         setShowActionSecretModal(false);
         setActionSecretPassword('');
         setIsConfirming(false);
+        setWrongPasswordErrorMessage(data?.error || 'The secret key you entered is incorrect.');
         setShowWrongPasswordAlert(true);
       }
     } catch (error) {
       setShowActionSecretModal(false);
       setActionSecretPassword('');
       setIsConfirming(false);
+      const errMsg = error?.response?.data?.error || 'The secret key you entered is incorrect.';
+      setWrongPasswordErrorMessage(errMsg);
       setShowWrongPasswordAlert(true);
     }
   };
 
   const [showInitialWrongPassword, setShowInitialWrongPassword] = useState(false);
+  const [secretLockoutSeconds, setSecretLockoutSeconds] = useState(0);
+  const [secretRemainingAttempts, setSecretRemainingAttempts] = useState(null);
+
+  // Restore secret lockout state on refresh
+  useEffect(() => {
+    try {
+      const savedLockedUntil = localStorage.getItem('cf_secret_locked_until');
+      const savedRemaining = localStorage.getItem('cf_secret_remaining');
+
+      if (savedLockedUntil) {
+        const lockedUntilMs = Number(savedLockedUntil);
+        const now = Date.now();
+        if (lockedUntilMs > now) {
+          const secs = Math.ceil((lockedUntilMs - now) / 1000);
+          setSecretLockoutSeconds(secs);
+          setSecretRemainingAttempts(0);
+        } else {
+          localStorage.removeItem('cf_secret_locked_until');
+        }
+      }
+
+      if (savedRemaining !== null && savedRemaining !== undefined) {
+        setSecretRemainingAttempts(Number(savedRemaining));
+      }
+
+      if (user?.username) {
+        apiClient.get(`/auth/rate-limit-status?action=verify-secret&identifier=${encodeURIComponent(user.username)}`)
+          .then((res) => {
+            const data = res.data;
+            if (data.isLocked && data.retryAfterSeconds) {
+              setSecretLockoutSeconds(data.retryAfterSeconds);
+              setSecretRemainingAttempts(0);
+              if (data.lockedUntil) {
+                localStorage.setItem('cf_secret_locked_until', String(new Date(data.lockedUntil).getTime()));
+              }
+            } else if (typeof data.remainingAttempts === 'number') {
+              setSecretRemainingAttempts(data.remainingAttempts);
+              localStorage.setItem('cf_secret_remaining', String(data.remainingAttempts));
+            }
+          })
+          .catch(() => {});
+      }
+    } catch (e) {}
+  }, [user?.username]);
+
+  useEffect(() => {
+    if (secretLockoutSeconds <= 0) return;
+    const interval = setInterval(() => {
+      setSecretLockoutSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          localStorage.removeItem('cf_secret_locked_until');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [secretLockoutSeconds]);
+
+  const formatSecretTimer = (totalSecs) => {
+    const hrs = Math.floor(totalSecs / 3600);
+    const mins = Math.floor((totalSecs % 3600) / 60);
+    const secs = totalSecs % 60;
+    if (hrs > 0) {
+      return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
 
   const verifySecretPassword = async () => {
-    if (!secretPassword.trim()) {
-      setAlertMessage('Please enter the secret password');
-      setShowAlert(true);
+    if (!secretPassword.trim() || secretLockoutSeconds > 0) {
+      if (!secretPassword.trim()) {
+        setAlertMessage('Please enter the secret password');
+        setShowAlert(true);
+      }
       return;
     }
     
@@ -315,14 +391,35 @@ const UserManagement = () => {
       if (data.success && data.hasAccess) {
         setHasAccess(true);
         setShowSecretModal(false);
+        setSecretRemainingAttempts(null);
+        setSecretLockoutSeconds(0);
+        localStorage.removeItem('cf_secret_locked_until');
+        localStorage.removeItem('cf_secret_remaining');
       } else {
         setShowSecretModal(false);
         setSecretPassword('');
+        setWrongPasswordErrorMessage(data?.error || 'The secret key you entered is incorrect.');
         setShowInitialWrongPassword(true);
       }
     } catch (error) {
+      const data = error?.response?.data || {};
+      const errMsg = data.error || 'The secret key you entered is incorrect.';
+      if (data.isLocked && data.retryAfterSeconds) {
+        setSecretLockoutSeconds(data.retryAfterSeconds);
+        setSecretRemainingAttempts(0);
+        if (data.lockedUntil) {
+          localStorage.setItem('cf_secret_locked_until', String(new Date(data.lockedUntil).getTime()));
+        } else {
+          localStorage.setItem('cf_secret_locked_until', String(Date.now() + data.retryAfterSeconds * 1000));
+        }
+        localStorage.setItem('cf_secret_remaining', '0');
+      } else if (typeof data.remainingAttempts === 'number') {
+        setSecretRemainingAttempts(data.remainingAttempts);
+        localStorage.setItem('cf_secret_remaining', String(data.remainingAttempts));
+      }
       setShowSecretModal(false);
       setSecretPassword('');
+      setWrongPasswordErrorMessage(errMsg);
       setShowInitialWrongPassword(true);
     }
   };
@@ -364,14 +461,38 @@ const UserManagement = () => {
                   Enter your HOST secret password to unlock staff administration
                 </p>
               </div>
+
+              {/* Lockout Active Banner */}
+              {secretLockoutSeconds > 0 && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-center animate-pulse">
+                  <div className="text-xs font-bold text-red-600 uppercase tracking-wider mb-0.5">
+                    ⚠️ Secret Verification Locked
+                  </div>
+                  <div className="text-xl font-mono font-extrabold text-red-700 my-0.5">
+                    {formatSecretTimer(secretLockoutSeconds)}
+                  </div>
+                  <div className="text-[11px] text-red-600">
+                    Please wait until countdown completes before re-attempting.
+                  </div>
+                </div>
+              )}
+
+              {/* Remaining Attempts Warning */}
+              {secretLockoutSeconds === 0 && secretRemainingAttempts !== null && secretRemainingAttempts < 5 && (
+                <div className="mb-4 p-2 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between text-xs text-amber-800">
+                  <span>Chances remaining in 1hr:</span>
+                  <span className="font-bold bg-amber-100 px-2 py-0.5 rounded text-amber-900">{secretRemainingAttempts} / 5</span>
+                </div>
+              )}
               
               <div className="mb-5">
                 <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1.5">Secret Password <span className="text-[#FF2E46]">*</span></label>
                 <input
                   type="password"
                   value={secretPassword}
+                  disabled={secretLockoutSeconds > 0}
                   onChange={(e) => setSecretPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-2 focus:ring-[#FF2E46]/20 transition-all"
+                  className="w-full px-3.5 py-2.5 bg-white border border-[#E0E2E5] rounded-lg text-sm text-[#2C2C2C] focus:outline-none focus:border-[#FF2E46] focus:ring-2 focus:ring-[#FF2E46]/20 transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="Enter secret password"
                   onKeyPress={(e) => e.key === 'Enter' && verifySecretPassword()}
                   autoFocus
@@ -387,9 +508,10 @@ const UserManagement = () => {
                 </button>
                 <button
                   onClick={verifySecretPassword}
-                  className="flex-1 bg-[#FF2E46] hover:bg-[#FF5A71] text-white py-2 rounded-lg font-semibold text-xs sm:text-sm shadow-xs transition-all"
+                  disabled={secretLockoutSeconds > 0}
+                  className="flex-1 bg-[#FF2E46] hover:bg-[#FF5A71] text-white py-2 rounded-lg font-semibold text-xs sm:text-sm shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Verify Access
+                  {secretLockoutSeconds > 0 ? `Locked (${formatSecretTimer(secretLockoutSeconds)})` : 'Verify Access'}
                 </button>
               </div>
               
@@ -414,8 +536,18 @@ const UserManagement = () => {
               <div className="w-10 h-10 rounded-lg bg-[#FFE8EB] text-[#FF2E46] flex items-center justify-center mx-auto mb-3 text-lg font-bold">
                 ✕
               </div>
-              <h2 className="text-lg font-bold text-center text-[#2C2C2C] mb-1.5">Invalid Secret Password</h2>
-              <p className="text-xs sm:text-sm text-[#666666] text-center mb-5">The secret key you entered is incorrect. Please verify and try again.</p>
+              <h2 className="text-lg font-bold text-center text-[#2C2C2C] mb-1.5">
+                {secretLockoutSeconds > 0 ? 'Access Locked' : 'Invalid Secret Password'}
+              </h2>
+              <p className="text-xs sm:text-sm text-[#666666] text-center mb-5">{wrongPasswordErrorMessage || 'The secret key you entered is incorrect. Please verify and try again.'}</p>
+              
+              {secretLockoutSeconds > 0 && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-center">
+                  <div className="text-xs font-semibold text-red-600">Remaining lockout time:</div>
+                  <div className="text-xl font-mono font-extrabold text-red-700 mt-1">{formatSecretTimer(secretLockoutSeconds)}</div>
+                </div>
+              )}
+
               <div className="flex gap-2.5">
                 <button
                   onClick={() => {
@@ -433,7 +565,7 @@ const UserManagement = () => {
                   }}
                   className="flex-1 bg-[#FF2E46] hover:bg-[#FF5A71] text-white py-2 rounded-lg font-semibold text-xs sm:text-sm shadow-xs transition-all"
                 >
-                  Retry
+                  {secretLockoutSeconds > 0 ? 'View Countdown' : 'Retry'}
                 </button>
               </div>
             </div>

@@ -8,8 +8,22 @@ const apiClient = axios.create({
   baseURL: API_BASE_URL,
 });
 
+function getOrCreateDeviceId() {
+  try {
+    let deviceId = localStorage.getItem('cf_device_id');
+    if (!deviceId) {
+      deviceId = 'dev_' + Math.random().toString(36).substring(2, 12) + '_' + Date.now().toString(36);
+      localStorage.setItem('cf_device_id', deviceId);
+    }
+    return deviceId;
+  } catch (e) {
+    return 'browser_default_device';
+  }
+}
+
 apiClient.interceptors.request.use(
   (config) => {
+    config.headers['X-Device-Id'] = getOrCreateDeviceId();
     const token = useAuthStore.getState().token;
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;

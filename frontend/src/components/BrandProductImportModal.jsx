@@ -102,12 +102,8 @@ const BrandProductImportModal = ({ brand, onClose }) => {
       setRows(mapped);
       setOriginalRows(mapped);
     } catch (err) {
-      const msg = err?.response?.data?.error || err?.message || '';
-      if (msg.toLowerCase().includes('invalid secret') || msg === 'invalid') {
-        setSecretError('Invalid secret password. Please try again.');
-      } else {
-        setSecretError('Failed to save. Please try again.');
-      }
+      const msg = err?.response?.data?.error || err?.message || 'Invalid secret password. Please try again.';
+      setSecretError(msg);
     } finally {
       setIsSaving(false);
     }

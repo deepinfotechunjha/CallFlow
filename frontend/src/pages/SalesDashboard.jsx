@@ -282,7 +282,7 @@ const SalesDashboard = () => {
         toast.success(`Successfully exported ${dataToExport.length} sales entries to Excel`);
         setShowExportModal(false);
       } else {
-        toast.error('Invalid secret password');
+        toast.error(data.error || 'Invalid secret password');
       }
     } catch (error) {
       console.error('Export error:', error);

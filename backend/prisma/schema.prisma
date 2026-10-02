@@ -349,3 +349,18 @@ model OrderHold {
   @@index([orderId])
   @@index([heldAt])
 }
+
+model AuthAttempt {
+  id             Int       @id @default(autoincrement())
+  key            String    @unique
+  failedAttempts Int       @default(0)
+  firstFailedAt  DateTime  @default(now())
+  lastFailedAt   DateTime  @default(now())
+  lockedUntil    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([key])
+  @@index([lockedUntil])
+}
+

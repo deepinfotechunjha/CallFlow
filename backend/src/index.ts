@@ -10,7 +10,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import type { Request, Response, NextFunction } from "express";
-
+import { checkRateLimit, recordFailedAttempt, resetRateLimit } from "./utils/progressiveLimiter.js";
 
 dotenv.config();
 
@@ -507,6 +507,19 @@ app.get("/health", async (_req: Request, res: Response) => {
     }
 });
 
+// Auth rate limit status check (for page refresh/initial load on current device)
+app.get('/auth/rate-limit-status', async (req: Request, res: Response) => {
+    const action = (req.query.action as string) || 'login';
+    const identifier = (req.query.identifier as string) || 'device';
+
+    try {
+        const check = await checkRateLimit(prisma, action, identifier, req);
+        res.json(check);
+    } catch (err) {
+        res.json({ isLocked: false, remainingAttempts: 5 });
+    }
+});
+
 // Auth endpoints
 app.post('/auth/login', async (req: Request, res: Response) => {
     const { username, password } = req.body as { username: string; password: string };
@@ -514,9 +527,30 @@ app.post('/auth/login', async (req: Request, res: Response) => {
         return res.status(400).json({ error: 'Username and password are required' });
     }
 
+    // Check progressive rate limit (username + device)
+    const limitCheck = await checkRateLimit(prisma, 'login', username, req);
+    if (limitCheck.isLocked) {
+        return res.status(429).json({
+            error: limitCheck.message,
+            isLocked: true,
+            retryAfterSeconds: limitCheck.retryAfterSeconds,
+            lockedUntil: limitCheck.lockedUntil
+        });
+    }
+
     try {
         const user = await withRetry(() => prisma.user.findUnique({ where: { username } }));
-        if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+        if (!user) {
+            const failResult = await recordFailedAttempt(prisma, 'login', username, req);
+            const status = failResult.isLocked ? 429 : 401;
+            return res.status(status).json({
+                error: failResult.message,
+                remainingAttempts: failResult.remainingAttempts,
+                isLocked: failResult.isLocked,
+                retryAfterSeconds: failResult.retryAfterSeconds,
+                lockedUntil: failResult.lockedUntil
+            });
+        }
 
         let ok = false;
         try {
@@ -530,9 +564,22 @@ app.post('/auth/login', async (req: Request, res: Response) => {
             ok = true;
         }
 
-        if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+        if (!ok) {
+            const failResult = await recordFailedAttempt(prisma, 'login', username, req);
+            const status = failResult.isLocked ? 429 : 401;
+            return res.status(status).json({
+                error: failResult.message,
+                remainingAttempts: failResult.remainingAttempts,
+                isLocked: failResult.isLocked,
+                retryAfterSeconds: failResult.retryAfterSeconds,
+                lockedUntil: failResult.lockedUntil
+            });
+        }
 
-            const tokenPayload: any = { id: user.id, username: user.username, role: user.role };
+        // On successful credentials, reset attempts back to fresh state
+        await resetRateLimit(prisma, 'login', username, req);
+
+        const tokenPayload: any = { id: user.id, username: user.username, role: user.role };
         if (user.role === 'COMPANY_BASED_ACCESS' && user.brandName) {
             tokenPayload.brandName = user.brandName;
         }
@@ -589,6 +636,17 @@ app.post("/auth/verify-secret", authMiddleware, async (req: Request, res: Respon
     if (!user?.id) {
         return res.status(401).json({ error: 'User not authenticated' });
     }
+
+    const identifier = user.username || `user_${user.id}`;
+    const limitCheck = await checkRateLimit(prisma, 'verify-secret', identifier, req);
+    if (limitCheck.isLocked) {
+        return res.status(429).json({
+            error: limitCheck.message,
+            isLocked: true,
+            retryAfterSeconds: limitCheck.retryAfterSeconds,
+            lockedUntil: limitCheck.lockedUntil
+        });
+    }
     
     try {
         const dbUser = await prisma.user.findUnique({ 
@@ -601,9 +659,20 @@ app.post("/auth/verify-secret", authMiddleware, async (req: Request, res: Respon
         }
         
         const isValidSecret = await bcrypt.compare(secretPassword, dbUser.secretPassword);
-        if (!isValidSecret) {
-            return res.status(401).json({ error: 'Invalid secret password' });
+        if (!isValidSecret && dbUser.secretPassword !== secretPassword) {
+            const failResult = await recordFailedAttempt(prisma, 'verify-secret', identifier, req);
+            const status = failResult.isLocked ? 429 : 401;
+            return res.status(status).json({
+                error: failResult.message,
+                remainingAttempts: failResult.remainingAttempts,
+                isLocked: failResult.isLocked,
+                retryAfterSeconds: failResult.retryAfterSeconds,
+                lockedUntil: failResult.lockedUntil
+            });
         }
+
+        // On successful secret verification, reset attempts back to fresh state
+        await resetRateLimit(prisma, 'verify-secret', identifier, req);
         
         res.json({ success: true, hasAccess: dbUser.role === 'HOST' });
     } catch (err: any) {
@@ -619,11 +688,23 @@ app.post('/auth/special-admin-login', async (req: Request, res: Response) => {
     if (!username || !password) {
         return res.status(400).json({ error: 'Username and password are required' });
     }
+
+    const limitCheck = await checkRateLimit(prisma, 'special-admin-login', username, req);
+    if (limitCheck.isLocked) {
+        return res.status(429).json({
+            error: limitCheck.message,
+            isLocked: true,
+            retryAfterSeconds: limitCheck.retryAfterSeconds,
+            lockedUntil: limitCheck.lockedUntil
+        });
+    }
     
     const adminUsername = process.env.SPECIAL_ADMIN_USERNAME || 'specialadmin';
     const adminPassword = process.env.SPECIAL_ADMIN_PASSWORD || 'REMOVED';
     
     if (username === adminUsername && password === adminPassword) {
+        await resetRateLimit(prisma, 'special-admin-login', username, req);
+
         const token = signToken({ 
             id: -1, 
             username: adminUsername, 
@@ -640,7 +721,15 @@ app.post('/auth/special-admin-login', async (req: Request, res: Response) => {
             } 
         });
     } else {
-        res.status(401).json({ error: 'Invalid credentials' });
+        const failResult = await recordFailedAttempt(prisma, 'special-admin-login', username, req);
+        const status = failResult.isLocked ? 429 : 401;
+        res.status(status).json({
+            error: failResult.message,
+            remainingAttempts: failResult.remainingAttempts,
+            isLocked: failResult.isLocked,
+            retryAfterSeconds: failResult.retryAfterSeconds,
+            lockedUntil: failResult.lockedUntil
+        });
     }
 });
 
@@ -650,13 +739,33 @@ app.post('/auth/special-admin-verify-secret', async (req: Request, res: Response
     if (!secret) {
         return res.status(400).json({ error: 'Secret is required' });
     }
+
+    const identifier = 'special_admin_secret';
+    const limitCheck = await checkRateLimit(prisma, 'special-admin-secret', identifier, req);
+    if (limitCheck.isLocked) {
+        return res.status(429).json({
+            error: limitCheck.message,
+            isLocked: true,
+            retryAfterSeconds: limitCheck.retryAfterSeconds,
+            lockedUntil: limitCheck.lockedUntil
+        });
+    }
     
     const adminSecret = process.env.SPECIAL_ADMIN_SECRET || 'REMOVED';
     
     if (secret === adminSecret) {
+        await resetRateLimit(prisma, 'special-admin-secret', identifier, req);
         res.json({ success: true });
     } else {
-        res.status(401).json({ error: 'Invalid secret' });
+        const failResult = await recordFailedAttempt(prisma, 'special-admin-secret', identifier, req);
+        const status = failResult.isLocked ? 429 : 401;
+        res.status(status).json({
+            error: failResult.message,
+            remainingAttempts: failResult.remainingAttempts,
+            isLocked: failResult.isLocked,
+            retryAfterSeconds: failResult.retryAfterSeconds,
+            lockedUntil: failResult.lockedUntil
+        });
     }
 });
 
@@ -725,6 +834,17 @@ app.post('/auth/special-admin-verify-otp', async (req: Request, res: Response) =
     if (!email || !otp || !token) {
         return res.status(400).json({ error: 'Email, OTP, and token are required' });
     }
+
+    const identifier = email;
+    const limitCheck = await checkRateLimit(prisma, 'special-admin-otp', identifier, req);
+    if (limitCheck.isLocked) {
+        return res.status(429).json({
+            error: limitCheck.message,
+            isLocked: true,
+            retryAfterSeconds: limitCheck.retryAfterSeconds,
+            lockedUntil: limitCheck.lockedUntil
+        });
+    }
     
     const otpData = otpCache.get(token);
     
@@ -742,9 +862,18 @@ app.post('/auth/special-admin-verify-otp', async (req: Request, res: Response) =
     }
     
     if (otpData.email !== email || otpData.otp !== otp) {
-        return res.status(400).json({ error: 'Invalid OTP' });
+        const failResult = await recordFailedAttempt(prisma, 'special-admin-otp', identifier, req);
+        const status = failResult.isLocked ? 429 : 400;
+        return res.status(status).json({
+            error: failResult.message || 'Invalid OTP',
+            remainingAttempts: failResult.remainingAttempts,
+            isLocked: failResult.isLocked,
+            retryAfterSeconds: failResult.retryAfterSeconds,
+            lockedUntil: failResult.lockedUntil
+        });
     }
     
+    await resetRateLimit(prisma, 'special-admin-otp', identifier, req);
     otpData.verified = true;
     otpCache.set(token, otpData);
     
@@ -4093,6 +4222,7 @@ app.delete('/brands/:id', authMiddleware, requireRole(['HOST']), async (req: Req
 // ─── Brand Products ──────────────────────────────────────────────────────────
 app.get('/brands/:brandName/products', authMiddleware, async (req: Request, res: Response) => {
     const { brandName } = req.params;
+    if (!brandName) return res.status(400).json({ error: 'Brand name is required' });
     try {
         const products = await prisma.brandProduct.findMany({
             where: { brandName },
@@ -4107,6 +4237,7 @@ app.get('/brands/:brandName/products', authMiddleware, async (req: Request, res:
 
 app.post('/brands/:brandName/products', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
     const { brandName } = req.params;
+    if (!brandName) return res.status(400).json({ error: 'Brand name is required' });
     const { products, mode } = req.body as {
         products: { code: string; configuration: string }[];
         mode: 'replace' | 'merge';
@@ -4151,6 +4282,7 @@ app.post('/brands/:brandName/products', authMiddleware, requireRole(['HOST']), a
 
 app.delete('/brands/:brandName/products', authMiddleware, requireRole(['HOST']), async (req: Request, res: Response) => {
     const { brandName } = req.params;
+    if (!brandName) return res.status(400).json({ error: 'Brand name is required' });
     try {
         const result = await prisma.brandProduct.deleteMany({ where: { brandName } });
         res.json({ success: true, deletedCount: result.count });
