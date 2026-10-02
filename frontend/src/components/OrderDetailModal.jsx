@@ -1,6 +1,6 @@
 import React from 'react';
 import useClickOutside from '../hooks/useClickOutside';
-import OrderRemarkDisplay from './OrderRemarkDisplay';
+import OrderRemarkDisplay, { RemarkSummary, parseOrderRemark } from './OrderRemarkDisplay';
 
 const STATUS_BADGE = {
   PENDING:   'bg-gray-100 text-gray-700',
@@ -58,6 +58,7 @@ const OrderDetailModal = ({ order, onClose }) => {
           </div>
 
           {/* Order Info */}
+<<<<<<< HEAD
           <div className="bg-gray-50 rounded-lg p-4 space-y-2">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Order Info</p>
             <Row label="Order #" value={`#${order.id}`} />
@@ -67,9 +68,29 @@ const OrderDetailModal = ({ order, onClose }) => {
             </div>
             <Row label="Called By" value={order.calledBy} />
             <Row label="Dispatch From" value={order.dispatchFrom?.split(',').map(loc => loc.trim()).filter(Boolean).join(', ')} />
+=======
+          <div className="bg-[#F8F9FA] rounded-lg p-3.5 space-y-2 border border-[#E0E2E5]">
+            <p className="text-[11px] font-bold text-[#2C2C2C] uppercase tracking-wider mb-1.5">Order Specifications</p>
+            {!parseOrderRemark(order.orderRemark) && (
+              <div className="flex gap-2 text-xs">
+                <span className="font-bold text-[#666666] min-w-[120px] uppercase tracking-wider">Remark:</span>
+                <span className="text-[#2C2C2C] font-semibold">{order.orderRemark}</span>
+              </div>
+            )}
+            <Row label="Caller" value={order.calledBy} />
+            <Row label="Dispatch Hub" value={order.dispatchFrom?.split(',').map(loc => loc.trim()).filter(Boolean).join(', ')} />
+>>>>>>> 228f965 (order page ui changes+ mobile view)
             <Row label="Created By" value={order.createdBy} />
             <Row label="Created At" value={formatDate(order.createdAt)} />
           </div>
+
+          {/* Order Items (table format remark) */}
+          {parseOrderRemark(order.orderRemark) && (
+            <div className="bg-[#F8F9FA] rounded-lg p-3.5 border border-[#E0E2E5]">
+              <p className="text-[11px] font-bold text-[#2C2C2C] uppercase tracking-wider mb-2.5">Order Items</p>
+              <OrderRemarkDisplay remark={order.orderRemark} />
+            </div>
+          )}
 
           {/* Hold History */}
           {order.holds?.length > 0 && (

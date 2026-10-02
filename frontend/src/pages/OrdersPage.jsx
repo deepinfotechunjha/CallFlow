@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import useOrderStore from '../store/orderStore';
 import useAuthStore from '../store/authStore';
 import AddOrderModal from '../components/AddOrderModal';
+import { RemarkSummary, parseOrderRemark } from '../components/OrderRemarkDisplay';
 import OrderHoldModal from '../components/OrderHoldModal';
 import OrderBillModal from '../components/OrderBillModal';
 import OrderCompleteModal from '../components/OrderCompleteModal';
@@ -167,7 +168,11 @@ const OrdersPage = () => {
         o.salesEntry?.gstNo?.toLowerCase().includes(q) ||
         o.salesEntry?.contactPerson1Name?.toLowerCase().includes(q) ||
         o.salesEntry?.contactPerson1Number?.includes(q) ||
-        o.orderRemark?.toLowerCase().includes(q) ||
+        (() => {
+          const parsed = parseOrderRemark(o.orderRemark);
+          if (parsed) return parsed.items.some(i => i.code.toLowerCase().includes(q) || i.configuration.toLowerCase().includes(q));
+          return o.orderRemark?.toLowerCase().includes(q);
+        })() ||
         o.calledBy?.toLowerCase().includes(q) ||
         o.createdBy?.toLowerCase().includes(q) ||
         o.status?.toLowerCase().includes(q) ||
@@ -434,8 +439,13 @@ const OrdersPage = () => {
                             {order.brandName || '—'}
                           </td>
                         )}
+<<<<<<< HEAD
                         <td className="px-4 py-4 text-sm text-gray-700 max-w-[200px]">
                           <p className="break-words whitespace-pre-wrap" title={order.orderRemark}>{order.orderRemark || '—'}</p>
+=======
+                        <td className="px-3.5 py-3.5 text-xs sm:text-sm text-[#2C2C2C] max-w-[200px]">
+                          <RemarkSummary remark={order.orderRemark} />
+>>>>>>> 228f965 (order page ui changes+ mobile view)
                         </td>
                         <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">{order.calledBy || '—'}</td>
                         <td className="px-4 py-4">
@@ -519,9 +529,15 @@ const OrdersPage = () => {
                 </span>
               </div>
 
+<<<<<<< HEAD
               <p className="text-sm text-gray-700 mb-1"><span className="font-medium">Remark:</span> {order.orderRemark}</p>
               {order.brandName && user?.role === 'HOST' && <p className="text-xs text-teal-700 font-medium mb-1">Brand: {order.brandName}</p>}
               {order.calledBy && <p className="text-xs text-gray-500 mb-1">Called by: {order.calledBy}</p>}
+=======
+              <div className="mb-1.5"><span className="font-semibold text-[#666666] text-xs">Remark: </span><RemarkSummary remark={order.orderRemark} /></div>
+              {order.brandName && user?.role === 'HOST' && <p className="text-xs text-[#FF2E46] font-semibold mb-1">Brand: {order.brandName}</p>}
+              {order.calledBy && <p className="text-xs text-[#666666] mb-1">Called by: {order.calledBy}</p>}
+>>>>>>> 228f965 (order page ui changes+ mobile view)
               {order.dispatchFrom && (
                 <div className="flex flex-wrap gap-1 mb-1">
                   {order.dispatchFrom.split(',').map(loc => (
